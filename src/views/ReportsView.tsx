@@ -727,7 +727,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
         `"${item.seasonRecord.seedVariety}"`,
         `"${item.seasonRecord.seedType}"`,
         `"${item.seasonRecord.plantingDate}"`,
-        `"${item.seasonRecord.actualHarvestDate || item.seasonRecord.estimatedHarvestDate}"`,
+        `"${(item.seasonRecord as any).actualHarvestDate || item.seasonRecord.estimatedHarvestDate}"`,
         item.seasonRecord.actualProductionVolumeMt.toFixed(2),
         item.seasonRecord.actualProductionBags || Math.round(item.seasonRecord.actualProductionVolumeMt * 20),
         item.seasonRecord.yieldMtPerHa.toFixed(2),
@@ -1658,7 +1658,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
                         {item.seasonRecord.plantingDate}
                       </td>
                       <td className="p-1.5 border border-slate-300 font-mono text-slate-700 whitespace-nowrap">
-                        {item.seasonRecord.actualHarvestDate || item.seasonRecord.estimatedHarvestDate}
+                        {(item.seasonRecord as any).actualHarvestDate || item.seasonRecord.estimatedHarvestDate}
                       </td>
                       <td className="p-1.5 border border-slate-300 text-right font-mono font-black text-amber-900 whitespace-nowrap">
                         {item.seasonRecord.actualProductionVolumeMt.toFixed(2)}

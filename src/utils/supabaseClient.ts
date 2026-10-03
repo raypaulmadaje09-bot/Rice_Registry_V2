@@ -3,11 +3,16 @@ import { FarmParcel, LftAccount, User } from '../types';
 
 // Supabase project environment configuration
 const supabaseUrl =
-  (import.meta as any).env?.VITE_SUPABASE_URL || 'https://encmfqxsjoqqpgqzukcf.supabase.co';
+  (import.meta as any).env?.VITE_SUPABASE_URL ||
+  (import.meta as any).env?.SUPABASE_URL ||
+  'https://fzimfyncnshbnyuzncfz.supabase.co';
 const supabaseAnonKey =
-  (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || 'sb_publishable_JOerKEU_MPilqt2GFQnbZg_kisfO6Mg';
+  (import.meta as any).env?.VITE_SUPABASE_ANON_KEY ||
+  (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  (import.meta as any).env?.SUPABASE_PUBLISHABLE_KEY ||
+  'sb_publishable_oXGHvsTTPJ5SEsovLZUg9g_COAFGzNu';
 
-// In-memory auth storage provider - strictly NO localStorage
+// In-memory auth storage provider
 export const memoryAuthStorage = {
   _store: new Map<string, string>(),
   getItem: (key: string): string | null => memoryAuthStorage._store.get(key) ?? null,
@@ -19,13 +24,18 @@ export const memoryAuthStorage = {
   },
 };
 
+// Browser or in-memory auth storage provider
+const browserAuthStorage = typeof window !== 'undefined' && window.localStorage
+  ? window.localStorage
+  : memoryAuthStorage;
+
 // Official Supabase JS client instance
 export const supabaseClient: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    storage: memoryAuthStorage,
+    storage: browserAuthStorage,
   },
   realtime: {
     params: {
@@ -44,6 +54,21 @@ const localBroadcast = typeof window !== 'undefined' && 'BroadcastChannel' in wi
 
 // Active Realtime Channel Reference
 let activeRealtimeChannel: RealtimeChannel | null = null;
+
+/**
+ * Reusable promise timeout helper to prevent hanging network operations
+ */
+export async function withTimeout<T>(
+  promise: PromiseLike<T>,
+  timeoutMs: number = 7000,
+  fallbackMessage: string = 'Operation timed out'
+): Promise<T> {
+  let timer: any;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(fallbackMessage)), timeoutMs);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timer));
+}
 
 /**
  * Parses a farmer name into family name, given name, and middle name
@@ -91,60 +116,82 @@ export function parseFarmerName(nameStr: string): { family: string; given: strin
 }
 
 /**
- * Normalizes database rows from 'farms', 'farm_parcels', or 'farm_records' into standard FarmParcel
+ * Clean mapper function that maps the 'farmers' Supabase schema
+ * (id, rsbsa_number, farmer_name, barangay, contact_number, lat, lng, etc.)
+ * into the frontend FarmParcel interface.
+ * Parses farmer_name into farmerFamilyName, farmerGivenName, and farmerMiddleName.
  */
-export function normalizeFarmParcel(row: any): FarmParcel {
+export function mapFarmerRowToParcel(row: any): FarmParcel {
   if (!row) return {} as FarmParcel;
-  const tagNumber = row.tagNumber || row.tag_number || row.parcel_tag || row.id || `PARCEL-${Date.now()}`;
-  const farmerName =
-    row.farmerName ||
+  const tagNumber = String(row.id || row.tagNumber || row.tag_number || row.parcel_tag || `PARCEL-${Date.now()}`);
+  const farmerName = String(
     row.farmer_name ||
+    row.farmerName ||
     row.raiserName ||
     row.raiser_name ||
-    (row.family_name ? `${row.family_name}, ${row.given_name || ''} ${row.middle_name || ''}`.trim() : 'Farmer');
+    row.name ||
+    row.full_name ||
+    (row.family_name ? `${row.family_name}, ${row.given_name || ''} ${row.middle_name || ''}`.trim() : '') ||
+    'UNKNOWN FARMER'
+  ).trim();
+
   const parsed = parseFarmerName(farmerName);
 
-  const farmerFamilyName = (row.family_name || row.farmer_family_name || row.farmerFamilyName || parsed.family || '').trim();
-  const farmerGivenName = (row.given_name || row.farmer_given_name || row.farmerGivenName || parsed.given || farmerName).trim();
-  const farmerMiddleName = (row.middle_name || row.farmer_middle_name || row.farmerMiddleName || parsed.middle || '').trim();
+  const farmerFamilyName = (row.farmer_family_name || row.farmerFamilyName || row.family_name || (row.farmer_name ? String(row.farmer_name).split(',')[0]?.trim() : '') || parsed.family || '').trim();
+  const farmerGivenName = (row.farmer_given_name || row.farmerGivenName || row.given_name || (row.farmer_name && String(row.farmer_name).includes(',') ? String(row.farmer_name).split(',')[1]?.trim() : '') || parsed.given || farmerName).trim();
+  const farmerMiddleName = (row.farmer_middle_name || row.farmerMiddleName || row.middle_name || parsed.middle || '').trim();
 
-  const areaHa = Number(row.farm_area_ha ?? row.farmAreaHa ?? row.areaHa ?? row.area_ha ?? row.weightKg ?? 0);
-  const barangay = row.barangay || 'Poblacion District I';
-  const residentialAddress = row.residential_address || row.residentialAddress || row.address || `${barangay}, Silago, Southern Leyte`;
-  const rsbsaNo = row.rsbsa_no || row.rsbsaNo || row.swineNameOrId || row.swine_name_or_id || row.rsbsaNumber || row.rsbsa_number || row.rsbsaId || '';
-  const commodity = row.commodity_planted || row.commodityPlanted || row.commodity || 'Rice';
+  const areaHa = Number(row.farm_area_ha ?? row.farmAreaHa ?? row.area_ha ?? row.areaHa ?? row.weight_kg ?? row.weightKg ?? 1.25);
+  const barangay = row.barangay || 'Salvacion';
+  const residentialAddress = row.residential_address || row.residentialAddress || row.address || 'Silago, Southern Leyte';
+  const rsbsaNo = String(
+    row.rsbsa_number ||
+    row.rsbsaNumber ||
+    row.rsbsa_no ||
+    row.rsbsaNo ||
+    row.swineNameOrId ||
+    row.swine_name_or_id ||
+    row.rsbsaId ||
+    'NO RSBSA'
+  ).trim();
+  const commodity = row.commodity || row.commodity_planted || row.commodityPlanted || 'Rice';
   const season = row.season || row.croppingSeason || row.cropping_season || 'Wet Season (WS) 2026 (June – Nov 2026)';
   const fieldPhotoUrl = row.field_photo_url || row.fieldPhotoUrl || '';
   const photoUrl = row.photo_url || row.photoUrl || row.farmer_photo_url || row.farmerPhotoUrl || '';
 
-  // Parse GPS coordinates if given in string "lat, lng" format
+  // Parse contact number: strip non-digits, accept 11-digit mobile format 09XXXXXXXXX
+  const rawContact = String(row.contact_number || row.contactNumber || row.phone || row.mobile || '').trim();
+  const digits = rawContact.replace(/\D/g, '');
+  const contactNumber = digits.length === 11 && digits.startsWith('09') ? digits : (rawContact || '');
+
+  // Parse GPS coordinates
   let lat = Number(row.lat ?? row.latitude);
-  let lng = Number(row.lng ?? row.longitude);
-  if ((isNaN(lat) || isNaN(lng) || !lat) && row.gps_coordinates) {
+  let lng = Number(row.lng ?? row.longitude ?? row.long);
+  if ((isNaN(lat) || isNaN(lng) || !lat || !lng) && row.gps_coordinates) {
     const parts = String(row.gps_coordinates).split(',').map((s) => parseFloat(s.trim()));
     if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
       lat = parts[0];
       lng = parts[1];
     }
   }
-  if (isNaN(lat) || !lat) lat = 10.5333;
-  if (isNaN(lng) || !lng) lng = 125.1667;
+  if (isNaN(lat) || !lat) lat = 10.5312;
+  if (isNaN(lng) || !lng) lng = 125.1643;
 
   const isPendingSync = Boolean(row.is_pending_sync || row.isPendingSync);
 
   return {
     tagNumber,
-    swineNameOrId: rsbsaNo,
-    rsbsa_no: rsbsaNo,
-    raiserName: farmerName,
+    swineNameOrId: rsbsaNo || 'NO RSBSA',
+    rsbsa_no: rsbsaNo || 'NO RSBSA',
+    raiserName: farmerName || 'UNKNOWN FARMER',
     farmerFamilyName,
     farmerGivenName,
     farmerMiddleName,
     barangay,
-    purok: row.purok || '',
+    purok: row.purok || 'Purok 1',
     address: residentialAddress,
     residential_address: residentialAddress,
-    contactNumber: row.contactNumber || row.contact_number || row.phone || '',
+    contactNumber,
     birthday: row.birthday || row.birth_date || '',
     farmLocation: row.farmLocation || row.farm_location || barangay.toUpperCase(),
     lat,
@@ -156,21 +203,21 @@ export function normalizeFarmParcel(row: any): FarmParcel {
     sex: row.sex || row.tenure || row.tenurial_status || 'Owner-Cultivator',
     ageMonths: Number(row.ageMonths ?? row.age_months ?? 45),
     scale: row.scale || (areaHa < 2 ? 'Smallholder (<2 ha)' : areaHa <= 5 ? 'Medium Farm (2-5 ha)' : 'Commercial (>5 ha)'),
-    purpose: row.purpose || row.ecosystem || 'Irrigated Lowland (NIA)',
+    purpose: row.ecosystem || row.purpose || 'Irrigated Lowland',
     vaccinationStatus: row.vaccinationStatus || row.vaccination_status || 'RSBSA Enrolled & PCIC Insured',
     healthStatus: row.healthStatus || row.health_status || row.standingCropStage || 'Active Crop (Tillering)',
     biosecurityScore: row.biosecurityScore || row.biosecurity_score || 'Georeferenced (GPS Polygon Mapped)',
-    registrationDate: row.registrationDate || row.registration_date || row.createdAt || new Date().toISOString().split('T')[0],
+    registrationDate: row.registrationDate || row.registration_date || row.createdAt || row.created_at || new Date().toISOString().split('T')[0],
     syncStatus: isPendingSync ? 'Offline / Pending Sync' : (row.syncStatus || row.sync_status || 'Live Synced'),
     is_pending_sync: isPendingSync,
     isPendingSync,
     targetYieldMt: Number(row.targetYieldMt ?? row.target_yield_mt ?? 6.0),
     commodity,
     commodity_planted: commodity,
-    breed: row.breed || row.variety || 'NSIC Rc 222 (Tubigan 18)',
-    variety: row.variety || row.breed || 'NSIC Rc 222 (Tubigan 18)',
+    breed: row.seed_variety || row.breed || row.variety || 'NSIC Rc 222',
+    variety: row.seed_variety || row.variety || row.breed || 'NSIC Rc 222',
     seedType: row.seedType || row.seed_type || 'INBRED',
-    ecosystem: row.ecosystem || row.purpose || 'Irrigated Lowland (NIA)',
+    ecosystem: row.ecosystem || row.purpose || 'Irrigated Lowland',
     tenure: row.tenure || row.sex || 'Owner-Cultivator',
     focalPerson: row.focalPerson || row.focal_person || row.technician || 'MAO Assigned LFT',
     standingCropStage: row.standingCropStage || row.standing_crop_stage || 'Vegetative',
@@ -183,10 +230,18 @@ export function normalizeFarmParcel(row: any): FarmParcel {
     photo_url: photoUrl,
     fieldPhotoUrl,
     field_photo_url: fieldPhotoUrl,
-    gpsAccuracyMeters: row.gpsAccuracyMeters || row.gps_accuracy_meters || 3.5,
+    gpsAccuracyMeters: Number(row.gpsAccuracyMeters || row.gps_accuracy_meters || 3.5),
     polygonCoords: row.polygonCoords || row.polygon_coords || undefined,
+    boundaryCoords: row.boundaryCoords || row.boundary_coords || undefined,
     seasonalRecords: row.seasonalRecords || row.seasonal_records || []
   };
+}
+
+/**
+ * Normalizes database rows from 'farmers' (primary), 'farms', or 'farm_parcels' into standard FarmParcel
+ */
+export function normalizeFarmParcel(row: any): FarmParcel {
+  return mapFarmerRowToParcel(row);
 }
 
 /**
@@ -296,16 +351,32 @@ export function subscribeToSupabaseRealtime(callbacks: RealtimeSyncCallbacks): (
       }
     });
 
-    // 1. Listen for Postgres CDC (Change Data Capture) changes on rice_farm_records, farms, farm_parcels, farmers, and crop_stages_monitoring
-    const farmTables = ['rice_farm_records', 'farms', 'farm_parcels', 'farm_records', 'farmers', 'crop_stages_monitoring'];
-    farmTables.forEach((tableName) => {
+    // 1. Listen for Postgres CDC changes on 'farmers' table (Primary table schema)
+    channel.on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'farmers' },
+      (payload) => {
+        if (payload.eventType === 'DELETE') {
+          const oldTag = (payload.old as any)?.id || (payload.old as any)?.tagNumber || (payload.old as any)?.tag_number || (payload.old as any)?.parcel_tag;
+          if (oldTag) {
+            callbacks.onParcelDelete(oldTag);
+          }
+        } else if (payload.new) {
+          callbacks.onParcelUpsert(mapFarmerRowToParcel(payload.new));
+        }
+      }
+    );
+
+    // Fallback listeners for farms, farm_parcels, farm_records, crop_stages_monitoring
+    const fallbackTables = ['farms', 'farm_parcels', 'farm_records', 'crop_stages_monitoring'];
+    fallbackTables.forEach((tableName) => {
       channel
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: tableName },
           (payload) => {
             if (payload.new) {
-              callbacks.onParcelUpsert(normalizeFarmParcel(payload.new));
+              callbacks.onParcelUpsert(mapFarmerRowToParcel(payload.new));
             }
           }
         )
@@ -314,7 +385,7 @@ export function subscribeToSupabaseRealtime(callbacks: RealtimeSyncCallbacks): (
           { event: 'UPDATE', schema: 'public', table: tableName },
           (payload) => {
             if (payload.new) {
-              callbacks.onParcelUpsert(normalizeFarmParcel(payload.new));
+              callbacks.onParcelUpsert(mapFarmerRowToParcel(payload.new));
             }
           }
         )
@@ -495,14 +566,16 @@ export const supabaseStorage = {
       const cleanRecordId = recordId.replace(/[^a-zA-Z0-9_-]/g, '_');
       const filePath = `${cleanRecordId}-${Date.now()}.${fileExt}`;
 
-      // Upload image file directly to the 'farm-photos' Supabase Storage bucket
-      const { data, error } = await supabaseClient.storage
+      // Upload image file directly to the 'farm-photos' Supabase Storage bucket with 6s timeout
+      const uploadPromise = supabaseClient.storage
         .from('farm-photos')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: true,
           contentType: file.type || 'image/jpeg'
         });
+
+      const { data, error } = await withTimeout(uploadPromise, 6000, 'Supabase storage timeout');
 
       if (!error) {
         const { data: urlData } = supabaseClient.storage
@@ -512,10 +585,10 @@ export const supabaseStorage = {
         if (urlData?.publicUrl) {
           return urlData.publicUrl;
         }
-      } else if (data?.path) {
+      } else if ((data as any)?.path) {
         const { data: urlData } = supabaseClient.storage
           .from('farm-photos')
-          .getPublicUrl(data.path);
+          .getPublicUrl((data as any).path);
 
         if (urlData?.publicUrl) {
           return urlData.publicUrl;
@@ -525,12 +598,8 @@ export const supabaseStorage = {
       console.warn('Supabase Storage notice:', err);
     }
 
-    // High-fidelity fallback for offline or unauthenticated prototyping
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target?.result as string);
-      reader.readAsDataURL(file);
-    });
+    // Return empty string on storage failure instead of heavy Base64 that causes timeouts in database
+    return '';
   }
 };
 
@@ -603,7 +672,7 @@ export function clearOfflinePendingFarms(): void {
 }
 
 /**
- * Validates whether an RSBSA number already exists in Supabase or the offline pending queue
+ * Validates whether an RSBSA number already exists in Supabase 'farmers' table or the offline pending queue
  */
 export async function checkDuplicateRsbsa(
   rsbsa: string,
@@ -625,47 +694,25 @@ export async function checkDuplicateRsbsa(
   if (pendingMatch) {
     return {
       isDuplicate: true,
-      farmerName: pendingMatch.raiserName || `${pendingMatch.farmerGivenName} ${pendingMatch.farmerFamilyName}`,
+      farmerName: pendingMatch.raiserName || `${pendingMatch.farmerGivenName} ${pendingMatch.farmerFamilyName}`.trim(),
       existingTag: pendingMatch.tagNumber,
       isOfflineMatch: true
     };
   }
 
-  // 2. Query Supabase 'rice_farm_records' directly
+  // 2. Query Supabase 'farmers' table directly with timeout
   if (typeof navigator === 'undefined' || navigator.onLine) {
     try {
-      const { data, error } = await supabaseClient
-        .from('rice_farm_records')
-        .select('id, rsbsa_no, family_name, given_name')
-        .ilike('rsbsa_no', clean)
+      const qPromise = supabaseClient
+        .from('farmers')
+        .select('id, rsbsa_number, farmer_name')
+        .ilike('rsbsa_number', clean)
         .limit(5);
+
+      const { data, error } = await withTimeout(qPromise, 4000, 'Duplicate RSBSA check timeout');
 
       if (!error && Array.isArray(data) && data.length > 0) {
-        const match = data.find((r: any) => !excludeTagNumber || r.id !== excludeTagNumber);
-        if (match) {
-          const name = [match.family_name ? match.family_name.toUpperCase() + ',' : '', match.given_name].filter(Boolean).join(' ') || 'Registered Farmer';
-          return {
-            isDuplicate: true,
-            farmerName: name,
-            existingTag: match.id,
-            isOfflineMatch: false
-          };
-        }
-      }
-    } catch (err) {
-      console.warn('Supabase rice_farm_records duplicate check notice:', err);
-    }
-
-    // 3. Fallback check on 'farms' table
-    try {
-      const { data: fData, error: fError } = await supabaseClient
-        .from('farms')
-        .select('id, farmer_name, rsbsa_number, barangay, area_ha, ecosystem')
-        .or(`rsbsa_number.ilike.${clean},farmer_name.ilike.${clean}`)
-        .limit(5);
-
-      if (!fError && Array.isArray(fData) && fData.length > 0) {
-        const match = fData.find((r: any) => !excludeTagNumber || r.id !== excludeTagNumber);
+        const match = data.find((r: any) => !excludeTagNumber || (r.id !== excludeTagNumber && r.id !== `FARMER-${excludeTagNumber}`));
         if (match) {
           return {
             isDuplicate: true,
@@ -675,14 +722,92 @@ export async function checkDuplicateRsbsa(
           };
         }
       }
-    } catch {}
+    } catch (err) {
+      console.warn('Supabase farmers duplicate check notice:', err);
+    }
   }
 
   return { isDuplicate: false };
 }
 
 /**
- * Automatically synchronizes queued offline pending farm records to Supabase
+ * Validates whether a farmer with the same full name already exists in Supabase 'farmers' table
+ * or offline pending queue (optionally filtered by barangay jurisdiction)
+ */
+export async function checkDuplicateFarmerName(
+  fullName: string,
+  barangay?: string,
+  excludeTagNumber?: string
+): Promise<{ isDuplicate: boolean; existingName?: string; barangay?: string; isOfflineMatch?: boolean }> {
+  const normalize = (str: string) =>
+    (str || '').toLowerCase().trim().replace(/[,.-]/g, ' ').replace(/\s+/g, ' ');
+
+  const cleanName = normalize(fullName);
+  if (!cleanName || cleanName.length < 3) {
+    return { isDuplicate: false };
+  }
+
+  // 1. Check local offline pending queue
+  const pending = getOfflinePendingFarms();
+  const pendingMatch = pending.find((p) => {
+    if (excludeTagNumber && p.tagNumber === excludeTagNumber) return false;
+    const pFullName = normalize(
+      [p.farmerGivenName, p.farmerMiddleName, p.farmerFamilyName].filter(Boolean).join(' ') || p.raiserName || ''
+    );
+    const pBrgy = (p.barangay || '').trim().toLowerCase();
+    const targetBrgy = (barangay || '').trim().toLowerCase();
+    const sameBrgy = !targetBrgy || !pBrgy || pBrgy === targetBrgy;
+    return pFullName === cleanName && sameBrgy;
+  });
+
+  if (pendingMatch) {
+    return {
+      isDuplicate: true,
+      existingName: pendingMatch.raiserName || `${pendingMatch.farmerGivenName} ${pendingMatch.farmerFamilyName}`.trim(),
+      barangay: pendingMatch.barangay,
+      isOfflineMatch: true
+    };
+  }
+
+  // 2. Query Supabase 'farmers' table directly with timeout
+  if (typeof navigator === 'undefined' || navigator.onLine) {
+    try {
+      let query = supabaseClient
+        .from('farmers')
+        .select('id, farmer_name, barangay, rsbsa_number');
+
+      if (barangay) {
+        query = query.ilike('barangay', barangay.trim());
+      }
+
+      const { data, error } = await withTimeout(query.limit(50), 4000, 'Duplicate Name check timeout');
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const match = data.find((r: any) => {
+          if (excludeTagNumber && (r.id === excludeTagNumber || r.id === `FARMER-${excludeTagNumber}`)) return false;
+          const rName = normalize(r.farmer_name || '');
+          return rName === cleanName;
+        });
+
+        if (match) {
+          return {
+            isDuplicate: true,
+            existingName: match.farmer_name,
+            barangay: match.barangay,
+            isOfflineMatch: false
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase farmers name duplicate check notice:', err);
+    }
+  }
+
+  return { isDuplicate: false };
+}
+
+/**
+ * Automatically synchronizes queued offline pending farm records to Supabase 'farmers' table
  */
 export async function syncOfflinePendingFarms(): Promise<{
   syncedCount: number;
@@ -710,20 +835,15 @@ export async function syncOfflinePendingFarms(): Promise<{
     }
 
     try {
-      const ricePayload = sanitizeRiceFarmRecordPayload(parcel);
+      const farmerPayload = sanitizeFarmerPayload(parcel);
       const farmPayload = sanitizeFarmPayload(parcel);
 
       let success = false;
       try {
-        const { error: rErr } = await supabaseClient
-          .from('rice_farm_records')
-          .upsert(ricePayload, { onConflict: 'id' });
-        if (!rErr) success = true;
-      } catch {}
-
-      try {
-        await supabaseClient.from('farms').upsert(farmPayload, { onConflict: 'id' });
-        success = true;
+        const { error: fErr } = await supabaseClient
+          .from('farmers')
+          .upsert(farmerPayload, { onConflict: 'id' });
+        if (!fErr) success = true;
       } catch {}
 
       if (success) {
@@ -755,48 +875,96 @@ export async function syncOfflinePendingFarms(): Promise<{
 }
 
 /**
- * Sanitizes FarmParcel into exact column schema required by the 'rice_farm_records' table in Supabase
+ * Sanitizes FarmParcel into exact column schema required by the 'farmers' table in Supabase
+ * Enforces numeric-only contact number (11-digit mobile format 09XXXXXXXXX)
  */
-export function sanitizeRiceFarmRecordPayload(parcel: FarmParcel) {
-  const norm = normalizeFarmParcel(parcel);
-  const areaHa = Number(norm.weightKg || norm.areaHa || norm.farm_area_ha || 0);
-  const rsbsa = norm.swineNameOrId || norm.rsbsa_no || '';
+export function sanitizeFarmerPayload(parcel: FarmParcel) {
+  const norm = mapFarmerRowToParcel(parcel);
+  const areaHa = Number(norm.weightKg || norm.areaHa || norm.farm_area_ha || 1.0);
+  const rawContact = norm.contactNumber || '';
+  const digits = rawContact.replace(/\D/g, '');
+  const contact_number = digits.length === 11 && digits.startsWith('09') ? digits : digits.slice(0, 11);
+
+  // Auto-generate or format ID as 'FARMER-SLG-...'
+  const rawId = (norm.tagNumber || '').trim();
+  let formattedId = rawId;
+  if (!formattedId) {
+    formattedId = `FARMER-SLG-${Date.now().toString().slice(-6)}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+  } else if (!formattedId.startsWith('FARMER-SLG-')) {
+    if (formattedId.startsWith('FARMER-')) {
+      formattedId = `FARMER-SLG-${formattedId.replace(/^FARMER-/, '')}`;
+    } else if (formattedId.startsWith('SLG-')) {
+      formattedId = `FARMER-${formattedId}`;
+    } else {
+      formattedId = `FARMER-SLG-${formattedId}`;
+    }
+  }
+
+  // Combined farmer_name: pinagsamang Last Name, First Name, at Middle Name
+  const fam = (norm.farmerFamilyName || '').trim();
+  const giv = (norm.farmerGivenName || '').trim();
+  const mid = (norm.farmerMiddleName || '').trim();
+  let farmerName = '';
+  if (fam && giv) {
+    farmerName = `${fam.toUpperCase()}, ${giv}${mid ? ' ' + mid : ''}`.trim();
+  } else if (norm.raiserName) {
+    farmerName = norm.raiserName.trim();
+  } else {
+    farmerName = [fam.toUpperCase(), giv, mid].filter(Boolean).join(' ').trim() || 'Registered Farmer';
+  }
+
+  // Optimize payload: never store heavy Base64 strings or blob URLs into database row
+  const safePhotoUrl =
+    norm.photoUrl && !norm.photoUrl.startsWith('data:') && !norm.photoUrl.startsWith('blob:')
+      ? norm.photoUrl
+      : norm.photo_url && !norm.photo_url.startsWith('data:') && !norm.photo_url.startsWith('blob:')
+      ? norm.photo_url
+      : null;
+
+  const safeFieldPhotoUrl =
+    norm.fieldPhotoUrl && !norm.fieldPhotoUrl.startsWith('data:') && !norm.fieldPhotoUrl.startsWith('blob:')
+      ? norm.fieldPhotoUrl
+      : norm.field_photo_url && !norm.field_photo_url.startsWith('data:') && !norm.field_photo_url.startsWith('blob:')
+      ? norm.field_photo_url
+      : null;
 
   return {
-    id: norm.tagNumber,
-    rsbsa_no: rsbsa,
-    family_name: norm.farmerFamilyName || '',
-    given_name: norm.farmerGivenName || '',
-    middle_name: norm.farmerMiddleName || null,
-    field_photo_url: norm.fieldPhotoUrl || norm.field_photo_url || null,
-    photo_url: norm.photoUrl || norm.photo_url || null,
+    id: formattedId,
+    rsbsa_number: norm.swineNameOrId || norm.rsbsa_no || '',
+    farmer_name: farmerName,
     barangay: norm.barangay || 'Poblacion District I',
+    contact_number,
+    lat: Number(norm.lat || 10.5335),
+    lng: Number(norm.lng || 125.1620),
+    area_ha: areaHa,
+    address: norm.address || norm.residential_address || `${norm.barangay || 'Poblacion'}, Silago, Southern Leyte`,
     purok: norm.purok || '',
-    residential_address: norm.address || norm.residential_address || `${norm.barangay}, Silago, Southern Leyte`,
     birthday: norm.birthday || null,
-    farm_location: norm.farmLocation || norm.barangay?.toUpperCase() || '',
-    gps_coordinates: `${norm.lat}, ${norm.lng}`,
-    farm_area_ha: areaHa,
-    commodity_planted: norm.commodity || norm.commodity_planted || 'Rice',
-    season: norm.croppingSeason || norm.season || 'Wet Season (WS) 2026 (June – Nov 2026)',
-    breed: norm.breed || 'NSIC Rc 222 (Tubigan 18)',
     variety: norm.variety || norm.breed || 'NSIC Rc 222 (Tubigan 18)',
-    purpose: norm.purpose || 'Irrigated Lowland (NIA)',
-    health_status: norm.healthStatus || 'Active Crop (Tillering)',
-    sync_status: 'Live Synced',
-    lat: Number(norm.lat || 10.5333),
-    lng: Number(norm.lng || 125.1667),
-    target_yield_mt: Number(norm.targetYieldMt || 6.0),
+    seed_type: norm.seedType || 'INBRED',
+    ecosystem: norm.ecosystem || norm.purpose || 'Irrigated Lowland (NIA)',
+    tenure: norm.tenure || norm.sex || 'Owner-Cultivator',
+    cropping_season: norm.croppingSeason || norm.season || 'Wet Season (WS) 2026 (June – Nov 2026)',
     planting_date: norm.plantingDate || null,
-    harvest_date: norm.harvestDate || null
+    harvest_date: norm.harvestDate || null,
+    photo_url: safePhotoUrl,
+    field_photo_url: safeFieldPhotoUrl,
+    sync_status: 'Live Synced'
   };
+}
+
+/**
+ * Backward compatibility alias for sanitizeFarmerPayload
+ */
+export function sanitizeRiceFarmRecordPayload(parcel: FarmParcel) {
+  return sanitizeFarmerPayload(parcel);
 }
 
 /**
  * Sanitizes FarmParcel into exact column schema supported by the 'farms' table in Supabase (id, farmer_name, rsbsa_number, barangay, area_ha, ecosystem)
  */
 export function sanitizeFarmPayload(parcel: FarmParcel) {
-  const norm = normalizeFarmParcel(parcel);
+  const norm = mapFarmerRowToParcel(parcel);
   const rsbsa = norm.swineNameOrId || norm.rsbsa_no || '';
   const areaHa = Number(norm.weightKg || norm.areaHa || norm.farm_area_ha || 0);
 
@@ -827,20 +995,6 @@ export function sanitizeLftPayload(account: LftAccount) {
     areaHa: Number(norm.areaHa || 0),
     status: norm.status || 'Certified Field LFT (Active)',
     photoUrl: norm.photoUrl || ''
-  };
-}
-
-/**
- * Sanitizes FarmParcel into 'farmers' table schema
- */
-export function sanitizeFarmerPayload(parcel: FarmParcel) {
-  return {
-    id: `FARMER-${parcel.tagNumber}`,
-    rsbsa_number: parcel.swineNameOrId || '',
-    farmer_name: parcel.raiserName || '',
-    barangay: parcel.barangay || '',
-    contact_number: parcel.contactNumber || '',
-    address: parcel.address || ''
   };
 }
 
@@ -877,71 +1031,35 @@ let isAppSettingsAvailable = true;
 
 export const supabaseDb = {
   /**
-   * Fetch all registered farm parcels / records from Supabase tables (rice_farm_records primary)
+   * Fetch all registered farm parcels / records from Supabase 'farmers' table (Primary source of truth)
    */
   async getFarmRecords(): Promise<FarmParcel[]> {
     const offlinePending = getOfflinePendingFarms();
     let remoteRecords: FarmParcel[] = [];
 
-    // 1. Primary Query: 'rice_farm_records' ordered by created_at DESC (as required by brief)
+    // 1. Primary Query: Supabase 'farmers' table with 6s timeout
     try {
-      let res = await supabaseClient
-        .from('rice_farm_records')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const qPromise = supabaseClient
+        .from('farmers')
+        .select('*');
 
-      if (res.error) {
-        // Fallback ordering if created_at is not on table schema
-        res = await supabaseClient
-          .from('rice_farm_records')
-          .select('*')
-          .order('family_name', { ascending: true });
-      }
-
-      const { data, error } = res;
+      const { data, error } = await withTimeout(qPromise, 6000, 'Supabase farmers fetch timeout');
       if (!error && Array.isArray(data) && data.length > 0) {
-        remoteRecords = data.map(normalizeFarmParcel);
+        remoteRecords = data.map(mapFarmerRowToParcel);
       }
     } catch (e) {
-      console.warn('Supabase rice_farm_records query check:', e);
+      console.warn('Supabase farmers query notice:', e);
     }
 
-    // 2. Secondary fallback: Query 'farms' table if rice_farm_records returned empty
+    // 2. Fallback to cached parcels if Supabase is offline, timed out, or empty
     if (remoteRecords.length === 0) {
       try {
-        const { data: fData, error: fError } = await supabaseClient
-          .from('farms')
-          .select('id, farmer_name, rsbsa_number, barangay, area_ha, ecosystem');
-
-        if (!fError && Array.isArray(fData) && fData.length > 0) {
-          remoteRecords = fData.map((row: any) =>
-            normalizeFarmParcel({
-              tagNumber: row.id,
-              swineNameOrId: row.rsbsa_number,
-              raiserName: row.farmer_name,
-              barangay: row.barangay,
-              farm_area_ha: row.area_ha,
-              areaHa: row.area_ha,
-              weightKg: row.area_ha,
-              purpose: row.ecosystem,
-              ecosystem: row.ecosystem
-            })
-          );
-        }
-      } catch (e) {
-        console.warn('Supabase farms query check:', e);
-      }
-    }
-
-    // 3. Fallback 'farm_parcels' table
-    if (remoteRecords.length === 0) {
-      try {
-        const { data: pData, error: pError } = await supabaseClient
-          .from('farm_parcels')
-          .select('*');
-
-        if (!pError && Array.isArray(pData) && pData.length > 0) {
-          remoteRecords = pData.map(normalizeFarmParcel);
+        const cached = typeof window !== 'undefined' ? localStorage.getItem('silago_cached_parcels') : null;
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            remoteRecords = parsed.map(mapFarmerRowToParcel);
+          }
         }
       } catch {}
     }
@@ -975,13 +1093,12 @@ export const supabaseDb = {
       let res = await supabaseClient
         .from('farmers')
         .select('*')
-        .order('family_name', { ascending: true });
+        .order('farmer_name', { ascending: true });
 
       if (res.error) {
         res = await supabaseClient
           .from('farmers')
-          .select('*')
-          .order('full_name', { ascending: true });
+          .select('*');
       }
 
       if (!res.error && Array.isArray(res.data)) {
@@ -994,10 +1111,10 @@ export const supabaseDb = {
   },
 
   /**
-   * Insert a new farm record directly to Supabase with offline queue fallback
+   * Insert a new farm record directly to Supabase 'farmers' table with offline queue fallback
    */
   async insertFarmRecord(parcel: FarmParcel): Promise<boolean> {
-    const norm = normalizeFarmParcel(parcel);
+    const norm = mapFarmerRowToParcel(parcel);
     const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
 
     // If device is offline, store locally in offline pending queue immediately
@@ -1006,24 +1123,42 @@ export const supabaseDb = {
       return true;
     }
 
-    const ricePayload = sanitizeRiceFarmRecordPayload(norm);
-    const farmPayload = sanitizeFarmPayload(norm);
     const farmerPayload = sanitizeFarmerPayload(norm);
-
     let success = false;
     let hadNetworkError = false;
 
-    // 1. Direct insert to 'rice_farm_records'
+    // 1. Primary insert to 'farmers' table with 6s timeout
     try {
-      const { error: rErr } = await supabaseClient
-        .from('rice_farm_records')
-        .upsert(ricePayload, { onConflict: 'id' });
+      const upsertPromise = supabaseClient
+        .from('farmers')
+        .upsert(farmerPayload, { onConflict: 'id' });
 
-      if (rErr) {
-        if (rErr.code === '23505' || rErr.message?.includes('23505')) {
-          throw rErr;
+      const { error: fErr } = await withTimeout(upsertPromise, 6000, 'Supabase insert timeout');
+
+      if (fErr) {
+        if (fErr.code === '23505' || fErr.message?.includes('23505')) {
+          throw fErr;
         }
-        console.warn('Supabase rice_farm_records upsert notice:', rErr.message);
+        console.warn('Supabase farmers upsert schema notice:', fErr.message);
+
+        // Fallback to core columns if custom columns caused error
+        const corePayload = {
+          id: farmerPayload.id,
+          rsbsa_number: farmerPayload.rsbsa_number,
+          farmer_name: farmerPayload.farmer_name,
+          barangay: farmerPayload.barangay,
+          contact_number: farmerPayload.contact_number,
+          lat: farmerPayload.lat,
+          lng: farmerPayload.lng,
+          area_ha: farmerPayload.area_ha
+        };
+        const corePromise = supabaseClient.from('farmers').upsert(corePayload, { onConflict: 'id' });
+        const { error: coreErr } = await withTimeout(corePromise, 4000, 'Core upsert timeout');
+        if (!coreErr) {
+          success = true;
+        } else if (coreErr.code === '23505' || coreErr.message?.includes('23505')) {
+          throw coreErr;
+        }
       } else {
         success = true;
       }
@@ -1032,38 +1167,10 @@ export const supabaseDb = {
         throw err;
       }
       hadNetworkError = true;
+      console.warn('Network timeout or error on farmers insert:', err?.message || err);
     }
 
-    // 2. Also insert to 'farms' table for complete cross-compatibility
-    try {
-      const { error } = await supabaseClient
-        .from('farms')
-        .upsert(farmPayload, { onConflict: 'id' });
-
-      if (error) {
-        if (error.code === '23505' || error.message?.includes('23505')) {
-          throw error;
-        }
-      } else {
-        success = true;
-      }
-    } catch (err: any) {
-      if (err?.code === '23505' || err?.message?.includes('23505')) {
-        throw err;
-      }
-      hadNetworkError = true;
-    }
-
-    // 3. Sync farmer row to 'farmers' table
-    if (farmerPayload.rsbsa_number || farmerPayload.farmer_name) {
-      try {
-        await supabaseClient.from('farmers').upsert(farmerPayload, { onConflict: 'id' });
-      } catch (err: any) {
-        if (err?.code === '23505') throw err;
-      }
-    }
-
-    // If network failed, save to offline pending queue
+    // If network failed or timed out, save to offline pending queue so work is never lost
     if (hadNetworkError && !success) {
       saveOfflinePendingFarm(norm);
       return true;
@@ -1087,11 +1194,11 @@ export const supabaseDb = {
   },
 
   /**
-   * Update an existing farm record in Supabase and broadcast real-time sync event
+   * Update an existing farm record in Supabase 'farmers' table and broadcast real-time sync event
    */
   async updateFarmRecord(tagNumber: string, updatedFields: Partial<FarmParcel>): Promise<void> {
     try {
-      const merged = normalizeFarmParcel({
+      const merged = mapFarmerRowToParcel({
         ...updatedFields,
         tagNumber
       });
@@ -1102,16 +1209,28 @@ export const supabaseDb = {
         return;
       }
 
-      const ricePayload = sanitizeRiceFarmRecordPayload(merged);
-      const farmPayload = sanitizeFarmPayload(merged);
+      const farmerPayload = sanitizeFarmerPayload(merged);
 
       try {
-        await supabaseClient.from('rice_farm_records').upsert(ricePayload, { onConflict: 'id' });
-      } catch {}
-
-      try {
-        await supabaseClient.from('farms').upsert(farmPayload, { onConflict: 'id' });
-      } catch {}
+        const updatePromise = supabaseClient.from('farmers').upsert(farmerPayload, { onConflict: 'id' });
+        await withTimeout(updatePromise, 6000, 'Supabase update timeout');
+      } catch (err) {
+        console.warn('Supabase farmers update notice:', err);
+        // Fallback to core columns
+        const corePayload = {
+          id: farmerPayload.id,
+          rsbsa_number: farmerPayload.rsbsa_number,
+          farmer_name: farmerPayload.farmer_name,
+          barangay: farmerPayload.barangay,
+          contact_number: farmerPayload.contact_number,
+          lat: farmerPayload.lat,
+          lng: farmerPayload.lng,
+          area_ha: farmerPayload.area_ha
+        };
+        try {
+          await withTimeout(supabaseClient.from('farmers').upsert(corePayload, { onConflict: 'id' }), 4000);
+        } catch {}
+      }
 
       await broadcastRealtimeChange('parcel_upsert', { parcel: merged });
     } catch (e) {
@@ -1120,24 +1239,18 @@ export const supabaseDb = {
   },
 
   /**
-   * Delete a farm record from Supabase and broadcast real-time sync event
+   * Delete a farm record from Supabase 'farmers' table and broadcast real-time sync event
    */
   async deleteFarmRecord(tagNumber: string): Promise<void> {
     try {
-      // Remove from offline queue if queued
       removeOfflinePendingFarm(tagNumber);
 
-      try {
-        await supabaseClient.from('rice_farm_records').delete().eq('id', tagNumber);
-      } catch {}
-
-      try {
-        await supabaseClient.from('farms').delete().eq('id', tagNumber);
-      } catch {}
-
-      try {
-        await supabaseClient.from('farmers').delete().eq('id', `FARMER-${tagNumber}`);
-      } catch {}
+      const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+      if (isOnline) {
+        const cleanTag = tagNumber.startsWith('FARMER-') ? tagNumber : `FARMER-${tagNumber}`;
+        const delPromise = supabaseClient.from('farmers').delete().or(`id.eq.${tagNumber},id.eq.${cleanTag}`);
+        await withTimeout(delPromise, 5000);
+      }
     } catch (e) {
       console.warn('Supabase farm record delete notice:', e);
     }
@@ -1149,27 +1262,24 @@ export const supabaseDb = {
   },
 
   /**
-   * Bulk delete farm records from Supabase and broadcast real-time sync event
+   * Bulk delete farm records from Supabase 'farmers' table and broadcast real-time sync event
    */
   async deleteBulkFarmRecords(tagNumbers: string[]): Promise<boolean> {
     if (!tagNumbers || tagNumbers.length === 0) return true;
     try {
       tagNumbers.forEach((tag) => removeOfflinePendingFarm(tag));
 
-      try {
-        await supabaseClient.from('rice_farm_records').delete().in('id', tagNumbers);
-      } catch (err) {
-        console.warn('Supabase rice_farm_records bulk delete notice:', err);
+      const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+      if (isOnline) {
+        const farmerIds = Array.from(
+          new Set([
+            ...tagNumbers,
+            ...tagNumbers.map((t) => (t.startsWith('FARMER-') ? t : `FARMER-${t}`))
+          ])
+        );
+        const delPromise = supabaseClient.from('farmers').delete().in('id', farmerIds);
+        await withTimeout(delPromise, 6000);
       }
-
-      try {
-        await supabaseClient.from('farms').delete().in('id', tagNumbers);
-      } catch {}
-
-      const farmerIds = tagNumbers.map((t) => `FARMER-${t}`);
-      try {
-        await supabaseClient.from('farmers').delete().in('id', farmerIds);
-      } catch {}
 
       for (const tagNumber of tagNumbers) {
         try {
@@ -1195,8 +1305,8 @@ export const supabaseDb = {
    */
   async syncParcels(parcels: FarmParcel[]): Promise<void> {
     try {
-      const payloads = parcels.map(sanitizeFarmPayload);
-      await supabaseClient.from('farms').upsert(payloads, { onConflict: 'id' });
+      const payloads = parcels.map(sanitizeFarmerPayload);
+      await supabaseClient.from('farmers').upsert(payloads, { onConflict: 'id' });
     } catch (e) {
       console.warn('Supabase bulk sync notice:', e);
     }
@@ -1216,18 +1326,8 @@ export const supabaseDb = {
       if (!error && Array.isArray(data) && data.length > 0) {
         return data.map(normalizeLftAccount);
       }
-    } catch {}
-
-    try {
-      const { data: aData, error: aError } = await supabaseClient
-        .from('lft_accounts')
-        .select('*');
-
-      if (!aError && Array.isArray(aData) && aData.length > 0) {
-        return aData.map(normalizeLftAccount);
-      }
     } catch (e) {
-      console.warn('Supabase LFT accounts check:', e);
+      console.warn('Supabase LFT technicians fetch notice:', e);
     }
 
     return [];
@@ -1277,24 +1377,25 @@ export const supabaseDb = {
 
       // Check if user is an LFT officer registered in database
       const { data, error } = await supabaseClient
-        .from('lft_accounts')
+        .from('lft_technicians')
         .select('*')
-        .or(`email.ilike.%${clean}%,username.ilike.%${clean}%,contactNumber.ilike.%${clean}%`)
+        .or(`email.ilike.%${clean}%,username.ilike.%${clean}%,contact_number.ilike.%${clean}%`)
         .limit(1);
 
       if (!error && Array.isArray(data) && data.length > 0) {
         const lft = data[0];
+        const assigned = lft.assigned_barangays || lft.assignedBarangays || (lft.barangay ? lft.barangay.split(',').map((b: string) => b.trim()) : []);
         return {
           name: lft.name,
           username: lft.username,
           role: 'Barangay Focal Person',
           title: 'Local Farmer Technician (LFT)',
           barangay: lft.barangay,
-          assignedBarangays: lft.assignedBarangays || (lft.barangay ? lft.barangay.split(',').map((b: string) => b.trim()) : []),
+          assignedBarangays: assigned,
           office: `Brgy. ${lft.barangay} / Silago Sector`,
           scope: `Jurisdiction: ${lft.barangay}`,
           status: lft.status,
-          contactNumber: lft.contactNumber,
+          contactNumber: lft.contact_number || lft.contactNumber,
           email: lft.email
         };
       }

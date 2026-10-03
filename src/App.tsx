@@ -69,7 +69,9 @@ const AppContent: React.FC = () => {
     isOnline,
     syncOfflineQueue,
     syncNotification,
-    setSyncNotification
+    setSyncNotification,
+    activeTab,
+    setActiveTab
   } = useApp();
 
   const [isAdminProfileOpen, setIsAdminProfileOpen] = useState(false);
@@ -79,8 +81,19 @@ const AppContent: React.FC = () => {
   // Role permissions check
   const isCentralAdmin = currentUser?.role === 'Central Admin';
 
-  // Primary view: landing page or portal
+  // Primary view: landing page or portal (persisted with user session)
   const [viewMode, setViewMode] = useState<'landing' | 'portal'>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const stored =
+          localStorage.getItem('silago_rice_auth_user') ||
+          localStorage.getItem('silago_rice_user_session') ||
+          localStorage.getItem('silago_rice_auth_session') ||
+          localStorage.getItem('rice_registry_user_session') ||
+          localStorage.getItem('silago_current_user');
+        if (stored) return 'portal';
+      }
+    } catch {}
     return currentUser ? 'portal' : 'landing';
   });
 
@@ -91,9 +104,6 @@ const AppContent: React.FC = () => {
     }
   }, [currentUser]);
 
-  const [activeTab, setActiveTab] = useState<PortalTab>(() => {
-    return isCentralAdmin ? 'dashboard' : 'lft_dashboard';
-  });
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -279,6 +289,19 @@ const AppContent: React.FC = () => {
       console.warn('Sign out notice:', e);
     }
     setCurrentUser(null);
+    try {
+      localStorage.removeItem('silago_rice_auth_user');
+      localStorage.removeItem('silago_rice_user_session');
+      localStorage.removeItem('silago_rice_auth_session');
+      localStorage.removeItem('rice_registry_user_session');
+      localStorage.removeItem('silago_current_user');
+      localStorage.removeItem('silago_active_tab');
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('tab');
+        window.history.replaceState({}, '', url.toString());
+      }
+    } catch {}
     setViewMode('landing');
   };
 

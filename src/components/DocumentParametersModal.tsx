@@ -29,28 +29,42 @@ interface DocumentParametersModalProps {
   onUpdateSignatories: (signatories: OfficialSignatory[]) => void;
   // Metadata
   memoRef: string;
-  onChangeMemoRef: (val: string) => void;
+  onChangeMemoRef?: (val: string) => void;
+  onUpdateMemoRef?: (val: string) => void;
   reportDate: string;
-  onChangeReportDate: (val: string) => void;
+  onChangeReportDate?: (val: string) => void;
+  onUpdateReportDate?: (val: string) => void;
   // Scope
-  selectedBarangay: string;
-  onChangeSelectedBarangay: (val: string) => void;
-  selectedSeason: string;
-  onChangeSelectedSeason: (val: string) => void;
+  selectedBarangay?: string;
+  onChangeSelectedBarangay?: (val: string) => void;
+  selectedSeason?: string;
+  onChangeSelectedSeason?: (val: string) => void;
   // Paper & Layout
-  paperSize: string;
-  onChangePaperSize: (val: string) => void;
-  orientation: 'landscape' | 'portrait';
-  onChangeOrientation: (val: 'landscape' | 'portrait') => void;
-  margins: string;
-  onChangeMargins: (val: string) => void;
-  tableDensity: string;
-  onChangeTableDensity: (val: string) => void;
+  paperSize?: string;
+  onChangePaperSize?: (val: string) => void;
+  orientation?: 'landscape' | 'portrait';
+  onChangeOrientation?: (val: 'landscape' | 'portrait') => void;
+  margins?: string;
+  onChangeMargins?: (val: string) => void;
+  tableDensity?: string;
+  onChangeTableDensity?: (val: string) => void;
   // Columns
-  visibleColumns: Record<string, boolean>;
-  onChangeVisibleColumns: (cols: Record<string, boolean>) => void;
+  visibleColumns?: Record<string, boolean>;
+  onChangeVisibleColumns?: (cols: Record<string, boolean>) => void;
   // Active document mode
   documentView: 'letter' | 'irrigators_letter' | 'mpcsrs_report' | 'registry_table' | 'complete_package';
+  headerConfig?: {
+    republicHeader?: string;
+    provinceHeader?: string;
+    municipalityHeader?: string;
+    officeHeader?: string;
+  };
+  onUpdateHeaderConfig?: (headers: {
+    republicHeader?: string;
+    provinceHeader?: string;
+    municipalityHeader?: string;
+    officeHeader?: string;
+  }) => void;
 }
 
 export const DocumentParametersModal: React.FC<DocumentParametersModalProps> = ({
@@ -60,21 +74,23 @@ export const DocumentParametersModal: React.FC<DocumentParametersModalProps> = (
   onUpdateSignatories,
   memoRef,
   onChangeMemoRef,
+  onUpdateMemoRef,
   reportDate,
   onChangeReportDate,
-  selectedBarangay,
+  onUpdateReportDate,
+  selectedBarangay = 'All Barangays',
   onChangeSelectedBarangay,
-  selectedSeason,
+  selectedSeason = 'Wet Season (WS) 2026',
   onChangeSelectedSeason,
-  paperSize,
+  paperSize = 'A4',
   onChangePaperSize,
-  orientation,
+  orientation = 'portrait',
   onChangeOrientation,
-  margins,
+  margins = 'normal',
   onChangeMargins,
-  tableDensity,
+  tableDensity = 'normal',
   onChangeTableDensity,
-  visibleColumns,
+  visibleColumns = {},
   onChangeVisibleColumns,
   documentView
 }) => {
@@ -409,7 +425,7 @@ export const DocumentParametersModal: React.FC<DocumentParametersModalProps> = (
                   <input
                     type="text"
                     value={memoRef}
-                    onChange={(e) => onChangeMemoRef(e.target.value)}
+                    onChange={(e) => (onChangeMemoRef || onUpdateMemoRef)?.(e.target.value)}
                     placeholder="e.g. SLG-MAO-RICE-2024-02B"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900"
                   />
@@ -425,7 +441,7 @@ export const DocumentParametersModal: React.FC<DocumentParametersModalProps> = (
                   <input
                     type="text"
                     value={reportDate}
-                    onChange={(e) => onChangeReportDate(e.target.value)}
+                    onChange={(e) => (onChangeReportDate || onUpdateReportDate)?.(e.target.value)}
                     placeholder="e.g. February 21, 2024"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900"
                   />
@@ -433,7 +449,7 @@ export const DocumentParametersModal: React.FC<DocumentParametersModalProps> = (
                     <button
                       type="button"
                       onClick={() =>
-                        onChangeReportDate(
+                        (onChangeReportDate || onUpdateReportDate)?.(
                           new Date().toLocaleDateString('en-US', {
                             month: 'long',
                             day: 'numeric',

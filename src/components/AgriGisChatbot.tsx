@@ -1992,8 +1992,7 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
         stage: p.healthStatus,
         location: p.farmLocation || p.address,
         hasCoordinates: Boolean(p.lat && p.lng && (p.lat !== 0 || p.lng !== 0)),
-        gpsCoordinates: p.lat && p.lng && (p.lat !== 0 || p.lng !== 0) ? `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}` : 'None',
-        tenure: p.batchNumber
+        tenure: p.sex || (p as any).batchNumber || 'Owner-Cultivator'
       }));
 
       const barangaysSummary = BARANGAYS.map((b) => ({

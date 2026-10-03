@@ -306,7 +306,8 @@ export const SmartColumnDrawer: React.FC<SmartColumnDrawerProps> = ({
 
           {orderedColumns.map((col, idx) => {
             const isChecked = Boolean(visibleColumns[col.id]);
-            const readiness = dataReadiness[col.id] || { percent: 100 };
+            const readiness: { percent: number; warning?: boolean; alert?: string } =
+              dataReadiness[col.id] || { percent: 100, warning: false };
             const isFirst = idx === 0;
             const isLast = idx === orderedColumns.length - 1;
 

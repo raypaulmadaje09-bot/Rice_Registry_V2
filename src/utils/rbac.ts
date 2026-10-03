@@ -25,6 +25,7 @@ export interface UserPermissions {
   isCentralAdmin: boolean;
   isLftOfficer: boolean;
   isPublicVisitor: boolean;
+  canAddParcels: boolean;
   canManageLftAccounts: boolean;
   canConfigureSystemSettings: boolean;
   canDeleteParcels: boolean;
@@ -42,6 +43,7 @@ export function getUserPermissions(user: User | null | undefined): UserPermissio
       isCentralAdmin: false,
       isLftOfficer: false,
       isPublicVisitor: true,
+      canAddParcels: false,
       canManageLftAccounts: false,
       canConfigureSystemSettings: false,
       canDeleteParcels: false,
@@ -59,6 +61,7 @@ export function getUserPermissions(user: User | null | undefined): UserPermissio
     isCentralAdmin,
     isLftOfficer,
     isPublicVisitor: false,
+    canAddParcels: isCentralAdmin || isLftOfficer,
     canManageLftAccounts: isCentralAdmin,
     canConfigureSystemSettings: isCentralAdmin,
     canDeleteParcels: isCentralAdmin, // Only Central Admin can delete records

@@ -393,7 +393,9 @@ export const PhoneVerificationModal: React.FC<PhoneVerificationModalProps> = ({
               {otpCode.map((digit, idx) => (
                 <input
                   key={idx}
-                  ref={(el) => (otpInputRefs.current[idx] = el)}
+                  ref={(el) => {
+                    otpInputRefs.current[idx] = el;
+                  }}
                   type="text"
                   maxLength={1}
                   value={digit}

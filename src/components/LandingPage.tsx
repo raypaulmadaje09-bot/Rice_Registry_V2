@@ -52,7 +52,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const uniqueFarmersCount = useMemo(() => {
     const set = new Set<string>();
     parcels.forEach((p) => {
-      const name = p.farmerName || p.ownerName;
+      const name = p.raiserName || (p as any).farmerName || (p as any).ownerName;
       if (name && name.trim()) set.add(name.trim().toLowerCase());
     });
     return set.size;
@@ -78,6 +78,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       office: 'Silago Municipal Agriculture Office (DA-MAO)',
       photoUrl: ''
     };
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('silago_rice_auth_user', JSON.stringify(adminUser));
+      }
+    } catch {}
     setCurrentUser(adminUser);
     onNavigateToPortalTab('dashboard');
   };
@@ -105,6 +110,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       email: 'lft@silago.gov.ph',
       photoUrl: ''
     };
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('silago_rice_auth_user', JSON.stringify(lftUser));
+      }
+    } catch {}
     setCurrentUser(lftUser);
     onNavigateToPortalTab('lft_dashboard');
   };
@@ -756,7 +766,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 {/* Bottom: Puroks & Terrain Pill */}
                 <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-50">
                   <span className="text-slate-500 font-medium">
-                    {b.purokCount} Puroks
+                    {b.puroks ?? (b as any).purokCount ?? 7} Puroks
                   </span>
                   <span className="text-[10px] font-medium text-blue-700 bg-blue-50/80 border border-blue-200 px-2 py-0.5 rounded-full">
                     {b.terrain}

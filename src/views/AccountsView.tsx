@@ -347,7 +347,7 @@ export const AccountsView: React.FC = () => {
       const displayBarangay = formatBarangayChipName(bName);
 
       const verifiedCount = brgyParcels.filter(
-        (p) => p.status === 'Verified' || (p.swineNameOrId && p.lat && p.lng)
+        (p) => (p as any).status === 'Verified' || p.syncStatus === 'Live Synced' || (p.swineNameOrId && p.lat && p.lng)
       ).length;
       const progressPct = brgyParcels.length > 0
         ? Math.min(100, Math.round((verifiedCount / brgyParcels.length) * 100))

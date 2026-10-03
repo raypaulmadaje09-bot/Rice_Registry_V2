@@ -9,7 +9,7 @@ import {
 } from '../data/barangays';
 import { useApp } from '../context/AppContext';
 import { calculateCropGrowthStage, CropGrowthStageCalc } from '../data/riceVarieties';
-import { uploadFarmPhoto, supabaseClient, parseFarmerName, checkDuplicateRsbsa } from '../utils/supabaseClient';
+import { uploadFarmPhoto, supabaseClient, parseFarmerName, checkDuplicateRsbsa, checkDuplicateFarmerName, withTimeout } from '../utils/supabaseClient';
 import { SafeImage } from './SafeImage';
 import { DaLogo, SilagoSeal, BagOngSilagoLogo, OfficialSealsTrio } from './Seals';
 import { ManageReferenceModal, ManageType } from './ManageReferenceModal';
@@ -141,7 +141,7 @@ export const AddParcelModal: React.FC<AddParcelModalProps> = ({
     farmerMiddleName: '',
     raiserName: '',
     birthday: '',
-    contactNumber: '0917-555-1234',
+    contactNumber: '09175551234',
     barangay: effectiveDefaultBarangay,
     purok: 'Purok Riverside',
     address: 'Silago, Southern Leyte',
@@ -198,8 +198,8 @@ export const AddParcelModal: React.FC<AddParcelModalProps> = ({
         commodity: 'Rice'
       });
     } else {
-      const randomTag = `SLG-${(defaultBarangay || 'POB1').substring(0, 4).toUpperCase()}-${Math.floor(
-        100 + Math.random() * 900
+      const randomTag = `FARMER-SLG-${(defaultBarangay || 'POB1').substring(0, 4).toUpperCase().replace(/\s+/g, '')}-${Math.floor(
+        1000 + Math.random() * 9000
       )}`;
       const randomRsbsa = `08-64-16-${String(Math.floor(1 + Math.random() * 15)).padStart(3, '0')}-${String(
         Math.floor(1000 + Math.random() * 9000)
@@ -213,7 +213,7 @@ export const AddParcelModal: React.FC<AddParcelModalProps> = ({
         farmerMiddleName: '',
         raiserName: '',
         birthday: '1975-06-15',
-        contactNumber: '0917-555-1234',
+        contactNumber: '09175551234',
         barangay: (initialCoords?.barangay && availableBarangays.some(b => matchBarangay(b.name, initialCoords.barangay!)))
           ? initialCoords.barangay
           : effectiveDefaultBarangay,
@@ -409,8 +409,8 @@ export const AddParcelModal: React.FC<AddParcelModalProps> = ({
     const timer = setTimeout(async () => {
       try {
         const { data: dbFarms, error: qErr } = await supabaseClient
-          .from('farms')
-          .select('id, farmer_name, family_name, given_name, middle_name, barangay, rsbsa_number')
+          .from('farmers')
+          .select('id, farmer_name, barangay, rsbsa_number')
           .ilike('barangay', brgy);
 
         if (isCancelled) return;
@@ -441,9 +441,10 @@ export const AddParcelModal: React.FC<AddParcelModalProps> = ({
           });
 
           if (found) {
+            const foundAny = found as any;
             const matchName =
               found.farmer_name ||
-              [found.given_name, found.middle_name, found.family_name].filter(Boolean).join(' ') ||
+              [foundAny.given_name, foundAny.middle_name, foundAny.family_name].filter(Boolean).join(' ') ||
               'Existing Farmer';
 
             setDuplicateNameMatch({
@@ -573,27 +574,25 @@ export const AddParcelModal: React.FC<AddParcelModalProps> = ({
     else setIsUploadingPhoto(true);
 
     try {
+      // Instant local object URL preview without heavy Base64 data string
+      const previewUrl = URL.createObjectURL(file);
+      setFormData((prev) => ({
+        ...prev,
+        [field]: previewUrl
+      }));
+
       const recordTag = formData.tagNumber || formData.swineNameOrId || 'farm_parcel';
       const cleanTag = recordTag.replace(/[^a-zA-Z0-9_-]/g, '_');
       const publicUrl = await uploadFarmPhoto(file, `${cleanTag}-${isField ? 'field' : 'farmer'}`);
 
-      setFormData((prev) => ({
-        ...prev,
-        [field]: publicUrl
-      }));
+      if (publicUrl) {
+        setFormData((prev) => ({
+          ...prev,
+          [field]: publicUrl
+        }));
+      }
     } catch (err) {
       console.warn('Direct Supabase photo upload notice:', err);
-      // Local fallback
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          setFormData((prev) => ({
-            ...prev,
-            [field]: e.target?.result as string
-          }));
-        }
-      };
-      reader.readAsDataURL(file);
     } finally {
       if (isField) setIsUploadingFieldPhoto(false);
       else setIsUploadingPhoto(false);
@@ -609,6 +608,16 @@ export const AddParcelModal: React.FC<AddParcelModalProps> = ({
     if (!formData.raiserName && (!formData.farmerFamilyName || !formData.farmerGivenName)) {
       setError('Farmer Name is required (Family Name and Given Name).');
       return;
+    }
+
+    // Strict numeric-only contact number validation (strip non-digits, accept 11-digit mobile 09XXXXXXXXX)
+    const rawContact = (formData.contactNumber || '').trim();
+    const cleanContact = rawContact.replace(/\D/g, '');
+    if (cleanContact) {
+      if (cleanContact.length !== 11 || !cleanContact.startsWith('09')) {
+        setError('Contact Number must be a valid 11-digit mobile number starting with 09 (e.g. 09XXXXXXXXX).');
+        return;
+      }
     }
 
     // Strict RSBSA duplicate check pre-submission
@@ -642,8 +651,22 @@ export const AddParcelModal: React.FC<AddParcelModalProps> = ({
 
     const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
 
+    const rawTag = (formData.tagNumber || '').trim();
+    let formattedTag = rawTag;
+    if (!formattedTag) {
+      formattedTag = `FARMER-SLG-${Date.now().toString().slice(-6)}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    } else if (!formattedTag.startsWith('FARMER-SLG-')) {
+      if (formattedTag.startsWith('FARMER-')) {
+        formattedTag = `FARMER-SLG-${formattedTag.replace(/^FARMER-/, '')}`;
+      } else if (formattedTag.startsWith('SLG-')) {
+        formattedTag = `FARMER-${formattedTag}`;
+      } else {
+        formattedTag = `FARMER-SLG-${formattedTag}`;
+      }
+    }
+
     const finalParcel: FarmParcel = {
-      tagNumber: formData.tagNumber || `SLG-${Date.now().toString().slice(-6)}`,
+      tagNumber: formattedTag,
       swineNameOrId: formData.swineNameOrId || 'NO RSBSA',
       rsbsa_no: formData.swineNameOrId || 'NO RSBSA',
       farmerFamilyName: formData.farmerFamilyName || '',
@@ -656,7 +679,7 @@ export const AddParcelModal: React.FC<AddParcelModalProps> = ({
       purok: formData.purok || 'Purok Riverside',
       address: formData.address || 'Silago, Southern Leyte',
       residential_address: formData.address || `${targetBrgy}, Silago, Southern Leyte`,
-      contactNumber: formData.contactNumber || '0917-000-0000',
+      contactNumber: cleanContact || '09170000000',
       breed: formData.breed || 'NSIC Rc 222',
       seedType: formData.seedType || 'INBRED',
       sex: formData.sex || 'Owner-Cultivator',
@@ -701,7 +724,7 @@ export const AddParcelModal: React.FC<AddParcelModalProps> = ({
 
     setIsSubmitting(true);
     try {
-      // Strict RSBSA duplicate check against online Supabase and offline queue
+      // 1. Strict RSBSA duplicate check against online Supabase farmers and offline queue
       const inputRsbsa = (formData.swineNameOrId || '').trim();
       if (inputRsbsa && inputRsbsa.toUpperCase() !== 'NO RSBSA') {
         const dupCheck = await checkDuplicateRsbsa(inputRsbsa, editingParcel?.tagNumber);
@@ -718,7 +741,33 @@ export const AddParcelModal: React.FC<AddParcelModalProps> = ({
         }
       }
 
-      // Check if duplicate name resolution is unresolved or exact duplicate
+      // 2. Strict Full Name duplicate check against online Supabase farmers and offline queue
+      const fam = (formData.farmerFamilyName || '').trim();
+      const giv = (formData.farmerGivenName || '').trim();
+      const mid = (formData.farmerMiddleName || '').trim();
+      const checkFullName = [giv, mid, fam].filter(Boolean).join(' ') || (formData.raiserName || '').trim();
+
+      if (checkFullName.length >= 3 && nameDuplicateResolution !== 'distinct_person') {
+        const nameCheck = await checkDuplicateFarmerName(
+          checkFullName,
+          targetBrgy,
+          editingParcel?.tagNumber
+        );
+        if (nameCheck.isDuplicate) {
+          setDuplicateNameMatch({
+            existingName: nameCheck.existingName || checkFullName,
+            barangay: nameCheck.barangay || targetBrgy,
+            isExactSameRecord: true
+          });
+          setUniqueViolationAlert(
+            `Warning: A farmer named "${nameCheck.existingName || checkFullName}" is already registered in Barangay ${nameCheck.barangay || targetBrgy}. Duplicate entries are not allowed.`
+          );
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // 3. Check if duplicate name resolution is unresolved or exact duplicate
       if (duplicateNameMatch && nameDuplicateResolution !== 'distinct_person') {
         setUniqueViolationAlert(
           'Dili ma-save! Narehistro na kini nga ngalan sa mag-uuma sa maong barangay aron malikayan ang double-entry.'
@@ -727,7 +776,7 @@ export const AddParcelModal: React.FC<AddParcelModalProps> = ({
         return;
       }
 
-      await onSave(finalParcel);
+      await withTimeout(Promise.resolve(onSave(finalParcel)), 8000, 'Nalapas ang oras sa koneksyon. Na-save sa offline queue.');
       onClose();
     } catch (err: any) {
       console.warn('Submission notice:', err);
@@ -945,11 +994,25 @@ export const AddParcelModal: React.FC<AddParcelModalProps> = ({
                       Mobile / Contact No.
                     </label>
                     <input
-                      type="text"
+                      type="tel"
+                      inputMode="numeric"
                       value={formData.contactNumber || ''}
-                      onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
-                      placeholder="0917-555-1234"
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:ring-2 focus:ring-emerald-600"
+                      onKeyDown={(e) => {
+                        if (
+                          !/[0-9]/.test(e.key) &&
+                          !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key) &&
+                          !(e.ctrlKey || e.metaKey)
+                        ) {
+                          e.preventDefault();
+                        }
+                      }}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, '').slice(0, 11);
+                        setFormData({ ...formData, contactNumber: digits });
+                      }}
+                      maxLength={11}
+                      placeholder="09XXXXXXXXX"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:ring-2 focus:ring-emerald-600 font-mono"
                     />
                   </div>
                 </div>
