@@ -1,0 +1,6 @@
+{
+  "name": "Rice Farm Registry and Georeferencing",
+  "description": "Official Rice Farm Registry and Georeferencing Geographic Information System for the 15 Barangays of Silago, Southern Leyte with LFT (Local Farmer Technician) field management.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

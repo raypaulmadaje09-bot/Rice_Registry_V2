@@ -1,0 +1,470 @@
+@import "tailwindcss";
+
+.leaflet-popup-content-wrapper {
+  color: #f8fafc !important;
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
+}
+.leaflet-popup-tip {
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+}
+.leaflet-tooltip {
+  color: #f8fafc !important;
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+  border-radius: 0.5rem !important;
+  padding: 4px 8px !important;
+  font-size: 11px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3) !important;
+}
+.silago-clean-tooltip {
+  color: #0f172a !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(6px) !important;
+  border: 1px solid rgba(30, 58, 30, 0.25) !important;
+  border-radius: 8px !important;
+  padding: 3px 8px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+  box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.18), 0 2px 4px -2px rgba(0, 0, 0, 0.1) !important;
+  pointer-events: none !important;
+}
+.silago-clean-tooltip::before {
+  display: none !important;
+}
+.leaflet-control-zoom a {
+  color: #f8fafc !important;
+  background-color: #0f172a !important;
+  border: 1px solid #334155 !important;
+}
+.leaflet-control-zoom a:hover {
+  background-color: #1e293b !important;
+}
+.leaflet-control-scale-line {
+  color: #cbd5e1 !important;
+  background: rgba(15, 23, 42, 0.8) !important;
+  border-color: #475569 !important;
+  border-radius: 4px !important;
+  padding: 2px 6px !important;
+  font-size: 10px !important;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.vertical-header-cell {
+  white-space: normal;
+  text-align: center;
+  vertical-align: middle;
+  padding: 4px 2px !important;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Custom permanently visible horizontal & vertical scrollbar for database tables */
+.custom-table-scrollbar {
+  overflow-x: auto;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+}
+
+.custom-table-scrollbar::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+  display: block;
+}
+
+.custom-table-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.custom-table-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #94a3b8;
+  border-radius: 4px;
+  border: 2px solid #f1f5f9;
+}
+
+.custom-table-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #475569;
+}
+
+.custom-table-scrollbar::-webkit-scrollbar-corner {
+  background: #f1f5f9;
+}
+
+@media print {
+  @page {
+    size: landscape;
+    margin: 0.3in 0.3in 0.4in 0.3in;
+  }
+
+  html,
+  body {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide all UI elements, docks, and navigation */
+  aside,
+  nav,
+  header,
+  .floating-fab-dock,
+  .no-print,
+  button,
+  #admin-mobile-menu-btn {
+    display: none !important;
+  }
+
+  #root,
+  .h-screen,
+  .min-h-screen,
+  .overflow-y-auto,
+  .overflow-x-auto,
+  .flex-1,
+  main {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .lg\:pl-72 {
+    padding-left: 0 !important;
+  }
+
+  /* Target print container */
+  #official-print-document,
+  #printable-official-document,
+  #printable-area {
+    box-shadow: none !important;
+    border: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .break-inside-avoid,
+  .print\:break-inside-avoid,
+  .signatories-block {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .print\:mt-auto {
+    margin-top: auto !important;
+  }
+
+  /* Fixed 100% Table Layout with Auto-scaling and Zero Clipping */
+  #official-print-document table,
+  #printable-official-document table,
+  #printable-area table,
+  table {
+    width: 100% !important;
+    max-width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto;
+    font-size: 7.5pt !important;
+    line-height: 1.15 !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+
+  #official-print-document th,
+  #official-print-document td,
+  #printable-official-document th,
+  #printable-official-document td,
+  table th,
+  table td {
+    border: 1px solid #000000 !important;
+    border-color: #000000 !important;
+    color: #000000 !important;
+    padding: 2.5px 1.5px !important;
+    box-sizing: border-box !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+
+  /* Repeat table headers cleanly on every printed page */
+  #official-print-document thead,
+  #printable-official-document thead,
+  table thead {
+    display: table-header-group !important;
+  }
+
+  #official-print-document tbody,
+  #printable-official-document tbody,
+  table tbody {
+    display: table-row-group !important;
+  }
+
+  #official-print-document tfoot,
+  #printable-official-document tfoot,
+  table tfoot {
+    display: table-footer-group !important;
+  }
+
+  #official-print-document tr,
+  #printable-official-document tr,
+  table tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: auto;
+  }
+
+  .vertical-header-cell {
+    height: 75px !important;
+    max-height: 75px !important;
+    font-size: 7pt !important;
+    padding: 2px 1px !important;
+    line-height: 1.1 !important;
+  }
+
+  .print-page-break {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  #official-print-document input,
+  #official-print-document select,
+  #printable-official-document input,
+  #printable-official-document select {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    border: none !important;
+  }
+}
+
+/* =========================================================
+   GPS Location Pinpoint and Radar Ripple Ground Shadow Styles
+   ========================================================= */
+
+@keyframes gpsPulseRipple {
+  0% {
+    transform: translate(-50%, -50%) scale(0.3);
+    opacity: 0.9;
+  }
+  70% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2.6);
+    opacity: 0;
+  }
+}
+
+@keyframes gpsPinBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.custom-gps-pin-container {
+  position: relative;
+  width: 36px;
+  height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Concentric Radar Rings at the Tip of the Pin */
+.gps-radar-wrapper {
+  position: absolute;
+  bottom: 0px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.gps-radar-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(239, 68, 68, 0.75);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+  transform: translate(-50%, -50%);
+  animation: gpsPulseRipple 2.2s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
+}
+
+.gps-radar-ring.ring-1 {
+  width: 24px;
+  height: 24px;
+  animation-delay: 0s;
+}
+
+.gps-radar-ring.ring-2 {
+  width: 24px;
+  height: 24px;
+  animation-delay: 0.75s;
+}
+
+.gps-radar-ring.ring-3 {
+  width: 24px;
+  height: 24px;
+  animation-delay: 1.5s;
+}
+
+.gps-radar-center-dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  background: #ef4444;
+  border: 1.5px solid #ffffff;
+  border-radius: 9999px;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 6px #ef4444;
+}
+
+/* Teardrop Pin Body */
+.gps-pin-icon-body {
+  position: relative;
+  z-index: 10;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+}
+
+.custom-gps-pin-container:hover .gps-pin-icon-body,
+.custom-gps-pin-container.is-hovered .gps-pin-icon-body {
+  transform: translateY(-4px) scale(1.1);
+}
+
+.custom-gps-pin-container.is-selected .gps-pin-icon-body {
+  animation: gpsPinBounce 1.2s ease-in-out infinite;
+  filter: drop-shadow(0 6px 12px rgba(37, 99, 235, 0.6));
+}
+
+.custom-gps-pin-container.is-selected .gps-radar-ring {
+  border-color: rgba(37, 99, 235, 0.9);
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.6);
+}
+
+.custom-gps-pin-container.is-selected .gps-radar-center-dot {
+  background: #2563eb;
+  box-shadow: 0 0 8px #2563eb;
+}
+
+/* Centroid Label Pill */
+.gps-pin-pill-label {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(4px);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.custom-gps-pin-container.is-selected .gps-pin-pill-label {
+  background: #2563eb;
+  border-color: #ffffff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.5);
+}
+
+/* RiceSsistant Sleek Idle Capsule Animations */
+@keyframes smoothFloatIn {
+  0% {
+    opacity: 0;
+    transform: translateX(16px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes smoothFadeOut {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(8px) scale(0.96);
+  }
+}
+
+.animate-smooth-float-in {
+  animation: smoothFloatIn 700ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-smooth-fade-out {
+  animation: smoothFadeOut 500ms ease-out forwards;
+}
+
+
+

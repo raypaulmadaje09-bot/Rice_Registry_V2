@@ -1,0 +1,80 @@
+<svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Circular Path for Text -->
+    <path id="textPathTop" d="M 30,100 A 70,70 0 1,1 170,100" />
+    <path id="textPathBottom" d="M 170,100 A 70,70 0 0,1 30,100" />
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCD34D" />
+      <stop offset="50%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#B45309" />
+    </linearGradient>
+    <radialGradient id="greenBg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#15803D" />
+      <stop offset="100%" stop-color="#0E5A2A" />
+    </radialGradient>
+  </defs>
+
+  <!-- Outer Ring with Gold Border -->
+  <circle cx="100" cy="100" r="96" fill="#0E5A2A" stroke="url(#goldGrad)" stroke-width="5" />
+  <circle cx="100" cy="100" r="88" fill="none" stroke="#FDE68A" stroke-width="1.5" stroke-dasharray="3 2" />
+
+  <!-- Inner Circle -->
+  <circle cx="100" cy="100" r="62" fill="#F8FAFC" stroke="url(#goldGrad)" stroke-width="3" />
+
+  <!-- Gold Laurel & Rice Stalks in Ring -->
+  <!-- Arc Text Top -->
+  <text font-family="'Times New Roman', Times, serif" font-size="12.5" font-weight="bold" fill="#FEF08A" letter-spacing="2.2">
+    <textPath href="#textPathTop" startOffset="50%" text-anchor="middle">
+      DEPARTMENT OF AGRICULTURE
+    </textPath>
+  </text>
+  <!-- Arc Text Bottom -->
+  <text font-family="'Times New Roman', Times, serif" font-size="11" font-weight="bold" fill="#FEF08A" letter-spacing="3.5">
+    <textPath href="#textPathBottom" startOffset="50%" text-anchor="middle">
+      • PHILIPPINES •
+    </textPath>
+  </text>
+
+  <!-- Inner Agricultural Emblem -->
+  <!-- Golden Sun Rays -->
+  <g transform="translate(100, 95)" fill="#F59E0B">
+    <circle cx="0" cy="0" r="16" fill="#FBBF24" />
+    <polygon points="0,-36 4,-18 -4,-18" />
+    <polygon points="0,36 4,18 -4,18" />
+    <polygon points="-36,0 -18,-4 -18,4" />
+    <polygon points="36,0 18,-4 18,4" />
+    <polygon points="-25,-25 -12,-18 -18,-12" />
+    <polygon points="25,-25 18,-12 12,-18" />
+    <polygon points="-25,25 -18,12 -12,18" />
+    <polygon points="25,25 12,18 18,12" />
+  </g>
+
+  <!-- Rolling Fields / Furrows (Green) -->
+  <path d="M 45,115 C 65,100 85,110 100,105 C 115,100 135,110 155,115 C 152,135 130,158 100,161 C 70,158 48,135 45,115 Z" fill="#15803D" />
+  <path d="M 52,122 C 72,110 90,118 100,115 C 110,112 128,120 148,122 C 145,138 126,155 100,158 C 74,155 55,138 52,122 Z" fill="#166534" />
+  
+  <!-- Sprouting Rice Plant / Seedling (Gold & White) -->
+  <path d="M 100,135 Q 100,90 100,75 Q 100,90 100,135" stroke="#FEF08A" stroke-width="3" stroke-linecap="round" />
+  <!-- Left Rice Leaf -->
+  <path d="M 100,102 C 85,95 72,105 78,115 C 86,112 95,110 100,108" fill="#FBBF24" stroke="#D97706" stroke-width="0.8" />
+  <!-- Right Rice Leaf -->
+  <path d="M 100,98 C 115,90 128,100 122,112 C 114,108 105,106 100,104" fill="#FBBF24" stroke="#D97706" stroke-width="0.8" />
+  <!-- Center Sprout -->
+  <path d="M 100,85 C 93,76 96,68 100,65 C 104,68 107,76 100,85 Z" fill="#FEF08A" />
+  
+  <!-- Left Rice Grains -->
+  <ellipse cx="62" cy="95" rx="3.5" ry="6" transform="rotate(-30 62 95)" fill="#F59E0B" stroke="#B45309" stroke-width="0.6" />
+  <ellipse cx="66" cy="85" rx="3.5" ry="6" transform="rotate(-20 66 85)" fill="#F59E0B" stroke="#B45309" stroke-width="0.6" />
+  <ellipse cx="72" cy="76" rx="3.5" ry="6" transform="rotate(-10 72 76)" fill="#F59E0B" stroke="#B45309" stroke-width="0.6" />
+
+  <!-- Right Rice Grains -->
+  <ellipse cx="138" cy="95" rx="3.5" ry="6" transform="rotate(30 138 95)" fill="#F59E0B" stroke="#B45309" stroke-width="0.6" />
+  <ellipse cx="134" cy="85" rx="3.5" ry="6" transform="rotate(20 134 85)" fill="#F59E0B" stroke="#B45309" stroke-width="0.6" />
+  <ellipse cx="128" cy="76" rx="3.5" ry="6" transform="rotate(10 128 76)" fill="#F59E0B" stroke="#B45309" stroke-width="0.6" />
+  
+  <!-- DA Acronym Banner -->
+  <rect x="80" y="128" width="40" height="15" rx="3" fill="#0E5A2A" stroke="#FBBF24" stroke-width="1.2" />
+  <text x="100" y="140" fill="#FEF08A" font-family="'Arial Black', Impact, sans-serif" font-size="11" font-weight="900" text-anchor="middle" letter-spacing="1">
+    DA
+  </text>
+</svg>
