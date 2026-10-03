@@ -77,6 +77,14 @@ export const AccountsView: React.FC = () => {
   const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
 
+  // Quick Assign Barangay to LFT Officer Modal State
+  const [assignModalData, setAssignModalData] = useState<{
+    isOpen: boolean;
+    barangay: string;
+    displayBarangay: string;
+    selectedOfficerId: string;
+  } | null>(null);
+
   // Form state for Adding / Editing LFT Officer
   const [formData, setFormData] = useState({
     name: '',
@@ -193,6 +201,68 @@ export const AccountsView: React.FC = () => {
 
   const handleOpenReassign = (acc: LftAccount) => {
     handleOpenEdit(acc);
+  };
+
+  const handleOpenAssignBarangay = (bName: string, currentAccount?: LftAccount) => {
+    setAssignModalData({
+      isOpen: true,
+      barangay: bName,
+      displayBarangay: formatBarangayChipName(bName),
+      selectedOfficerId: currentAccount?.id || (lftAccounts[0]?.id || '')
+    });
+  };
+
+  const handleAssignBarangayConfirm = (targetOfficerId: string, bName: string) => {
+    if (!targetOfficerId) {
+      // Unassign: remove this barangay from all officers
+      lftAccounts.forEach((officer) => {
+        const list = parseAssignedBarangays(officer.barangay);
+        const hasB = list.some((item) => matchBarangay(item, bName) || matchBarangay(bName, item));
+        if (hasB) {
+          const nextList = list.filter((item) => !matchBarangay(item, bName) && !matchBarangay(bName, item));
+          updateLftAccount(officer.id, {
+            barangay: nextList.join(', '),
+            assignedBarangays: nextList
+          });
+        }
+      });
+      setNotification(`Brgy. ${formatBarangayChipName(bName)} na-set na isip Unassigned LFT.`);
+      setTimeout(() => setNotification(null), 4000);
+      setAssignModalData(null);
+      return;
+    }
+
+    const targetOfficer = lftAccounts.find((a) => a.id === targetOfficerId);
+    if (!targetOfficer) return;
+
+    // Remove bName from all other officers if present
+    lftAccounts.forEach((other) => {
+      if (other.id !== targetOfficerId) {
+        const otherList = parseAssignedBarangays(other.barangay);
+        const hasB = otherList.some((item) => matchBarangay(item, bName) || matchBarangay(bName, item));
+        if (hasB) {
+          const nextList = otherList.filter((item) => !matchBarangay(item, bName) && !matchBarangay(bName, item));
+          updateLftAccount(other.id, {
+            barangay: nextList.join(', '),
+            assignedBarangays: nextList
+          });
+        }
+      }
+    });
+
+    // Add bName to target officer if not already in list
+    const currentList = parseAssignedBarangays(targetOfficer.barangay);
+    const alreadyIn = currentList.some((item) => matchBarangay(item, bName) || matchBarangay(bName, item));
+    const nextTargetList = alreadyIn ? currentList : [...currentList, bName];
+
+    updateLftAccount(targetOfficer.id, {
+      barangay: nextTargetList.join(', '),
+      assignedBarangays: nextTargetList
+    });
+
+    setNotification(`Brgy. ${formatBarangayChipName(bName)} malampusong gi-assign kang ${targetOfficer.name}!`);
+    setTimeout(() => setNotification(null), 4000);
+    setAssignModalData(null);
   };
 
   const parseAssignedBarangays = (bStr: string): string[] => {
@@ -341,17 +411,33 @@ export const AccountsView: React.FC = () => {
         matchBarangay(acc.barangay, bName)
       );
       const officerName = assignedAccount ? assignedAccount.name : 'Unassigned LFT';
-      const officerId = assignedAccount ? (assignedAccount.username || assignedAccount.id) : `LFT-${bName}`;
+      const officerId = assignedAccount ? (assignedAccount.username || assignedAccount.id) : `LFT-${bName.toUpperCase()}`;
       const brgyParcels = parcels.filter((p) => matchBarangay(p.barangay, bName));
       const brgyArea = brgyParcels.reduce((sum, p) => sum + (p.weightKg || 0), 0);
       const displayBarangay = formatBarangayChipName(bName);
 
-      const verifiedCount = brgyParcels.filter(
-        (p) => (p as any).status === 'Verified' || p.syncStatus === 'Live Synced' || (p.swineNameOrId && p.lat && p.lng)
-      ).length;
-      const progressPct = brgyParcels.length > 0
-        ? Math.min(100, Math.round((verifiedCount / brgyParcels.length) * 100))
-        : 100;
+      // RSBSA-audited count & mapped hectares
+      const verifiedParcels = brgyParcels.filter(
+        (p) =>
+          (p as any).status === 'Verified' ||
+          p.syncStatus === 'Live Synced' ||
+          (p.swineNameOrId && p.swineNameOrId !== 'NO RSBSA' && p.lat && p.lng)
+      );
+      const verifiedCount = verifiedParcels.length;
+      const verifiedArea = verifiedParcels.reduce((sum, p) => sum + (p.weightKg || 0), 0);
+
+      // Compute dynamic audit progress based on RSBSA count & hectares (0% when no farmers registered)
+      let progressPct = 0;
+      if (brgyParcels.length > 0) {
+        const countRatio = verifiedCount / brgyParcels.length;
+        const areaRatio = brgyArea > 0 ? Math.min(1, verifiedArea / brgyArea) : countRatio;
+        progressPct = Math.min(100, Math.round(((countRatio * 0.6) + (areaRatio * 0.4)) * 100));
+        if (progressPct === 0 && verifiedCount > 0) {
+          progressPct = Math.round((verifiedCount / brgyParcels.length) * 100);
+        }
+      } else {
+        progressPct = 0;
+      }
 
       return {
         no: idx + 1,
@@ -359,6 +445,7 @@ export const AccountsView: React.FC = () => {
         displayName: displayBarangay,
         officerName,
         officerId,
+        assignedAccount,
         isCluster1,
         farmersCount: brgyParcels.length,
         areaHa: brgyArea,
@@ -566,10 +653,20 @@ export const AccountsView: React.FC = () => {
 
         {/* Compact LFT Officer Grid (2 or 3 Columns Responsive) */}
         {filteredAccounts.length === 0 ? (
-          <div className="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-8 text-center">
-            <Users className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-            <p className="text-xs font-bold text-slate-700">Walay nakit-ang LFT technician sa database.</p>
-            <p className="text-[11px] text-slate-400 mt-0.5">No technician accounts found in database. Please click &quot;Add Officer&quot; to enroll a new field technician.</p>
+          <div className="bg-slate-50/90 border-2 border-dashed border-slate-300 rounded-2xl p-8 sm:p-10 text-center flex flex-col items-center justify-center max-w-md mx-auto my-6 shadow-2xs">
+            <div className="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center mb-3">
+              <Users className="w-6 h-6 text-slate-400" />
+            </div>
+            <p className="text-sm font-bold text-slate-800">Walay nakit-ang LFT technician sa database.</p>
+            <p className="text-xs text-slate-500 mt-1 mb-4">No technician accounts found in database. Please click &quot;+ Add LFT Officer&quot; to enroll a new field technician.</p>
+            <button
+              type="button"
+              onClick={handleOpenAdd}
+              className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+            >
+              <Plus className="w-4 h-4" />
+              <span>+ Add LFT Officer</span>
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4.5">
@@ -959,48 +1056,101 @@ export const AccountsView: React.FC = () => {
                 <th className="py-2.5 px-3 font-bold border-r border-slate-700 text-center">Officer ID</th>
                 <th className="py-2.5 px-3 font-bold border-r border-slate-700 text-right">RSBSA Farmers</th>
                 <th className="py-2.5 px-3 font-bold border-r border-slate-700 text-right">Mapped Hectares</th>
-                <th className="py-2.5 px-3 font-bold text-center">Audit Progress</th>
+                <th className="py-2.5 px-3 font-bold border-r border-slate-700 text-center">Audit Progress</th>
+                <th className="py-2.5 px-3 font-bold text-center w-24">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
               {matrixData.map((row) => (
                 <tr key={row.rawName} className="hover:bg-slate-50/80 transition">
-                  <td className="py-2 px-3 text-center font-mono font-bold text-slate-500 border-r border-slate-100">
+                  <td className="py-2.5 px-3 text-center font-mono font-bold text-slate-500 border-r border-slate-100">
                     {row.no}
                   </td>
-                  <td className="py-2 px-3 font-bold text-slate-900 border-r border-slate-100 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <td className="py-2.5 px-3 font-bold text-slate-900 border-r border-slate-100 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
                     <span>Brgy. {row.displayName}</span>
                   </td>
-                  <td className="py-2 px-3 border-r border-slate-100 font-semibold text-slate-800">
-                    {row.officerName}
+                  <td className="py-2.5 px-3 border-r border-slate-100 font-semibold">
+                    {!row.assignedAccount || row.officerName === 'Unassigned LFT' ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/60 shadow-2xs">
+                        <AlertCircle className="w-3 h-3 text-amber-600 shrink-0" />
+                        Unassigned LFT
+                      </span>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-slate-800">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                        <span>{row.officerName}</span>
+                      </div>
+                    )}
                   </td>
-                  <td className="py-2 px-3 text-center border-r border-slate-100">
-                    <span className="font-mono text-[10.5px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">
+                  <td className="py-2.5 px-3 text-center border-r border-slate-100">
+                    <span className="inline-block font-mono text-[11px] font-semibold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-md border border-slate-200 tracking-tight shadow-2xs">
                       {row.officerId}
                     </span>
                   </td>
-                  <td className="py-2 px-3 text-right font-mono font-bold text-slate-900 border-r border-slate-100">
+                  <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900 border-r border-slate-100">
                     {row.farmersCount}
                   </td>
-                  <td className="py-2 px-3 text-right font-mono font-bold text-emerald-800 border-r border-slate-100">
+                  <td className="py-2.5 px-3 text-right font-mono font-bold text-emerald-800 border-r border-slate-100">
                     {row.areaHa.toFixed(2)} ha
                   </td>
-                  <td className="py-2 px-3 text-center">
+                  <td className="py-2.5 px-3 text-center border-r border-slate-100">
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-16 bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
                         <div
-                          className="bg-emerald-600 h-full rounded-full"
+                          className={`h-full rounded-full transition-all duration-300 ${
+                            row.progressPct === 0
+                              ? 'bg-slate-300 w-0'
+                              : row.progressPct < 50
+                              ? 'bg-amber-500'
+                              : row.progressPct < 80
+                              ? 'bg-blue-600'
+                              : 'bg-emerald-600'
+                          }`}
                           style={{ width: `${row.progressPct}%` }}
                         />
                       </div>
-                      <span className="text-[10px] font-mono font-bold text-slate-600">
+                      <span className={`text-[10px] font-mono font-bold ${
+                        row.progressPct === 0 ? 'text-slate-400' : 'text-slate-600'
+                      }`}>
                         {row.progressPct}%
                       </span>
                     </div>
                   </td>
+                  <td className="py-2.5 px-3 text-center">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenAssignBarangay(row.rawName, row.assignedAccount)}
+                      className="inline-flex items-center justify-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-lg border transition cursor-pointer shadow-2xs bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300 hover:border-emerald-400 active:scale-95"
+                      title={`Assign or reassign LFT Officer for Brgy. ${row.displayName}`}
+                    >
+                      <UserCheck className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>Assign</span>
+                    </button>
+                  </td>
                 </tr>
               ))}
+              {matrixData.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="py-8 px-4 text-center">
+                    <div className="bg-slate-50/90 border-2 border-dashed border-slate-300 rounded-2xl p-6 sm:p-8 max-w-sm mx-auto text-center flex flex-col items-center justify-center shadow-2xs">
+                      <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center mb-2.5">
+                        <Users className="w-5 h-5 text-slate-400" />
+                      </div>
+                      <p className="text-xs font-bold text-slate-800">Walay nakit-ang coverage record.</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5 mb-3.5">No technician accounts found in database. Please click &quot;+ Add LFT Officer&quot; to enroll a new field technician.</p>
+                      <button
+                        type="button"
+                        onClick={handleOpenAdd}
+                        className="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>+ Add LFT Officer</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -1367,6 +1517,195 @@ export const AccountsView: React.FC = () => {
               >
                 Delete Account
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: ASSIGN BARANGAY TO LFT OFFICER */}
+      {assignModalData && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setAssignModalData(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200"
+          >
+            {/* Header */}
+            <div className="bg-[#0c2340] text-white p-4.5 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-600/30 border border-emerald-400/40 flex items-center justify-center">
+                  <UserCheck className="w-4 h-4 text-emerald-300" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-bold text-base leading-tight">
+                    Assign LFT Officer
+                  </h3>
+                  <p className="text-[11px] text-slate-300">
+                    Brgy. {assignModalData.displayBarangay} Coverage Assignment
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAssignModalData(null)}
+                className="text-slate-300 hover:text-white p-1 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 space-y-4">
+              <div className="p-3 bg-emerald-50/70 border border-emerald-200/70 rounded-xl flex items-center gap-3">
+                <MapPin className="w-5 h-5 text-emerald-700 shrink-0" />
+                <div>
+                  <span className="text-[11px] font-bold text-emerald-900 block">Territory / Target Barangay</span>
+                  <span className="text-xs font-semibold text-emerald-950">Brgy. {assignModalData.displayBarangay}, Silago, Southern Leyte</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Select Field Extension Technician (LFT)
+                </label>
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                  {lftAccounts.map((officer) => {
+                    const officerBrgys = getOfficerBarangays(officer);
+                    const isAssignedToThis = officerBrgys.some((b) =>
+                      matchBarangay(b, assignModalData.barangay)
+                    );
+                    const isSelected = assignModalData.selectedOfficerId === officer.id;
+
+                    return (
+                      <div
+                        key={officer.id}
+                        onClick={() =>
+                          setAssignModalData((prev) =>
+                            prev ? { ...prev, selectedOfficerId: officer.id } : null
+                          )
+                        }
+                        className={`p-3 rounded-xl border transition cursor-pointer flex items-center justify-between ${
+                          isSelected
+                            ? 'bg-emerald-50/80 border-emerald-500 ring-2 ring-emerald-500/20'
+                            : 'bg-white hover:bg-slate-50 border-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-xs text-slate-700 border border-slate-200 overflow-hidden shrink-0">
+                            {officer.photoUrl ? (
+                              <img src={officer.photoUrl} alt={officer.name} className="w-full h-full object-cover" />
+                            ) : (
+                              officer.name.charAt(0)
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                              <span>{officer.name}</span>
+                              {isAssignedToThis && (
+                                <span className="text-[9.5px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded">
+                                  Current
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10.5px] text-slate-500 font-mono">
+                              {officerBrgys.length} barangay{officerBrgys.length !== 1 ? 's' : ''} assigned
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="shrink-0">
+                          {isSelected ? (
+                            <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center">
+                              <Check className="w-3.5 h-3.5" />
+                            </div>
+                          ) : (
+                            <div className="w-5 h-5 rounded-full border border-slate-300" />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Option to Unassign */}
+                  <div
+                    onClick={() =>
+                      setAssignModalData((prev) =>
+                        prev ? { ...prev, selectedOfficerId: '' } : null
+                      )
+                    }
+                    className={`p-3 rounded-xl border transition cursor-pointer flex items-center justify-between ${
+                      assignModalData.selectedOfficerId === ''
+                        ? 'bg-amber-50/80 border-amber-500 ring-2 ring-amber-500/20'
+                        : 'bg-white hover:bg-slate-50 border-slate-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                        <AlertCircle className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-xs text-slate-900">
+                          Leave Unassigned / Vacant
+                        </div>
+                        <span className="text-[10.5px] text-slate-500">
+                          Mark this barangay as unassigned territory
+                        </span>
+                      </div>
+                    </div>
+                    <div className="shrink-0">
+                      {assignModalData.selectedOfficerId === '' ? (
+                        <div className="w-5 h-5 rounded-full bg-amber-600 text-white flex items-center justify-center">
+                          <Check className="w-3.5 h-3.5" />
+                        </div>
+                      ) : (
+                        <div className="w-5 h-5 rounded-full border border-slate-300" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAssignModalData(null);
+                    handleOpenAdd();
+                  }}
+                  className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Enroll New LFT</span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAssignModalData(null)}
+                    className="px-3.5 py-1.5 border border-slate-300 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAssignBarangayConfirm(
+                        assignModalData.selectedOfficerId,
+                        assignModalData.barangay
+                      )
+                    }
+                    className="px-4 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5 active:scale-95"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Confirm Assignment</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
