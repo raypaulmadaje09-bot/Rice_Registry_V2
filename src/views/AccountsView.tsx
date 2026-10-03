@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   BARANGAYS,
+  OFFICIAL_15_BARANGAYS,
   ASSIGNED_10_BARANGAYS,
   WELLA_ASSIGNED_BARANGAYS,
   BRANDO_ASSIGNED_BARANGAYS,
@@ -159,8 +160,8 @@ export const AccountsView: React.FC = () => {
   const formatBarangayChipName = (rawName: string): string => {
     const trimmed = rawName.trim();
     const lower = trimmed.toLowerCase();
-    if (lower === 'pd1' || lower === 'pob1' || lower === 'poblacion 1') return 'Pob. 1';
-    if (lower === 'pd2' || lower === 'pob2' || lower === 'poblacion 2') return 'Pob. 2';
+    if (lower === 'pd1' || lower === 'pob1' || lower === 'poblacion 1' || lower === 'poblacion district 1') return 'Poblacion District 1';
+    if (lower === 'pd2' || lower === 'pob2' || lower === 'poblacion 2' || lower === 'poblacion district 2') return 'Poblacion District 2';
     if (lower === 'laguma') return 'Laguna';
     return trimmed;
   };
@@ -359,10 +360,10 @@ export const AccountsView: React.FC = () => {
       return officer.assignedBarangays;
     }
     if (officer.name.toLowerCase().includes('wella')) {
-      return ['Salvacion', 'Laguna', 'Pob. 1', 'Pob. 2', 'Hingatungan'];
+      return ['Salvacion', 'Laguna', 'Poblacion District 1', 'Poblacion District 2', 'Sap-ang'];
     }
     if (officer.name.toLowerCase().includes('brando')) {
-      return ['Mercedes', 'Katipunan', 'Puntana', 'Tubod', 'Balagawan'];
+      return ['Mercedes', 'Katipunan', 'Puntana', 'Hingatungan', 'Balagawan'];
     }
     return officer.barangay.split(',').map((s) => s.trim()).filter(Boolean);
   };
@@ -400,9 +401,9 @@ export const AccountsView: React.FC = () => {
 
   const isCentralAdmin = currentUser?.role === 'Central Admin';
 
-  // Coverage Matrix calculation across all 10 priority barangays
+  // Coverage Matrix calculation across all 15 official barangays
   const matrixData = useMemo(() => {
-    return ASSIGNED_10_BARANGAYS.map((bName, idx) => {
+    return OFFICIAL_15_BARANGAYS.map((bName, idx) => {
       const isCluster1 = WELLA_ASSIGNED_BARANGAYS.some(
         (w) => w.toLowerCase() === bName.toLowerCase()
       );
@@ -452,6 +453,13 @@ export const AccountsView: React.FC = () => {
         progressPct
       };
     }).filter((row) => {
+        // Filter tabs: All 15 Barangays | Assigned | Unassigned
+        if (officerFilter === 'ASSIGNED') {
+          if (!row.assignedAccount || row.officerName === 'Unassigned LFT') return false;
+        } else if (officerFilter === 'UNASSIGNED') {
+          if (row.assignedAccount && row.officerName !== 'Unassigned LFT') return false;
+        }
+
         if (matrixBarangaySearch.trim()) {
           const query = matrixBarangaySearch.toLowerCase();
           return (
@@ -462,7 +470,7 @@ export const AccountsView: React.FC = () => {
         }
         return true;
       });
-  }, [parcels, lftAccounts, matrixBarangaySearch]);
+  }, [parcels, lftAccounts, matrixBarangaySearch, officerFilter]);
 
   return (
     <div className="space-y-6 pb-12">
@@ -1006,29 +1014,29 @@ export const AccountsView: React.FC = () => {
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                All 10 Priority
+                All 15 Barangays
               </button>
               <button
                 type="button"
-                onClick={() => setOfficerFilter('Wella')}
+                onClick={() => setOfficerFilter('ASSIGNED')}
                 className={`px-3 py-1 rounded-lg transition cursor-pointer ${
-                  officerFilter === 'Wella'
+                  officerFilter === 'ASSIGNED'
                     ? 'bg-emerald-700 text-white shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Wella (5)
+                Assigned
               </button>
               <button
                 type="button"
-                onClick={() => setOfficerFilter('Brando')}
+                onClick={() => setOfficerFilter('UNASSIGNED')}
                 className={`px-3 py-1 rounded-lg transition cursor-pointer ${
-                  officerFilter === 'Brando'
-                    ? 'bg-blue-700 text-white shadow-2xs'
+                  officerFilter === 'UNASSIGNED'
+                    ? 'bg-amber-600 text-white shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Brando (5)
+                Unassigned
               </button>
             </div>
 
@@ -1372,7 +1380,7 @@ export const AccountsView: React.FC = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setAssignedBarangaysList(BARANGAYS.map((b) => b.name))}
+                      onClick={() => setAssignedBarangaysList(OFFICIAL_15_BARANGAYS)}
                       className="px-2 py-1 rounded-lg text-[10.5px] font-bold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition cursor-pointer shadow-2xs"
                     >
                       All 15
@@ -1388,14 +1396,13 @@ export const AccountsView: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-52 overflow-y-auto p-1.5 bg-white rounded-xl border border-slate-200/90 shadow-inner">
-                  {BARANGAYS.map((b) => {
-                    const isChecked = isBarangayAssigned(b.name, formData.barangay);
-                    const isPriority10 = ASSIGNED_10_BARANGAYS.some((p) => matchBarangay(p, b.name));
+                  {OFFICIAL_15_BARANGAYS.map((bName) => {
+                    const isChecked = isBarangayAssigned(bName, formData.barangay);
 
                     return (
                       <div
-                        key={b.name}
-                        onClick={() => toggleAssignedBarangay(b.name)}
+                        key={bName}
+                        onClick={() => toggleAssignedBarangay(bName)}
                         className={`flex items-start gap-2.5 p-2 rounded-lg border transition cursor-pointer select-none ${
                           isChecked
                             ? 'bg-emerald-50 border-emerald-400 ring-1 ring-emerald-400/40 text-emerald-950 font-bold shadow-2xs'
@@ -1417,17 +1424,12 @@ export const AccountsView: React.FC = () => {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-1">
                             <span className="text-xs truncate block font-bold">
-                              Brgy. {formatBarangayChipName(b.name)}
+                              Brgy. {formatBarangayChipName(bName)}
                             </span>
-                            {isPriority10 && (
-                              <span className="text-[8.5px] font-extrabold uppercase px-1 py-0.2 rounded bg-slate-100 text-slate-500 shrink-0">
-                                Priority
-                              </span>
-                            )}
+                            <span className="text-[8.5px] font-extrabold uppercase px-1 py-0.2 rounded bg-emerald-100 text-emerald-800 shrink-0">
+                              Official
+                            </span>
                           </div>
-                          <span className="text-[10px] text-slate-400 block truncate font-normal">
-                            {b.terrain || 'Rice Sector'}
-                          </span>
                         </div>
                       </div>
                     );

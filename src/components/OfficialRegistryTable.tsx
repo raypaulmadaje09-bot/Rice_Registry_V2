@@ -205,12 +205,14 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
             {p.lng ? p.lng.toFixed(7).replace(/0+$/, '').replace(/\.$/, '') : ''}
           </td>
         );
-      case 'farmArea':
+      case 'farmArea': {
+        const val = Number(p.weightKg ?? p.areaHa ?? (p as any).farm_area_ha ?? 0);
         return (
           <td key={colId} className="border border-black px-1.5 py-1 text-center font-mono font-bold whitespace-nowrap">
-            {p.weightKg !== undefined ? (p.weightKg === 1 ? '1' : p.weightKg) : ''}
+            {val > 0 ? val.toFixed(2) : ''}
           </td>
         );
+      }
       case 'commodity':
         return (
           <td key={colId} className="border border-black px-1.5 py-1 text-center font-bold uppercase whitespace-nowrap">
@@ -705,7 +707,10 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
                     )}
                     {visibleColumns.farmArea && (
                       <td className="border border-black px-1.5 py-1 text-center font-mono font-bold whitespace-nowrap">
-                        {p.weightKg !== undefined ? (p.weightKg === 1 ? '1' : p.weightKg) : ''}
+                        {(() => {
+                          const val = Number(p.weightKg ?? p.areaHa ?? (p as any).farm_area_ha ?? 0);
+                          return val > 0 ? val.toFixed(2) : '';
+                        })()}
                       </td>
                     )}
                     {visibleColumns.commodity && (

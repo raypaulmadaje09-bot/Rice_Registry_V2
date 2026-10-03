@@ -103,7 +103,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         'Katipunan',
         'Puntana',
         'Hingatungan',
-        'Brando'
+        'Balagawan'
       ],
       title: 'Local Farmer Technician (LFT - Temporary Session)',
       contactNumber: '',

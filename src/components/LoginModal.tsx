@@ -188,7 +188,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSucce
         'Katipunan',
         'Puntana',
         'Hingatungan',
-        'Brando'
+        'Balagawan'
       ],
       title: 'Local Farmer Technician (LFT - Temporary Session)',
       contactNumber: '',

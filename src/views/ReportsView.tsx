@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { supabaseDb, sortParcelsAlphabetically } from '../utils/supabaseClient';
 import {
   BARANGAYS,
+  OFFICIAL_15_BARANGAYS,
   ASSIGNED_10_BARANGAYS,
   matchBarangay,
   getDisplayBarangay,
@@ -146,7 +147,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
   const [reportType, setReportType] = useState<
     'official_registry' | 'seasonal_production' | 'barangay_consolidated' | 'census' | 'rsbsa'
   >('official_registry');
-  const [selectedBarangay, setSelectedBarangay] = useState<string>(initialBarangay || 'Balagawan');
+  const [selectedBarangay, setSelectedBarangay] = useState<string>(initialBarangay || 'ALL');
 
   const [persistedSignatories, setPersistedSignatories] = useState<OfficialSignatory[] | null>(null);
 
@@ -284,13 +285,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
   const [approvedBy, setApprovedBy] = useState('');
   const [approvedTitle, setApprovedTitle] = useState('');
 
-  // Filter parcels based on 10 assigned barangays or specific barangay, sorted alphabetically A-Z
+  // Filter parcels based on selected barangay (or ALL for all 15 barangays), sorted alphabetically A-Z
   const reportParcels = useMemo(() => {
     const filtered = parcels.filter((p) => {
-      if (selectedBarangay === 'ALL') return true;
-      if (selectedBarangay === 'ASSIGNED_10') {
-        return ASSIGNED_10_BARANGAYS.some((assigned) => matchBarangay(p.barangay, assigned));
-      }
+      if (selectedBarangay === 'ALL' || selectedBarangay === 'ASSIGNED_10') return true;
       return matchBarangay(p.barangay, selectedBarangay);
     });
     return sortParcelsAlphabetically(filtered);
@@ -326,9 +324,9 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
     });
   }, [reportParcels, selectedSeason]);
 
-  // Aggregate stats
+  // Aggregate stats: Total Registered Farm Area
   const totalAreaHa = useMemo(() => {
-    return reportParcels.reduce((sum, p) => sum + (p.weightKg || 0), 0);
+    return reportParcels.reduce((sum, p) => sum + (Number(p.weightKg || p.areaHa || (p as any).farm_area_ha || 0)), 0);
   }, [reportParcels]);
 
   const totalProductionMt = useMemo(() => {
@@ -911,7 +909,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
 
   const handleResetDefaults = () => {
     setReportType('official_registry');
-    setSelectedBarangay('Balagawan');
+    setSelectedBarangay('ALL');
     setSelectedSeason(activeSeason || ACTIVE_SEASON);
     setPaperSize('folio');
     setOrientation('landscape');
@@ -923,11 +921,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
 
   // Human-readable scope title for report header
   const reportScopeTitle = useMemo(() => {
-    if (selectedBarangay === 'ASSIGNED_10') {
-      return 'CONSOLIDATED MUNICIPAL REPORT (10 ASSIGNED BARANGAYS)';
-    }
-    if (selectedBarangay === 'ALL') {
-      return 'CONSOLIDATED MUNICIPAL REPORT (ALL SILAGO BARANGAYS)';
+    if (selectedBarangay === 'ALL' || selectedBarangay === 'ASSIGNED_10') {
+      return 'CONSOLIDATED MUNICIPAL REPORT (ALL 15 SILAGO BARANGAYS)';
     }
     return `BARANGAY-SPECIFIC REPORT: BARANGAY ${selectedBarangay.toUpperCase()}`;
   }, [selectedBarangay]);
@@ -1180,15 +1175,19 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
               className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-emerald-600 cursor-pointer shadow-2xs truncate"
             >
               <optgroup label="🌟 Consolidated">
-                <option value="ASSIGNED_10">⭐ Consolidated (10 Assigned)</option>
-                <option value="ALL">All Silago Barangays</option>
+                <option value="ALL">
+                  All 15 Barangays (All Records - {parcels.length} {parcels.length === 1 ? 'record' : 'records'})
+                </option>
               </optgroup>
-              <optgroup label="📍 Specific Barangays">
-                {ASSIGNED_10_BARANGAYS.map((b) => (
-                  <option key={b} value={b}>
-                    Brgy. {b}
-                  </option>
-                ))}
+              <optgroup label="📍 Specific Barangays (15 Official)">
+                {OFFICIAL_15_BARANGAYS.map((b) => {
+                  const count = parcels.filter((p) => matchBarangay(p.barangay, b)).length;
+                  return (
+                    <option key={b} value={b}>
+                      Brgy. {b} ({count} {count === 1 ? 'record' : 'records'})
+                    </option>
+                  );
+                })}
               </optgroup>
             </select>
           </div>

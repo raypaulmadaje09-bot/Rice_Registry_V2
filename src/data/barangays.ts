@@ -1,28 +1,37 @@
 import { Barangay, User } from '../types';
 import rawBarangays from '../data_barangays.json';
 
-// Explicit 10 Assigned Barangays specified by Municipal Agriculture
-export const ASSIGNED_10_BARANGAYS = [
-  'Salvacion',
-  'Laguma',
-  'Pd2',
-  'Pd1',
-  'Sap-ang',
-  'Brando',
-  'Mercedes',
+// Official 15 Barangays of Silago, Southern Leyte
+export const OFFICIAL_15_BARANGAYS = [
+  'Balagawan',
+  'Catmon',
+  'Calubian',
+  'Hingatungan',
+  'Imelda',
   'Katipunan',
+  'Laguna',
+  'Mercedes',
+  'Poblacion District 1',
+  'Poblacion District 2',
   'Puntana',
-  'Hingatungan'
+  'Salvacion',
+  'San Isidro',
+  'San Roque',
+  'Sap-ang'
 ] as const;
 
-export type AssignedBarangay = typeof ASSIGNED_10_BARANGAYS[number];
+export type OfficialBarangay = typeof OFFICIAL_15_BARANGAYS[number];
+
+// Alias for compatibility across codebase
+export const ASSIGNED_10_BARANGAYS = OFFICIAL_15_BARANGAYS;
+export type AssignedBarangay = typeof OFFICIAL_15_BARANGAYS[number];
 
 // Official 2 Assigned Local Farmer Technicians (LFTs)
 export const WELLA_ASSIGNED_BARANGAYS = [
   'Salvacion',
-  'Laguma',
-  'Pd2',
-  'Pd1',
+  'Laguna',
+  'Poblacion District 2',
+  'Poblacion District 1',
   'Sap-ang'
 ] as const;
 
@@ -31,7 +40,7 @@ export const BRANDO_ASSIGNED_BARANGAYS = [
   'Katipunan',
   'Puntana',
   'Hingatungan',
-  'Brando'
+  'Balagawan'
 ] as const;
 
 export const LFT_OFFICERS_INFO = {
@@ -129,6 +138,32 @@ const requiredBarangays: Partial<Barangay>[] = [
     lat: 10.542,
     lng: 125.176,
     asfStatus: 'Registered Sector'
+  },
+  {
+    name: 'Calubian',
+    puroks: 4,
+    terrain: 'Upland & River Basin',
+    registeredSwine: 0,
+    registeredRaisers: 0,
+    totalAreaHa: 0,
+    irrigatedAreaHa: 0,
+    rainfedAreaHa: 0,
+    lat: 10.530,
+    lng: 125.150,
+    asfStatus: 'Registered Sector'
+  },
+  {
+    name: 'San Roque',
+    puroks: 4,
+    terrain: 'Lowland Alluvial & Coast',
+    registeredSwine: 0,
+    registeredRaisers: 0,
+    totalAreaHa: 0,
+    irrigatedAreaHa: 0,
+    rainfedAreaHa: 0,
+    lat: 10.535,
+    lng: 125.170,
+    asfStatus: 'Registered Sector'
   }
 ];
 
@@ -156,8 +191,8 @@ requiredBarangays.forEach((item) => {
 export const BARANGAYS: Barangay[] = rawList;
 
 export const TOTAL_SILAGO_STATS = {
-  totalBarangays: 16,
-  assignedBarangaysCount: 10,
+  totalBarangays: 15,
+  assignedBarangaysCount: 15,
   registeredParcels: 0,
   totalFarmers: 0,
   totalAreaHa: 0,
@@ -170,7 +205,7 @@ export const TOTAL_SILAGO_STATS = {
 
 /**
  * Matches a database record's barangay string to an assigned barangay query.
- * Handles abbreviations (e.g. Pd1 -> Poblacion District 1, Brando -> San Bernardo, etc.)
+ * Handles abbreviations (e.g. Pd1 -> Poblacion District 1, etc.)
  */
 export function matchBarangay(recordBarangay: string, targetBarangay: string): boolean {
   if (!recordBarangay || !targetBarangay) return false;
@@ -181,21 +216,20 @@ export function matchBarangay(recordBarangay: string, targetBarangay: string): b
 
   if (rec === tgt) return true;
 
-  // Pd1 mapping
+  // Pd1 / Poblacion District 1 mapping
   if ((tgt === 'pd1' || tgt === 'poblacion district 1' || tgt === 'pob1' || tgt === 'poblacion 1') &&
       (rec === 'pd1' || rec.includes('poblacion district 1') || rec === 'pob1' || rec === 'poblacion 1')) {
     return true;
   }
 
-  // Pd2 mapping
+  // Pd2 / Poblacion District 2 mapping
   if ((tgt === 'pd2' || tgt === 'poblacion district 2' || tgt === 'pob2' || tgt === 'poblacion 2') &&
       (rec === 'pd2' || rec.includes('poblacion district 2') || rec === 'pob2' || rec === 'poblacion 2')) {
     return true;
   }
 
-  // Brando / San Bernardo mapping
-  if ((tgt === 'brando' || tgt === 'san bernardo' || tgt === 'sanbernardo') &&
-      (rec === 'brando' || rec.includes('san bernardo') || rec === 'sanbernardo')) {
+  // Laguna / Laguma mapping
+  if ((tgt === 'laguna' || tgt === 'laguma') && (rec === 'laguna' || rec === 'laguma' || rec.includes('lagu'))) {
     return true;
   }
 
@@ -207,8 +241,6 @@ export function matchBarangay(recordBarangay: string, targetBarangay: string): b
 
   // Salvacion
   if (tgt.includes('salvacion') && rec.includes('salvacion')) return true;
-  // Laguma
-  if (tgt.includes('laguma') && rec.includes('laguma')) return true;
   // Mercedes
   if (tgt.includes('mercedes') && rec.includes('mercedes')) return true;
   // Katipunan
@@ -217,6 +249,18 @@ export function matchBarangay(recordBarangay: string, targetBarangay: string): b
   if (tgt.includes('puntana') && rec.includes('puntana')) return true;
   // Hingatungan
   if (tgt.includes('hingatungan') && rec.includes('hingatungan')) return true;
+  // Balagawan
+  if (tgt.includes('balagawan') && rec.includes('balagawan')) return true;
+  // Catmon
+  if (tgt.includes('catmon') && rec.includes('catmon')) return true;
+  // Calubian
+  if (tgt.includes('calubian') && rec.includes('calubian')) return true;
+  // Imelda
+  if (tgt.includes('imelda') && rec.includes('imelda')) return true;
+  // San Isidro
+  if (tgt.includes('san isidro') && rec.includes('san isidro')) return true;
+  // San Roque
+  if (tgt.includes('san roque') && rec.includes('san roque')) return true;
 
   return rec.includes(tgt) || tgt.includes(rec);
 }
@@ -227,12 +271,11 @@ export function matchBarangay(recordBarangay: string, targetBarangay: string): b
 export function getDisplayBarangay(name: string): string {
   if (!name) return '';
   const lower = name.trim().toLowerCase();
-  if (lower === 'pd1' || lower.includes('poblacion district 1') || lower === 'pob1') return 'Pd1';
-  if (lower === 'pd2' || lower.includes('poblacion district 2') || lower === 'pob2') return 'Pd2';
-  if (lower === 'brando' || lower.includes('san bernardo') || lower === 'sanbernardo') return 'Brando';
+  if (lower === 'pd1' || lower.includes('poblacion district 1') || lower === 'pob1') return 'Poblacion District 1';
+  if (lower === 'pd2' || lower.includes('poblacion district 2') || lower === 'pob2') return 'Poblacion District 2';
   if (lower === 'sap-ang' || lower === 'sapang') return 'Sap-ang';
   if (lower.includes('salvacion')) return 'Salvacion';
-  if (lower.includes('laguma')) return 'Laguma';
+  if (lower === 'laguma' || lower.includes('lagu')) return 'Laguna';
   if (lower.includes('mercedes')) return 'Mercedes';
   if (lower.includes('katipunan')) return 'Katipunan';
   if (lower.includes('puntana')) return 'Puntana';
