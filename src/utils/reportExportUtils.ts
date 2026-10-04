@@ -826,6 +826,7 @@ export const exportRegistryTableExcel = (
 ) => {
   const colKeys = [
     'rsbsaNo',
+    'farmerName',
     'familyName',
     'givenName',
     'middleName',
@@ -842,6 +843,7 @@ export const exportRegistryTableExcel = (
 
   const headerLabels: Record<string, string> = {
     rsbsaNo: 'RSBSA NO.',
+    farmerName: 'FARMER NAME',
     familyName: 'FAMILY NAME',
     givenName: 'GIVEN NAME',
     middleName: 'MIDDLE NAME',
@@ -881,6 +883,7 @@ export const exportRegistryTableExcel = (
 
     const rowObj: Record<string, string | number> = {
       rsbsaNo: p.swineNameOrId || '',
+      farmerName: family && given ? `${family}, ${given}${middle ? ` ${middle}` : ''}` : (p.raiserName || ''),
       familyName: family,
       givenName: given,
       middleName: middle,
@@ -939,7 +942,7 @@ export const exportRegistryTableExcel = (
 
   // Auto-size columns
   ws['!cols'] = colKeys.map((k) => ({
-    wch: k === 'rsbsaNo' ? 22 : k === 'farmLocation' ? 25 : k === 'familyName' || k === 'givenName' ? 18 : 14
+    wch: k === 'rsbsaNo' ? 22 : k === 'farmerName' ? 26 : k === 'farmLocation' ? 25 : k === 'familyName' || k === 'givenName' ? 18 : 14
   }));
 
   XLSX.utils.book_append_sheet(wb, ws, 'RSBSA Masterlist');
@@ -1205,6 +1208,7 @@ export const exportRegistryTableWord = async (
   // Determine active visible columns and subcolumns
   const colKeys = [
     'rsbsaNo',
+    'farmerName',
     'familyName',
     'givenName',
     'middleName',
@@ -1248,6 +1252,24 @@ export const exportRegistryTableWord = async (
         children: [
           new Paragraph({
             children: [new TextRun({ text: 'RSBSA NO.', bold: true, size: 17, font: 'Arial' })],
+            alignment: AlignmentType.CENTER
+          })
+        ],
+        rowSpan: hasAnyGroup ? 2 : 1,
+        shading: { fill: 'F8FAFC' },
+        borders: cellBorders,
+        margins: cellMargins,
+        verticalAlign: VerticalAlign.CENTER
+      })
+    );
+  }
+
+  if (visibleColumns.farmerName) {
+    headerRow1Cells.push(
+      new TableCell({
+        children: [
+          new Paragraph({
+            children: [new TextRun({ text: 'FARMER NAME', bold: true, size: 17, font: 'Arial' })],
             alignment: AlignmentType.CENTER
           })
         ],
@@ -1550,6 +1572,7 @@ export const exportRegistryTableWord = async (
 
     const valMap: Record<string, string> = {
       rsbsaNo: p.swineNameOrId || 'NO RSBSA',
+      farmerName: family && given ? `${family}, ${given}${middle ? ` ${middle}` : ''}` : (p.raiserName || ''),
       familyName: family,
       givenName: given,
       middleName: middle,
@@ -1569,7 +1592,7 @@ export const exportRegistryTableWord = async (
     const rowCells = colKeys.map((k) => {
       const isNumOrCode = ['rsbsaNo', 'birthday', 'latitude', 'longitude', 'commodity'].includes(k);
       const isArea = k === 'farmArea';
-      const isName = ['familyName', 'givenName'].includes(k);
+      const isName = ['farmerName', 'familyName', 'givenName'].includes(k);
 
       const align = isArea
         ? AlignmentType.RIGHT
@@ -2682,6 +2705,7 @@ export const exportCompletePackageExcel = (
   // 4. Sheet: RSBSA Masterlist Registry
   const colKeys = [
     'rsbsaNo',
+    'farmerName',
     'familyName',
     'givenName',
     'middleName',
@@ -2698,6 +2722,7 @@ export const exportCompletePackageExcel = (
 
   const headerLabels: Record<string, string> = {
     rsbsaNo: 'RSBSA NO.',
+    farmerName: 'FARMER NAME',
     familyName: 'FAMILY NAME',
     givenName: 'GIVEN NAME',
     middleName: 'MIDDLE NAME',
@@ -2737,6 +2762,7 @@ export const exportCompletePackageExcel = (
 
     const rowObj: Record<string, string | number> = {
       rsbsaNo: p.swineNameOrId || '',
+      farmerName: family && given ? `${family}, ${given}${middle ? ` ${middle}` : ''}` : (p.raiserName || ''),
       familyName: family,
       givenName: given,
       middleName: middle,
@@ -2771,7 +2797,7 @@ export const exportCompletePackageExcel = (
 
   const wsReg = XLSX.utils.aoa_to_sheet(regRows);
   wsReg['!cols'] = colKeys.map((k) => ({
-    wch: k === 'rsbsaNo' ? 22 : k === 'farmLocation' ? 25 : k === 'familyName' || k === 'givenName' ? 18 : 14
+    wch: k === 'rsbsaNo' ? 22 : k === 'farmerName' ? 26 : k === 'farmLocation' ? 25 : k === 'familyName' || k === 'givenName' ? 18 : 14
   }));
   XLSX.utils.book_append_sheet(wb, wsReg, '4-Masterlist Registry');
 

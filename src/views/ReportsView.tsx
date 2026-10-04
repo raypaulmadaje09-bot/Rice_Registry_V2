@@ -123,6 +123,7 @@ const formatBirthday = (bday?: string) => {
 
 export const REGISTRY_COLUMNS = [
   { id: 'rsbsaNo', label: 'RSBSA No.', group: undefined },
+  { id: 'farmerName', label: 'Farmer Name', group: undefined },
   { id: 'familyName', label: 'Family Name', group: 'NAME' },
   { id: 'givenName', label: 'Given Name', group: 'NAME' },
   { id: 'middleName', label: 'Middle Name', group: 'NAME' },
@@ -202,9 +203,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
   // Column visibility for Registry Table
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     rsbsaNo: true,
-    familyName: true,
-    givenName: true,
-    middleName: true,
+    farmerName: true,
+    familyName: false,
+    givenName: false,
+    middleName: false,
     barangay: true,
     municipality: true,
     province: true,
@@ -256,11 +258,22 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
   };
 
   const handleResetColumnsToTemplate = () => {
-    const all: Record<string, boolean> = {};
-    OFFICIAL_REGISTRY_COLUMNS.forEach((col) => {
-      all[col.id] = true;
+    setVisibleColumns({
+      rsbsaNo: true,
+      farmerName: true,
+      familyName: false,
+      givenName: false,
+      middleName: false,
+      barangay: true,
+      municipality: true,
+      province: true,
+      birthday: true,
+      farmLocation: true,
+      latitude: true,
+      longitude: true,
+      farmArea: true,
+      commodity: true
     });
-    setVisibleColumns(all);
     setColumnOrder(OFFICIAL_REGISTRY_COLUMNS.map((c) => c.id));
   };
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
@@ -451,8 +464,13 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
         ? `${p.purok}, Brgy. ${getDisplayBarangay(p.barangay)}`
         : `Brgy. ${getDisplayBarangay(p.barangay)}`;
 
+      const farmerFullName = names.family && names.given
+        ? `${names.family}, ${names.given}${names.middle ? ` ${names.middle}` : ''}`
+        : (p.raiserName || '');
+
       const cells: Record<string, string> = {
         rsbsaNo: p.swineNameOrId || '',
+        farmerName: farmerFullName,
         familyName: names.family || '',
         givenName: names.given || '',
         middleName: names.middle || '',
@@ -542,8 +560,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
           <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
           <style>
             @page {
-              size: ${isLandscape ? 'landscape' : 'portrait'};
-              margin: 0.3in 0.3in 0.4in 0.3in;
+              size: legal landscape;
+              margin: 8mm;
             }
             html, body {
               width: 100% !important;
@@ -561,20 +579,16 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
             table {
               width: 100% !important;
               max-width: 100% !important;
-              table-layout: fixed !important;
               border-collapse: collapse !important;
-              font-size: 7.5pt !important;
+              font-size: 8pt !important;
               line-height: 1.15 !important;
-              word-break: break-word !important;
-              overflow-wrap: break-word !important;
             }
             th, td {
               border: 1px solid #000000 !important;
               color: #000000 !important;
-              padding: 2.5px 1.5px !important;
+              padding: 2px 3px !important;
               box-sizing: border-box !important;
-              word-break: break-word !important;
-              overflow-wrap: break-word !important;
+              vertical-align: middle !important;
             }
             thead {
               display: table-header-group !important;
@@ -584,6 +598,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
             }
             tfoot {
               display: table-footer-group !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
             }
             tr {
               page-break-inside: avoid !important;
@@ -637,6 +653,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
     if (reportType === 'official_registry') {
       const colKeys = [
         'rsbsaNo',
+        'farmerName',
         'familyName',
         'givenName',
         'middleName',
@@ -653,6 +670,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
 
       const headerLabels: Record<string, string> = {
         rsbsaNo: 'RSBSA NO.',
+        farmerName: 'FARMER NAME',
         familyName: 'FAMILY NAME',
         givenName: 'GIVEN NAME',
         middleName: 'MIDDLE NAME',
@@ -673,9 +691,13 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
         const { family, given, middle } = parseFarmerName(p);
         const bday = formatBirthday(p.birthday);
         const farmLoc = (p.farmLocation || p.barangay).toUpperCase();
+        const farmerFullName = family && given
+          ? `${family}, ${given}${middle ? ` ${middle}` : ''}`
+          : (p.raiserName || '-');
 
         const valMap: Record<string, string | number> = {
           rsbsaNo: `"${p.swineNameOrId || 'NO RSBSA'}"`,
+          farmerName: `"${farmerFullName}"`,
           familyName: `"${family}"`,
           givenName: `"${given}"`,
           middleName: `"${middle}"`,
@@ -940,12 +962,12 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
           @page {
             size: ${
               paperSize === 'folio'
-                ? '8.5in 13in'
+                ? 'legal landscape'
                 : paperSize === 'letter'
-                ? '8.5in 11in'
-                : '210mm 297mm'
-            } ${orientation === 'landscape' ? 'landscape' : 'portrait'};
-            margin: ${margins === 'narrow' ? '0.25in' : margins === 'wide' ? '0.75in' : '0.5in'};
+                ? 'letter landscape'
+                : 'A4 landscape'
+            };
+            margin: ${margins === 'narrow' ? '5mm' : margins === 'wide' ? '12mm' : '8mm'};
           }
           html, body, #root {
             height: auto !important;
@@ -981,7 +1003,21 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
             break-before: page !important;
           }
           table {
+            width: 100% !important;
+            max-width: 100% !important;
+            border-collapse: collapse !important;
             page-break-inside: auto;
+          }
+          thead {
+            display: table-header-group !important;
+          }
+          tbody {
+            display: table-row-group !important;
+          }
+          tfoot {
+            display: table-footer-group !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
           tr, td, th {
             page-break-inside: avoid !important;
@@ -1444,10 +1480,16 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
             <div className="flex flex-col flex-1 justify-between min-h-full">
               {/* Government Official Header with 3 Seals Center-Aligned */}
               <div className="text-center border-b-2 border-slate-900 pb-5 mb-5 space-y-2">
-                <div className="flex items-center justify-center gap-4 mb-2">
-                  <DaLogo className="w-14 h-14 object-contain drop-shadow-xs" />
-                  <SilagoSeal className="w-14 h-14 object-contain drop-shadow-xs" />
-                  <BagOngSilagoLogo className="w-14 h-14 object-contain drop-shadow-xs" />
+                <div className="flex items-center justify-center gap-6 mb-2">
+                  <div className="h-16 w-auto max-w-[70px] flex items-center justify-center">
+                    <BagongPilipinasLogo size={58} showText={true} className="h-16 w-auto max-w-[70px] object-contain drop-shadow-xs" />
+                  </div>
+                  <div className="h-16 w-auto max-w-[70px] flex items-center justify-center">
+                    <SilagoSeal size={58} className="h-16 w-auto max-w-[70px] object-contain drop-shadow-xs" />
+                  </div>
+                  <div className="h-16 w-auto max-w-[70px] flex items-center justify-center">
+                    <DaLogo size={58} className="h-16 w-auto max-w-[70px] object-contain drop-shadow-xs" />
+                  </div>
                 </div>
 
                 <div className="space-y-0.5">

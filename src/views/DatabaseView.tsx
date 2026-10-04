@@ -214,6 +214,20 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
     return { family, given, middle };
   };
 
+  const getFarmerDisplayName = (parcel: FarmParcel): string => {
+    if (parcel.farmerFamilyName && parcel.farmerGivenName) {
+      const fam = parcel.farmerFamilyName.trim().toUpperCase();
+      const giv = parcel.farmerGivenName.trim();
+      const mid = parcel.farmerMiddleName ? ` ${parcel.farmerMiddleName.trim()}` : '';
+      const suf = (parcel as any).farmerSuffix || (parcel as any).suffix ? ` ${(parcel as any).farmerSuffix || (parcel as any).suffix}` : '';
+      return `${fam}, ${giv}${mid}${suf}`.trim();
+    }
+    if (parcel.raiserName && parcel.raiserName.trim()) {
+      return parcel.raiserName.trim();
+    }
+    return 'UNNAMED FARMER';
+  };
+
   // Extract unique rice varieties
   const uniqueVarieties = useMemo(() => {
     const set = new Set<string>();
@@ -912,7 +926,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
       <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
         {/* Scrollable Container with Sticky Header, Sticky Left Columns, and Visible Scrollbar */}
         <div className="custom-table-scrollbar w-full overflow-x-auto overflow-y-auto max-h-[calc(100vh-240px)] min-h-[400px] divide-y divide-slate-100 relative">
-          <table className="w-full min-w-[1600px] text-left border-collapse text-xs">
+          <table className="w-full min-w-[1350px] text-left border-collapse text-xs">
             <thead className="sticky top-0 z-20 bg-[#0c2340] text-white shadow-xs">
               <tr className="border-b border-[#08182b] text-[10px] font-bold uppercase tracking-wider">
                 {/* 0. MULTI-SELECT CHECKBOX (Frozen Left 0) */}
@@ -932,72 +946,47 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                   RSBSA NO.
                 </th>
 
-                {/* 2. PROFILE PHOTO */}
+                {/* 2. PROFILE */}
                 <th className="sticky top-0 z-20 bg-[#0c2340] w-[64px] min-w-[64px] max-w-[64px] py-3 px-2 text-center whitespace-nowrap text-white border-b border-[#08182b]">
                   PROFILE
                 </th>
 
-                {/* 3. FAMILY NAME */}
-                <th className="sticky top-0 z-20 bg-[#0c2340] w-[125px] min-w-[125px] max-w-[125px] py-3 px-3.5 text-left whitespace-nowrap text-white border-b border-[#08182b]">
-                  FAMILY NAME
+                {/* 3. FARMER NAME */}
+                <th className="sticky top-0 z-20 bg-[#0c2340] w-[200px] min-w-[200px] py-3 px-3.5 text-left whitespace-nowrap text-white border-b border-[#08182b]">
+                  FARMER NAME
                 </th>
 
-                {/* 4. GIVEN NAME */}
-                <th className="sticky top-0 z-20 bg-[#0c2340] w-[125px] min-w-[125px] max-w-[125px] py-3 px-3.5 text-left whitespace-nowrap text-white border-b border-[#08182b]">
-                  GIVEN NAME
-                </th>
-
-                {/* 5. MIDDLE NAME */}
-                <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3 text-left whitespace-nowrap text-white border-b border-[#08182b] w-[100px] min-w-[100px]">
-                  MIDDLE NAME
-                </th>
-
-                {/* 6. FIELD PHOTO */}
-                <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-2 text-center whitespace-nowrap text-white border-b border-[#08182b] w-[80px] min-w-[80px]">
-                  FIELD PHOTO
-                </th>
-
-                {/* 7. BARANGAY */}
-                <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3.5 text-left whitespace-nowrap text-white border-b border-[#08182b] w-[125px] min-w-[125px]">
-                  BARANGAY
-                </th>
-
-                {/* 8. PUROK */}
-                <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-2.5 text-left whitespace-nowrap text-white border-b border-[#08182b] w-[90px] min-w-[90px]">
-                  PUROK
-                </th>
-
-                {/* 9. RESIDENTIAL ADDRESS */}
-                <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3.5 text-left whitespace-nowrap text-white border-b border-[#08182b] w-[150px] min-w-[150px]">
+                {/* 4. RESIDENTIAL ADDRESS */}
+                <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3.5 text-left whitespace-nowrap text-white border-b border-[#08182b] w-[180px] min-w-[180px]">
                   RESIDENTIAL ADDRESS
                 </th>
 
-                {/* 10. BIRTHDAY */}
+                {/* 5. BIRTHDAY */}
                 <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3 text-center whitespace-nowrap text-white border-b border-[#08182b] w-[100px] min-w-[100px]">
                   BIRTHDAY
                 </th>
 
-                {/* 11. FARM LOCATION */}
-                <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3.5 text-left whitespace-nowrap text-white border-b border-[#08182b] w-[140px] min-w-[140px]">
-                  FARM LOCATION
+                {/* 6. FARM AREA (HA) */}
+                <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3 text-right whitespace-nowrap text-white border-b border-[#08182b] w-[110px] min-w-[110px]">
+                  FARM AREA (HA)
                 </th>
 
-                {/* 12. GPS COORDINATES */}
+                {/* 7. COMMODITY / VARIETY */}
+                <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3.5 text-left whitespace-nowrap text-white border-b border-[#08182b] w-[180px] min-w-[180px]">
+                  COMMODITY / VARIETY
+                </th>
+
+                {/* 8. GPS COORDINATES */}
                 <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3.5 text-center whitespace-nowrap text-white border-b border-[#08182b] w-[160px] min-w-[160px]">
                   GPS COORDINATES
                 </th>
 
-                {/* 13. FARM AREA (ha) */}
-                <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3 text-right whitespace-nowrap text-white border-b border-[#08182b] w-[110px] min-w-[110px]">
-                  FARM AREA (ha)
-                </th>
-
-                {/* 14. COMMODITY PLANTED */}
+                {/* 9. FARM LOCATION (Basakan) */}
                 <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3.5 text-left whitespace-nowrap text-white border-b border-[#08182b] w-[180px] min-w-[180px]">
-                  COMMODITY PLANTED
+                  FARM LOCATION (Basakan)
                 </th>
 
-                {/* 15. ACTIONS (Sticky Right) */}
+                {/* 10. ACTIONS (Sticky Right) */}
                 <th className="sticky top-0 right-0 z-30 bg-[#0c2340] py-3 px-3.5 text-center whitespace-nowrap shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.3)] border-b border-[#08182b] text-white w-[115px] min-w-[115px]">
                   ACTIONS
                 </th>
@@ -1006,7 +995,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
             <tbody className="divide-y divide-slate-200/80 text-slate-700 bg-white">
               {filteredParcels.length === 0 ? (
                 <tr>
-                  <td colSpan={16} className="py-14 text-center text-slate-400 font-medium">
+                  <td colSpan={11} className="py-14 text-center text-slate-400 font-medium">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <Search className="w-8 h-8 text-slate-300 stroke-1" />
                       <p className="text-sm font-semibold text-slate-700">
@@ -1100,125 +1089,58 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                           </div>
                         </td>
 
-                        {/* 3. FAMILY NAME */}
-                        <td className="w-[125px] min-w-[125px] max-w-[125px] py-2.5 px-2 text-left whitespace-nowrap bg-amber-50">
-                          <input
-                            type="text"
-                            value={inlineEditData.farmerFamilyName}
-                            onChange={(e) =>
-                              setInlineEditData({ ...inlineEditData, farmerFamilyName: e.target.value })
-                            }
-                            className="w-full max-w-[115px] px-1.5 py-1 bg-white border border-slate-300 rounded text-xs font-bold uppercase text-slate-900 focus:ring-2 focus:ring-blue-600 shadow-2xs"
-                            placeholder="Last Name"
-                          />
-                        </td>
-
-                        {/* 4. GIVEN NAME */}
-                        <td className="w-[125px] min-w-[125px] max-w-[125px] py-2.5 px-2 text-left whitespace-nowrap bg-amber-50">
-                          <input
-                            type="text"
-                            value={inlineEditData.farmerGivenName}
-                            onChange={(e) =>
-                              setInlineEditData({ ...inlineEditData, farmerGivenName: e.target.value })
-                            }
-                            className="w-full max-w-[115px] px-1.5 py-1 bg-white border border-slate-300 rounded text-xs font-medium text-slate-900 focus:ring-2 focus:ring-blue-600 shadow-2xs"
-                            placeholder="First Name"
-                          />
-                        </td>
-
-                        {/* 5. MIDDLE NAME */}
-                        <td className="py-2.5 px-2 text-left whitespace-nowrap w-[100px] min-w-[100px] bg-amber-50">
-                          <input
-                            type="text"
-                            value={inlineEditData.farmerMiddleName}
-                            onChange={(e) =>
-                              setInlineEditData({ ...inlineEditData, farmerMiddleName: e.target.value })
-                            }
-                            className="w-20 px-1.5 py-1 bg-white border border-slate-300 rounded text-xs text-slate-700 focus:ring-2 focus:ring-blue-600 shadow-2xs"
-                            placeholder="Middle"
-                          />
-                        </td>
-
-                        {/* 6. FIELD PHOTO */}
-                        <td className="py-2 px-2 text-center whitespace-nowrap w-[80px] min-w-[80px] bg-amber-50">
-                          <div className="flex flex-col items-center gap-0.5">
-                            <SafeImage
-                              src={inlineEditData.fieldPhotoUrl || landPhoto}
-                              alt="Farm Field"
-                              fallbackType="field"
-                              className="w-9 h-7 rounded object-cover border border-blue-400 shadow-2xs"
+                        {/* 3. FARMER NAME */}
+                        <td className="w-[200px] min-w-[200px] py-2 px-2 text-left whitespace-nowrap bg-amber-50">
+                          <div className="flex flex-col gap-1">
+                            <input
+                              type="text"
+                              value={inlineEditData.farmerFamilyName}
+                              onChange={(e) =>
+                                setInlineEditData({ ...inlineEditData, farmerFamilyName: e.target.value })
+                              }
+                              className="w-full px-1.5 py-1 bg-white border border-slate-300 rounded text-xs font-bold uppercase text-slate-900 focus:ring-2 focus:ring-blue-600 shadow-2xs"
+                              placeholder="Family Name"
+                              title="Family Name"
                             />
-                            <label className="text-[9px] font-bold text-blue-700 hover:text-blue-900 underline cursor-pointer">
-                              Change
+                            <div className="flex gap-1">
                               <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(e) => handlePhotoFileChange(e, 'field')}
+                                type="text"
+                                value={inlineEditData.farmerGivenName}
+                                onChange={(e) =>
+                                  setInlineEditData({ ...inlineEditData, farmerGivenName: e.target.value })
+                                }
+                                className="w-1/2 px-1.5 py-0.5 bg-white border border-slate-300 rounded text-[11px] font-medium text-slate-900 focus:ring-2 focus:ring-blue-600 shadow-2xs"
+                                placeholder="Given Name"
+                                title="Given Name"
                               />
-                            </label>
+                              <input
+                                type="text"
+                                value={inlineEditData.farmerMiddleName}
+                                onChange={(e) =>
+                                  setInlineEditData({ ...inlineEditData, farmerMiddleName: e.target.value })
+                                }
+                                className="w-1/2 px-1.5 py-0.5 bg-white border border-slate-300 rounded text-[11px] text-slate-700 focus:ring-2 focus:ring-blue-600 shadow-2xs"
+                                placeholder="Middle Name"
+                                title="Middle Name"
+                              />
+                            </div>
                           </div>
                         </td>
 
-                        {/* 7. BARANGAY */}
-                        <td className="py-2.5 px-2.5 text-left whitespace-nowrap w-[125px] min-w-[125px] bg-amber-50">
-                          <select
-                            value={inlineEditData.barangay}
-                            onChange={(e) =>
-                              setInlineEditData({ ...inlineEditData, barangay: e.target.value })
-                            }
-                            className="px-2 py-1 bg-white border border-slate-300 rounded text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-blue-600 shadow-2xs cursor-pointer"
-                          >
-                            {BARANGAYS.map((b) => (
-                              <option key={b.name} value={b.name}>
-                                {getDisplayBarangay(b.name)}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-
-                        {/* 8. PUROK */}
-                        <td className="py-2.5 px-2 text-left whitespace-nowrap w-[90px] min-w-[90px] bg-amber-50">
-                          <select
-                            value={inlineEditData.purok}
-                            onChange={(e) =>
-                              setInlineEditData({ ...inlineEditData, purok: e.target.value })
-                            }
-                            className="px-2 py-1 bg-white border border-slate-300 rounded text-xs text-slate-800 focus:ring-2 focus:ring-blue-600 shadow-2xs cursor-pointer"
-                          >
-                            {[
-                              'Purok 1',
-                              'Purok 2',
-                              'Purok 3',
-                              'Purok 4',
-                              'Purok 5',
-                              'Purok 6',
-                              'Purok 7',
-                              'Sitio Centro',
-                              'Sitio Riverside',
-                              'Sitio Upper'
-                            ].map((p) => (
-                              <option key={p} value={p}>
-                                {p}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-
-                        {/* 9. RESIDENTIAL ADDRESS */}
-                        <td className="py-2.5 px-2.5 text-left whitespace-nowrap w-[150px] min-w-[150px] bg-amber-50">
+                        {/* 4. RESIDENTIAL ADDRESS */}
+                        <td className="py-2.5 px-2.5 text-left whitespace-nowrap w-[180px] min-w-[180px] bg-amber-50">
                           <input
                             type="text"
                             value={inlineEditData.residentialAddress}
                             onChange={(e) =>
                               setInlineEditData({ ...inlineEditData, residentialAddress: e.target.value })
                             }
-                            className="w-32 px-2 py-1 bg-white border border-slate-300 rounded text-xs text-slate-700 focus:ring-2 focus:ring-blue-600 shadow-2xs"
+                            className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs text-slate-700 focus:ring-2 focus:ring-blue-600 shadow-2xs"
                             placeholder="Silago, Southern Leyte"
                           />
                         </td>
 
-                        {/* 10. BIRTHDAY */}
+                        {/* 5. BIRTHDAY */}
                         <td className="py-2.5 px-2 text-center whitespace-nowrap w-[100px] min-w-[100px] bg-amber-50">
                           <input
                             type="text"
@@ -1231,22 +1153,55 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                           />
                         </td>
 
-                        {/* 11. FARM LOCATION */}
-                        <td className="py-2.5 px-2.5 text-left whitespace-nowrap w-[140px] min-w-[140px] bg-amber-50">
+                        {/* 6. FARM AREA (HA) */}
+                        <td className="py-2.5 px-2.5 text-right whitespace-nowrap w-[110px] min-w-[110px] bg-amber-50">
                           <input
-                            type="text"
-                            value={inlineEditData.farmLocation}
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={inlineEditData.weightKg}
                             onChange={(e) =>
-                              setInlineEditData({ ...inlineEditData, farmLocation: e.target.value })
+                              setInlineEditData({
+                                ...inlineEditData,
+                                weightKg: parseFloat(e.target.value) || 0
+                              })
                             }
-                            className="w-32 px-2 py-1 bg-white border border-slate-300 rounded text-xs text-slate-800 focus:ring-2 focus:ring-blue-600 shadow-2xs"
-                            placeholder="Sitio / Brgy"
+                            className="w-20 px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono font-bold text-right text-slate-900 focus:ring-2 focus:ring-blue-600 shadow-2xs"
+                            placeholder="0.25"
                           />
                         </td>
 
-                        {/* 12. GPS COORDINATES */}
+                        {/* 7. COMMODITY / VARIETY */}
+                        <td className="py-2.5 px-2.5 text-left whitespace-nowrap w-[180px] min-w-[180px] bg-amber-50">
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="text"
+                              value={inlineEditData.commodity}
+                              onChange={(e) =>
+                                setInlineEditData({ ...inlineEditData, commodity: e.target.value })
+                              }
+                              className="w-14 px-1.5 py-1 bg-white border border-slate-300 rounded text-xs font-semibold focus:ring-2 focus:ring-blue-600 shadow-2xs"
+                              placeholder="Rice"
+                            />
+                            <select
+                              value={inlineEditData.breed}
+                              onChange={(e) =>
+                                setInlineEditData({ ...inlineEditData, breed: e.target.value })
+                              }
+                              className="w-28 px-1.5 py-1 bg-white border border-slate-300 rounded text-xs font-medium focus:ring-2 focus:ring-blue-600 shadow-2xs cursor-pointer"
+                            >
+                              {RICE_VARIETIES.map((rv) => (
+                                <option key={rv.name} value={rv.name}>
+                                  {rv.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </td>
+
+                        {/* 8. GPS COORDINATES */}
                         <td className="py-2.5 px-2 text-center whitespace-nowrap w-[160px] min-w-[160px] bg-amber-50">
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center justify-center gap-1">
                             <input
                               type="number"
                               step="0.000001"
@@ -1279,54 +1234,36 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                           </div>
                         </td>
 
-                        {/* 13. FARM AREA (ha) */}
-                        <td className="py-2.5 px-2.5 text-right whitespace-nowrap w-[110px] min-w-[110px] bg-amber-50">
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={inlineEditData.weightKg}
-                            onChange={(e) =>
-                              setInlineEditData({
-                                ...inlineEditData,
-                                weightKg: parseFloat(e.target.value) || 0
-                              })
-                            }
-                            className="w-20 px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono font-bold text-right text-slate-900 focus:ring-2 focus:ring-blue-600 shadow-2xs"
-                            placeholder="0.25"
-                          />
-                        </td>
-
-                        {/* 14. COMMODITY PLANTED */}
+                        {/* 9. FARM LOCATION (Basakan) */}
                         <td className="py-2.5 px-2.5 text-left whitespace-nowrap w-[180px] min-w-[180px] bg-amber-50">
-                          <div className="flex items-center gap-1.5">
-                            <input
-                              type="text"
-                              value={inlineEditData.commodity}
-                              onChange={(e) =>
-                                setInlineEditData({ ...inlineEditData, commodity: e.target.value })
-                              }
-                              className="w-16 px-1.5 py-1 bg-white border border-slate-300 rounded text-xs font-semibold focus:ring-2 focus:ring-blue-600 shadow-2xs"
-                              placeholder="Rice"
-                            />
+                          <div className="flex flex-col gap-1">
                             <select
-                              value={inlineEditData.breed}
+                              value={inlineEditData.barangay}
                               onChange={(e) =>
-                                setInlineEditData({ ...inlineEditData, breed: e.target.value })
+                                setInlineEditData({ ...inlineEditData, barangay: e.target.value })
                               }
-                              className="w-28 px-1.5 py-1 bg-white border border-slate-300 rounded text-xs font-medium focus:ring-2 focus:ring-blue-600 shadow-2xs cursor-pointer"
+                              className="w-full px-1.5 py-1 bg-white border border-slate-300 rounded text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-blue-600 shadow-2xs cursor-pointer"
                             >
-                              {RICE_VARIETIES.map((rv) => (
-                                <option key={rv.name} value={rv.name}>
-                                  {rv.name}
+                              {BARANGAYS.map((b) => (
+                                <option key={b.name} value={b.name}>
+                                  {getDisplayBarangay(b.name)}
                                 </option>
                               ))}
                             </select>
+                            <input
+                              type="text"
+                              value={inlineEditData.purok}
+                              onChange={(e) =>
+                                setInlineEditData({ ...inlineEditData, purok: e.target.value })
+                              }
+                              className="w-full px-1.5 py-0.5 bg-white border border-slate-300 rounded text-[11px] text-slate-800 focus:ring-2 focus:ring-blue-600 shadow-2xs"
+                              placeholder="Purok / Sitio"
+                            />
                           </div>
                         </td>
 
-                        {/* 15. ACTIONS (Save & Cancel - Sticky Right) */}
-                        <td className="py-2 px-3 text-center whitespace-nowrap sticky right-0 z-10 bg-amber-50 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] w-[90px] min-w-[90px]">
+                        {/* 10. ACTIONS (Save & Cancel - Sticky Right) */}
+                        <td className="py-2 px-3 text-center whitespace-nowrap sticky right-0 z-10 bg-amber-50 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] w-[115px] min-w-[115px]">
                           <div className="flex items-center justify-center gap-1.5">
                             <button
                               type="button"
@@ -1420,88 +1357,33 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                         </button>
                       </td>
 
-                      {/* 3. FAMILY NAME */}
+                      {/* 3. FARMER NAME */}
                       <td
-                        className="w-[125px] min-w-[125px] max-w-[125px] py-2.5 px-3 whitespace-nowrap font-bold text-slate-900 text-xs uppercase truncate"
-                        title={nameParts.family || '-'}
+                        className="w-[200px] min-w-[200px] py-2.5 px-3.5 whitespace-nowrap font-bold text-slate-900 text-xs uppercase truncate"
+                        title={getFarmerDisplayName(parcel)}
                       >
-                        {nameParts.family || '-'}
+                        {getFarmerDisplayName(parcel)}
                       </td>
 
-                      {/* 4. GIVEN NAME */}
+                      {/* 4. RESIDENTIAL ADDRESS */}
                       <td
-                        className="w-[125px] min-w-[125px] max-w-[125px] py-2.5 px-3 whitespace-nowrap font-medium text-slate-800 text-xs truncate"
-                        title={nameParts.given || '-'}
+                        className="py-2.5 px-3.5 whitespace-nowrap text-slate-600 text-xs w-[180px] min-w-[180px] truncate"
+                        title={parcel.residential_address || parcel.address || (parcel.barangay ? `${getDisplayBarangay(parcel.barangay)}, Silago, Southern Leyte` : 'Silago, Southern Leyte')}
                       >
-                        {nameParts.given || '-'}
+                        {parcel.residential_address || parcel.address || (parcel.barangay ? `${getDisplayBarangay(parcel.barangay)}, Silago, Southern Leyte` : 'Silago, Southern Leyte')}
                       </td>
 
-                      {/* 5. MIDDLE NAME */}
-                      <td className="py-2.5 px-3 whitespace-nowrap text-slate-600 text-xs w-[100px] min-w-[100px]">
-                        {nameParts.middle || '-'}
-                      </td>
-
-                      {/* 6. FIELD PHOTO */}
-                      <td className="py-2 px-2 text-center whitespace-nowrap w-[80px] min-w-[80px]">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPhotoPreview({
-                              isOpen: true,
-                              photoUrl: landPhoto,
-                              photoType: 'field',
-                              parcel
-                            });
-                          }}
-                          className="relative inline-block group/land p-0.5 rounded-lg border-2 border-slate-200 hover:border-emerald-500 hover:scale-115 active:scale-95 transition-all duration-150 cursor-pointer shadow-2xs hover:shadow-md"
-                          title="Click to view full field photo"
-                        >
-                          <SafeImage
-                            src={landPhoto}
-                            alt={`Farm field ${parcel.swineNameOrId}`}
-                            fallbackType="field"
-                            className="w-9 h-7 rounded-md object-cover transition-transform group-hover/land:brightness-105"
-                          />
-                        </button>
-                      </td>
-
-                      {/* 7. BARANGAY (e.g. Balagawan) */}
-                      <td className="py-2.5 px-3.5 whitespace-nowrap text-slate-900 font-semibold text-xs w-[125px] min-w-[125px]">
-                        {getDisplayBarangay(parcel.barangay) || parcel.barangay || '-'}
-                      </td>
-
-                      {/* 8. PUROK (e.g. Purok 1) */}
-                      <td className="py-2.5 px-2.5 whitespace-nowrap text-slate-700 text-xs w-[90px] min-w-[90px]">
-                        {parcel.purok || 'Purok 1'}
-                      </td>
-
-                      {/* 9. RESIDENTIAL ADDRESS (Municipality & Province: Silago, Southern Leyte) */}
-                      <td className="py-2.5 px-3.5 whitespace-nowrap text-slate-600 text-xs w-[150px] min-w-[150px]" title={parcel.residential_address || parcel.address || 'Silago, Southern Leyte'}>
-                        {parcel.residential_address || parcel.address || 'Silago, Southern Leyte'}
-                      </td>
-
-                      {/* 10. BIRTHDAY (MM/DD/YYYY format) */}
+                      {/* 5. BIRTHDAY (MM/DD/YYYY format) */}
                       <td className="py-2.5 px-3 text-center whitespace-nowrap font-mono text-slate-700 text-xs w-[100px] min-w-[100px]">
                         {birthdayFormatted}
                       </td>
 
-                      {/* 11. FARM LOCATION (Barangay/Sitio) */}
-                      <td className="py-2.5 px-3.5 whitespace-nowrap text-slate-800 text-xs w-[140px] min-w-[140px]">
-                        {farmLocation}
-                      </td>
-
-                      {/* 12. GPS COORDINATES (Latitude & Longitude formatted cleanly) */}
-                      <td className="py-2.5 px-3.5 text-center whitespace-nowrap font-mono text-[11px] text-slate-700 w-[160px] min-w-[160px]">
-                        {parcel.lat ? `${parcel.lat.toFixed(6)}, ${parcel.lng.toFixed(6)}` : '-'}
-                      </td>
-
-                      {/* 13. FARM AREA (ha) (e.g. 0.25 ha) */}
+                      {/* 6. FARM AREA (HA) */}
                       <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono font-bold text-slate-900 text-xs w-[110px] min-w-[110px]">
                         {(parcel.weightKg || 0).toFixed(2)} ha
                       </td>
 
-                      {/* 14. COMMODITY PLANTED (e.g. Rice / Variety) */}
+                      {/* 7. COMMODITY / VARIETY */}
                       <td className="py-2.5 px-3.5 whitespace-nowrap text-slate-800 text-xs w-[180px] min-w-[180px]">
                         <div className="flex items-center gap-1.5">
                           <span className="font-semibold text-slate-900">{parcel.commodity || 'Rice'}</span>
@@ -1510,6 +1392,16 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                             {activeVariety || 'NSIC Rc 222'}
                           </span>
                         </div>
+                      </td>
+
+                      {/* 8. GPS COORDINATES */}
+                      <td className="py-2.5 px-3.5 text-center whitespace-nowrap font-mono text-[11px] text-slate-700 w-[160px] min-w-[160px]">
+                        {parcel.lat ? `${parcel.lat.toFixed(6)}, ${parcel.lng.toFixed(6)}` : '-'}
+                      </td>
+
+                      {/* 9. FARM LOCATION (Basakan) */}
+                      <td className="py-2.5 px-3.5 whitespace-nowrap font-semibold text-emerald-900 text-xs w-[180px] min-w-[180px]">
+                        {`🌾 Brgy. ${getDisplayBarangay(parcel.barangay) || parcel.barangay}${parcel.purok ? `, ${parcel.purok}` : ''}`}
                       </td>
 
                       {/* 15. ACTIONS: Governed strictly by RBAC & GIS locate */}

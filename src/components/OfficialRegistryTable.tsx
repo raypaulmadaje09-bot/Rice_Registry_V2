@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { FarmParcel, OfficialSignatory } from '../types';
-import { BagongPilipinasLogo, SilagoSeal, SouthernLeyteSeal } from './Seals';
+import { BagongPilipinasLogo, SilagoSeal, SouthernLeyteSeal, DaLogo } from './Seals';
 import { CustomTableData } from './TableEditorModal';
 import { Plus, Trash2, Edit3, CheckCircle2, RotateCcw } from 'lucide-react';
 import { supabaseDb, sortParcelsAlphabetically } from '../utils/supabaseClient';
@@ -103,9 +103,7 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
 
   const DEFAULT_SEQUENCE = [
     'rsbsaNo',
-    'familyName',
-    'givenName',
-    'middleName',
+    'farmerName',
     'barangay',
     'municipality',
     'province',
@@ -122,27 +120,34 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
   const activeOrderedColumns = effectiveOrder.filter((k) => visibleColumns[k]);
 
   const COLUMN_DEF_MAP: Record<string, { label: string; width: string }> = {
-    rsbsaNo: { label: 'RSBSA NO.', width: '11%' },
-    familyName: { label: 'FAMILY NAME', width: '8.5%' },
-    givenName: { label: 'GIVEN NAME', width: '8.5%' },
-    middleName: { label: 'MIDDLE NAME', width: '6.5%' },
-    barangay: { label: 'BARANGAY', width: '7.5%' },
-    municipality: { label: 'MUNICIPALITY', width: '6.5%' },
-    province: { label: 'PROVINCE', width: '7.5%' },
+    rsbsaNo: { label: 'RSBSA NO.', width: '13%' },
+    farmerName: { label: 'FARMER NAME', width: '19%' },
+    familyName: { label: 'FAMILY NAME', width: '8%' },
+    givenName: { label: 'GIVEN NAME', width: '8%' },
+    middleName: { label: 'MIDDLE NAME', width: '6%' },
+    barangay: { label: 'BARANGAY', width: '9%' },
+    municipality: { label: 'MUNICIPALITY', width: '7%' },
+    province: { label: 'PROVINCE', width: '8%' },
     birthday: { label: 'BIRTHDAY', width: '7%' },
-    farmLocation: { label: 'FARM LOCATION', width: '8.5%' },
-    latitude: { label: 'LATITUDE', width: '8.5%' },
-    longitude: { label: 'LONGITUDE', width: '8.5%' },
-    farmArea: { label: 'FARM AREA (ha)', width: '5.5%' },
-    commodity: { label: 'COMMODITY', width: '6.5%' }
+    farmLocation: { label: 'FARM LOCATION', width: '11%' },
+    latitude: { label: 'LATITUDE', width: '8%' },
+    longitude: { label: 'LONGITUDE', width: '8%' },
+    farmArea: { label: 'FARM AREA (ha)', width: '6%' },
+    commodity: { label: 'COMMODITY', width: '6%' }
   };
 
   const renderCellByColId = (colId: string, p: FarmParcel, family: string, given: string, middle: string, bday: string, farmLoc: string) => {
     switch (colId) {
       case 'rsbsaNo':
         return (
-          <td key={colId} className="border border-black px-1.5 py-1 font-mono text-[10px] print:text-[8.5px] font-bold text-center whitespace-nowrap">
+          <td key={colId} className="border border-black px-1.5 py-1 font-mono text-[10px] print:text-[8.5px] font-bold text-center whitespace-nowrap align-middle">
             {p.swineNameOrId || 'NO RSBSA'}
+          </td>
+        );
+      case 'farmerName':
+        return (
+          <td key={colId} className="border border-black px-1.5 py-1 font-bold text-left uppercase break-words align-middle">
+            {family && given ? `${family}, ${given}${middle ? ` ${middle}` : ''}` : (p.raiserName || '-')}
           </td>
         );
       case 'familyName':
@@ -343,6 +348,7 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
   // Number of visible columns before farm area for footer colSpan
   const colsBeforeArea = [
     'rsbsaNo',
+    'farmerName',
     'familyName',
     'givenName',
     'middleName',
@@ -357,6 +363,7 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
 
   const totalVisibleCols = [
     'rsbsaNo',
+    'farmerName',
     'familyName',
     'givenName',
     'middleName',
@@ -375,11 +382,17 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
     <div className="flex flex-col flex-1 justify-between min-h-full space-y-4 text-black font-sans">
       {/* 1. Official Government Letterhead (The 3 Logos Placed Above Republic of the Philippines) */}
       <div className="flex flex-col items-center justify-center pb-3 border-b-2 border-black">
-        {/* 3 Government Logos: Bagong Pilipinas, Province of Southern Leyte, Municipality of Silago */}
-        <div className="flex items-center justify-center gap-6 sm:gap-8 mb-2">
-          <BagongPilipinasLogo size={58} showText={true} />
-          <SouthernLeyteSeal size={62} />
-          <SilagoSeal size={62} />
+        {/* 3 Government Logos: Bagong Pilipinas, Municipal Seal ng Silago, at Department of Agriculture */}
+        <div className="flex items-center justify-center gap-6 mb-2">
+          <div className="h-16 w-auto max-w-[70px] flex items-center justify-center">
+            <BagongPilipinasLogo size={58} showText={true} className="h-16 w-auto max-w-[70px] object-contain" />
+          </div>
+          <div className="h-16 w-auto max-w-[70px] flex items-center justify-center">
+            <SilagoSeal size={58} className="h-16 w-auto max-w-[70px] object-contain" />
+          </div>
+          <div className="h-16 w-auto max-w-[70px] flex items-center justify-center">
+            <DaLogo size={58} className="h-16 w-auto max-w-[70px] object-contain" />
+          </div>
         </div>
 
         {/* Official Header Hierarchy */}
@@ -472,7 +485,7 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
             </tfoot>
           </table>
         ) : (
-        <table className="w-full table-fixed border-collapse border border-black text-black font-sans text-xs print:text-[8pt] print:leading-tight">
+        <table className="w-full border-collapse border border-black text-black font-sans text-[10px] leading-tight print:text-[8pt] print:leading-tight">
           <thead>
             {/* When user reordered columns, render the custom sequence headers */}
             {!isDefaultSequence ? (
@@ -481,7 +494,7 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
                   <th
                     key={colId}
                     style={{ width: COLUMN_DEF_MAP[colId]?.width || 'auto' }}
-                    className="border border-black px-1.5 py-1.5 text-center align-middle font-black text-[10px] print:text-[8pt] uppercase leading-tight bg-white"
+                    className="border border-black px-1.5 py-1 text-center align-middle font-black text-[10px] print:text-[8pt] uppercase leading-tight bg-white"
                   >
                     {COLUMN_DEF_MAP[colId]?.label || colId}
                   </th>
@@ -494,10 +507,20 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
                   {visibleColumns.rsbsaNo && (
                     <th
                       rowSpan={hasAnyGroup ? 2 : 1}
-                      style={{ width: '11%' }}
-                      className="border border-black px-1.5 py-1.5 text-center align-middle font-black text-[10px] print:text-[8pt] uppercase leading-tight bg-white"
+                      style={{ width: '13%' }}
+                      className="border border-black px-1.5 py-1 text-center align-middle font-black text-[10px] print:text-[8pt] uppercase leading-tight bg-white whitespace-nowrap"
                     >
                       RSBSA NO.
+                    </th>
+                  )}
+
+                  {visibleColumns.farmerName && (
+                    <th
+                      rowSpan={hasAnyGroup ? 2 : 1}
+                      style={{ width: '19%' }}
+                      className="border border-black px-1.5 py-1 text-center align-middle font-black text-[10px] print:text-[8pt] uppercase leading-tight bg-white break-words"
+                    >
+                      FARMER NAME
                     </th>
                   )}
 
@@ -523,7 +546,7 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
                     <th
                       rowSpan={hasAnyGroup ? 2 : 1}
                       style={{ width: '7%' }}
-                      className="border border-black px-1 py-1.5 text-center align-middle font-black text-[10px] print:text-[8pt] uppercase leading-tight bg-white"
+                      className="border border-black px-1.5 py-1 text-center align-middle font-black text-[10px] print:text-[8pt] uppercase leading-tight bg-white whitespace-nowrap"
                     >
                       BIRTHDAY
                     </th>
@@ -532,8 +555,8 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
                   {visibleColumns.farmLocation && (
                     <th
                       rowSpan={hasAnyGroup ? 2 : 1}
-                      style={{ width: '8.5%' }}
-                      className="border border-black px-1 py-1.5 text-center align-middle font-black text-[10px] print:text-[8pt] uppercase leading-tight bg-white"
+                      style={{ width: '11%' }}
+                      className="border border-black px-1.5 py-1 text-center align-middle font-black text-[10px] print:text-[8pt] uppercase leading-tight bg-white break-words"
                     >
                       FARM<br />LOCATION
                     </th>
@@ -551,8 +574,8 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
                   {visibleColumns.farmArea && (
                     <th
                       rowSpan={hasAnyGroup ? 2 : 1}
-                      style={{ width: '5.5%' }}
-                      className="border border-black px-1 py-1.5 text-center align-middle font-black text-[10px] print:text-[8pt] uppercase leading-tight bg-white"
+                      style={{ width: '6%' }}
+                      className="border border-black px-1.5 py-1 text-center align-middle font-black text-[10px] print:text-[8pt] uppercase leading-tight bg-white whitespace-nowrap"
                     >
                       FARM AREA<br />(ha)
                     </th>
@@ -561,8 +584,8 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
                   {visibleColumns.commodity && (
                     <th
                       rowSpan={hasAnyGroup ? 2 : 1}
-                      style={{ width: '6.5%' }}
-                      className="border border-black px-1 py-1.5 text-center align-middle font-black text-[10px] print:text-[8pt] uppercase leading-tight bg-white"
+                      style={{ width: '6%' }}
+                      className="border border-black px-1.5 py-1 text-center align-middle font-black text-[10px] print:text-[8pt] uppercase leading-tight bg-white whitespace-nowrap"
                     >
                       COMMODITY<br />PLANTED
                     </th>
@@ -573,44 +596,44 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
                 {hasAnyGroup && (
                   <tr className="bg-white text-center font-bold">
                     {visibleColumns.familyName && (
-                      <th style={{ width: '8.5%' }} className="border border-black px-1 py-1 text-center align-middle font-bold text-[9.5px] print:text-[7.5pt] uppercase leading-tight bg-white">
+                      <th style={{ width: '8%' }} className="border border-black px-1 py-1 text-center align-middle font-bold text-[9.5px] print:text-[7.5pt] uppercase leading-tight bg-white">
                         FAMILY<br />NAME
                       </th>
                     )}
                     {visibleColumns.givenName && (
-                      <th style={{ width: '8.5%' }} className="border border-black px-1 py-1 text-center align-middle font-bold text-[9.5px] print:text-[7.5pt] uppercase leading-tight bg-white">
+                      <th style={{ width: '8%' }} className="border border-black px-1 py-1 text-center align-middle font-bold text-[9.5px] print:text-[7.5pt] uppercase leading-tight bg-white">
                         GIVEN<br />NAME
                       </th>
                     )}
                     {visibleColumns.middleName && (
-                      <th style={{ width: '6.5%' }} className="border border-black px-1 py-1 text-center align-middle font-bold text-[9.5px] print:text-[7.5pt] uppercase leading-tight bg-white">
+                      <th style={{ width: '6%' }} className="border border-black px-1 py-1 text-center align-middle font-bold text-[9.5px] print:text-[7.5pt] uppercase leading-tight bg-white">
                         MIDDLE<br />NAME
                       </th>
                     )}
 
                     {visibleColumns.barangay && (
-                      <th style={{ width: '7.5%' }} className="border border-black px-1 py-1 text-center align-middle font-bold text-[9.5px] print:text-[7.5pt] uppercase leading-tight bg-white">
+                      <th style={{ width: '9%' }} className="border border-black px-1 py-1 text-center align-middle font-bold text-[9.5px] print:text-[7.5pt] uppercase leading-tight bg-white whitespace-nowrap">
                         BARANGAY
                       </th>
                     )}
                     {visibleColumns.municipality && (
-                      <th style={{ width: '6.5%' }} className="border border-black px-1 py-1 text-center align-middle font-bold text-[9.5px] print:text-[7.5pt] uppercase leading-tight bg-white">
+                      <th style={{ width: '7%' }} className="border border-black px-1 py-1 text-center align-middle font-bold text-[9.5px] print:text-[7.5pt] uppercase leading-tight bg-white whitespace-nowrap">
                         MUNICIPALITY
                       </th>
                     )}
                     {visibleColumns.province && (
-                      <th style={{ width: '7.5%' }} className="border border-black px-1 py-1 text-center align-middle font-bold text-[9.5px] print:text-[7.5pt] uppercase leading-tight bg-white">
+                      <th style={{ width: '8%' }} className="border border-black px-1 py-1 text-center align-middle font-bold text-[9.5px] print:text-[7.5pt] uppercase leading-tight bg-white whitespace-nowrap">
                         PROVINCE
                       </th>
                     )}
 
                     {visibleColumns.latitude && (
-                      <th style={{ width: '8.5%' }} className="border border-black px-1 py-1 text-center align-middle font-bold text-[9.5px] print:text-[7.5pt] uppercase leading-tight bg-white">
+                      <th style={{ width: '8%' }} className="border border-black px-1 py-1 text-center align-middle font-bold text-[9.5px] print:text-[7.5pt] uppercase leading-tight bg-white whitespace-nowrap">
                         LATITUDE
                       </th>
                     )}
                     {visibleColumns.longitude && (
-                      <th style={{ width: '8.5%' }} className="border border-black px-1 py-1 text-center align-middle font-bold text-[9.5px] print:text-[7.5pt] uppercase leading-tight bg-white">
+                      <th style={{ width: '8%' }} className="border border-black px-1 py-1 text-center align-middle font-bold text-[9.5px] print:text-[7.5pt] uppercase leading-tight bg-white whitespace-nowrap">
                         LONGITUDE
                       </th>
                     )}
@@ -655,6 +678,11 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
                         {p.swineNameOrId || 'NO RSBSA'}
                       </td>
                     )}
+                    {visibleColumns.farmerName && (
+                      <td className="border border-black px-1.5 py-1 font-bold text-left uppercase break-words align-middle">
+                        {family && given ? `${family}, ${given}${middle ? ` ${middle}` : ''}` : (p.raiserName || '-')}
+                      </td>
+                    )}
                     {visibleColumns.familyName && (
                       <td className="border border-black px-1.5 py-1 font-bold text-left uppercase whitespace-nowrap">
                         {family}
@@ -691,7 +719,7 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
                       </td>
                     )}
                     {visibleColumns.farmLocation && (
-                      <td className="border border-black px-1.5 py-1 text-center uppercase whitespace-nowrap">
+                      <td className="border border-black px-1.5 py-1 text-center uppercase break-words">
                         {farmLoc}
                       </td>
                     )}

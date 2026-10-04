@@ -25,6 +25,7 @@ export interface ColumnItem {
 
 export const OFFICIAL_REGISTRY_COLUMNS: ColumnItem[] = [
   { id: 'rsbsaNo', label: 'RSBSA No.', description: 'Official RSBSA Registration reference code' },
+  { id: 'farmerName', label: 'Farmer Name', description: 'Full Farmer Name (Surname, Given Middle Suffix)' },
   { id: 'familyName', label: 'Family Name', group: 'NAME', description: 'Farmer surname / family name' },
   { id: 'givenName', label: 'Given Name', group: 'NAME', description: 'Farmer legal first name' },
   { id: 'middleName', label: 'Middle Name', group: 'NAME', description: 'Farmer middle initial or name' },
