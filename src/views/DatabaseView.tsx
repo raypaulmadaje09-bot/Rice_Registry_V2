@@ -80,7 +80,10 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
     permissions,
     realtimeStatus,
     isRealtimeSyncing,
-    syncWithSupabase
+    syncWithSupabase,
+    offlineQueueCount,
+    syncOfflineQueue,
+    isOnline
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
@@ -600,10 +603,10 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
             {/* Supabase Realtime Sync Badge */}
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 border border-slate-200 text-slate-700">
               <span className={`w-2 h-2 rounded-full ${
-                realtimeStatus === 'connected' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+                !isOnline ? 'bg-amber-500' : realtimeStatus === 'connected' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
               }`} />
               <span>
-                {realtimeStatus === 'connected' ? 'Supabase Realtime: Live Synced' : `Realtime: ${realtimeStatus}`}
+                {!isOnline ? 'Offline Mode' : realtimeStatus === 'connected' ? 'Supabase Realtime: Live Synced' : `Realtime: ${realtimeStatus}`}
               </span>
               <button
                 type="button"
@@ -615,6 +618,23 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                 {isRealtimeSyncing ? 'Syncing...' : 'Sync Now'}
               </button>
             </div>
+
+            {/* Offline Pending Records Badge & Sync Button */}
+            {offlineQueueCount > 0 && (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 border border-amber-200 text-amber-800 shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                <span>{offlineQueueCount} offline record{offlineQueueCount > 1 ? 's' : ''} queued</span>
+                <button
+                  type="button"
+                  onClick={() => syncOfflineQueue()}
+                  disabled={!isOnline}
+                  className="ml-1 px-1.5 py-0.5 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white rounded text-[10px] font-bold transition cursor-pointer"
+                  title="Upload queued offline records to cloud database"
+                >
+                  Upload Queue
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
@@ -1448,7 +1468,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
 
                       {/* 7. BARANGAY (e.g. Balagawan) */}
                       <td className="py-2.5 px-3.5 whitespace-nowrap text-slate-900 font-semibold text-xs w-[125px] min-w-[125px]">
-                        {getDisplayBarangay(parcel.barangay)}
+                        {getDisplayBarangay(parcel.barangay) || parcel.barangay || '-'}
                       </td>
 
                       {/* 8. PUROK (e.g. Purok 1) */}
@@ -1457,8 +1477,8 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                       </td>
 
                       {/* 9. RESIDENTIAL ADDRESS (Municipality & Province: Silago, Southern Leyte) */}
-                      <td className="py-2.5 px-3.5 whitespace-nowrap text-slate-600 text-xs w-[150px] min-w-[150px]">
-                        Silago, Southern Leyte
+                      <td className="py-2.5 px-3.5 whitespace-nowrap text-slate-600 text-xs w-[150px] min-w-[150px]" title={parcel.residential_address || parcel.address || 'Silago, Southern Leyte'}>
+                        {parcel.residential_address || parcel.address || 'Silago, Southern Leyte'}
                       </td>
 
                       {/* 10. BIRTHDAY (MM/DD/YYYY format) */}

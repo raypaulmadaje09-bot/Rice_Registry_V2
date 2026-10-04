@@ -142,8 +142,8 @@ export function mapFarmerRowToParcel(row: any): FarmParcel {
   const farmerMiddleName = (row.farmer_middle_name || row.farmerMiddleName || row.middle_name || parsed.middle || '').trim();
 
   const areaHa = Number(row.farm_area_ha ?? row.farmAreaHa ?? row.area_ha ?? row.areaHa ?? row.weight_kg ?? row.weightKg ?? 1.25);
-  const barangay = row.barangay || 'Salvacion';
-  const residentialAddress = row.residential_address || row.residentialAddress || row.address || 'Silago, Southern Leyte';
+  const barangay = (row.barangay || '').trim();
+  const residentialAddress = (row.residential_address || row.residentialAddress || row.address || (barangay ? `${barangay}, Silago, Southern Leyte` : 'Silago, Southern Leyte')).trim();
   const rsbsaNo = String(
     row.rsbsa_number ||
     row.rsbsaNumber ||
@@ -843,10 +843,32 @@ export async function syncOfflinePendingFarms(): Promise<{
         const { error: fErr } = await supabaseClient
           .from('farmers')
           .upsert(farmerPayload, { onConflict: 'id' });
-        if (!fErr) success = true;
+        if (!fErr) {
+          success = true;
+        } else {
+          // Schema fallback to core columns
+          const corePayload = {
+            id: farmerPayload.id,
+            rsbsa_number: farmerPayload.rsbsa_number,
+            farmer_name: farmerPayload.farmer_name,
+            barangay: farmerPayload.barangay,
+            contact_number: farmerPayload.contact_number,
+            lat: farmerPayload.lat,
+            lng: farmerPayload.lng,
+            area_ha: farmerPayload.area_ha
+          };
+          const { error: coreErr } = await supabaseClient
+            .from('farmers')
+            .upsert(corePayload, { onConflict: 'id' });
+          if (!coreErr) success = true;
+        }
       } catch {}
 
       if (success) {
+        try {
+          await supabaseClient.from('farms').upsert(farmPayload, { onConflict: 'id' });
+        } catch {}
+
         syncedCount++;
         const syncedParcel: FarmParcel = {
           ...parcel,
@@ -928,16 +950,19 @@ export function sanitizeFarmerPayload(parcel: FarmParcel) {
       ? norm.field_photo_url
       : null;
 
+  const exactBarangay = (parcel.barangay || norm.barangay || '').trim();
+  const exactAddress = (parcel.residential_address || parcel.address || norm.residential_address || norm.address || (exactBarangay ? `${exactBarangay}, Silago, Southern Leyte` : 'Silago, Southern Leyte')).trim();
+
   return {
     id: formattedId,
     rsbsa_number: norm.swineNameOrId || norm.rsbsa_no || '',
     farmer_name: farmerName,
-    barangay: norm.barangay || 'Poblacion District I',
+    barangay: exactBarangay,
     contact_number,
     lat: Number(norm.lat || 10.5335),
     lng: Number(norm.lng || 125.1620),
     area_ha: areaHa,
-    address: norm.address || norm.residential_address || `${norm.barangay || 'Poblacion'}, Silago, Southern Leyte`,
+    address: exactAddress,
     purok: norm.purok || '',
     birthday: norm.birthday || null,
     variety: norm.variety || norm.breed || 'NSIC Rc 222 (Tubigan 18)',
@@ -972,7 +997,7 @@ export function sanitizeFarmPayload(parcel: FarmParcel) {
     id: norm.tagNumber,
     farmer_name: norm.raiserName || `${norm.farmerFamilyName || ''}, ${norm.farmerGivenName || ''}`.trim(),
     rsbsa_number: rsbsa,
-    barangay: norm.barangay || 'Poblacion District I',
+    barangay: (parcel.barangay || norm.barangay || '').trim(),
     area_ha: areaHa,
     ecosystem: norm.purpose || norm.ecosystem || 'Irrigated Lowland (NIA)'
   };

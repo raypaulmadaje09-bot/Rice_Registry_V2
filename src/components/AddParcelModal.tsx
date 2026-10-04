@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { FarmParcel } from '../types';
 import {
   BARANGAYS,
+  OFFICIAL_15_BARANGAYS,
   getAssignedLftForBarangay,
   getUserAssignedBarangays,
   isUserAuthorizedForBarangay,
@@ -100,8 +101,8 @@ export const AddParcelModal: React.FC<AddParcelModalProps> = ({
       );
       return match || assignedBarangays[0];
     }
-    return defaultBarangay || 'Salvacion';
-  }, [assignedBarangays, defaultBarangay]);
+    return defaultBarangay || availableBarangays[0]?.name || OFFICIAL_15_BARANGAYS[0];
+  }, [assignedBarangays, defaultBarangay, availableBarangays]);
 
   // Active Manage Reference Modal state ('variety' | 'ecosystem' | 'tenure' | 'season' | 'irrigationAssociation' | null)
   const [manageType, setManageType] = useState<ManageType | null>(null);
@@ -218,7 +219,8 @@ export const AddParcelModal: React.FC<AddParcelModalProps> = ({
           ? initialCoords.barangay
           : effectiveDefaultBarangay,
         purok: 'Purok Riverside',
-        address: 'Silago, Southern Leyte',
+        address: `${(initialCoords?.barangay && availableBarangays.some(b => matchBarangay(b.name, initialCoords.barangay!))) ? initialCoords.barangay : effectiveDefaultBarangay}, Silago, Southern Leyte`,
+        residential_address: `${(initialCoords?.barangay && availableBarangays.some(b => matchBarangay(b.name, initialCoords.barangay!))) ? initialCoords.barangay : effectiveDefaultBarangay}, Silago, Southern Leyte`,
         breed: varieties[0]?.name || 'NSIC Rc 222',
         seedType: varieties[0]?.seedType || 'INBRED',
         sex: tenures[0] || 'Owner-Cultivator',
@@ -677,8 +679,8 @@ export const AddParcelModal: React.FC<AddParcelModalProps> = ({
       raiserName: finalRaiserName,
       barangay: targetBrgy,
       purok: formData.purok || 'Purok Riverside',
-      address: formData.address || 'Silago, Southern Leyte',
-      residential_address: formData.address || `${targetBrgy}, Silago, Southern Leyte`,
+      address: formData.residential_address || formData.address || `${targetBrgy}, Silago, Southern Leyte`,
+      residential_address: formData.residential_address || formData.address || `${targetBrgy}, Silago, Southern Leyte`,
       contactNumber: cleanContact || '09170000000',
       breed: formData.breed || 'NSIC Rc 222',
       seedType: formData.seedType || 'INBRED',
@@ -1176,18 +1178,20 @@ export const AddParcelModal: React.FC<AddParcelModalProps> = ({
                       Residential Barangay
                     </label>
                     <select
-                      value={formData.address?.replace(', Silago, Southern Leyte', '') || formData.barangay}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          address: `${e.target.value}, Silago, Southern Leyte`
-                        })
-                      }
+                      value={formData.address?.replace(', Silago, Southern Leyte', '').trim() || formData.barangay}
+                      onChange={(e) => {
+                        const chosenRes = e.target.value;
+                        setFormData((prev) => ({
+                          ...prev,
+                          address: `${chosenRes}, Silago, Southern Leyte`,
+                          residential_address: `${chosenRes}, Silago, Southern Leyte`
+                        }));
+                      }}
                       className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 font-semibold focus:ring-2 focus:ring-emerald-600 cursor-pointer"
                     >
-                      {BARANGAYS.map((b) => (
-                        <option key={b.name} value={b.name}>
-                          {b.name}
+                      {OFFICIAL_15_BARANGAYS.map((b) => (
+                        <option key={b} value={b}>
+                          {b}
                         </option>
                       ))}
                     </select>

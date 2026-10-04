@@ -62,133 +62,43 @@ export function getAssignedLftForBarangay(_barangayName: string) {
   return LFT_OFFICERS_INFO.default;
 }
 
-// Additional / standard definitions
-const rawList: Barangay[] = (rawBarangays as Barangay[]).map((b) => {
+const OFFICIAL_BARANGAY_METADATA: Record<OfficialBarangay, { puroks: number; terrain: string; lat: number; lng: number }> = {
+  'Balagawan': { puroks: 5, terrain: 'Coastal Plains', lat: 10.518, lng: 125.172 },
+  'Catmon': { puroks: 4, terrain: 'River Basin Irrigated', lat: 10.525, lng: 125.158 },
+  'Calubian': { puroks: 4, terrain: 'Upland & River Basin', lat: 10.530, lng: 125.150 },
+  'Hingatungan': { puroks: 6, terrain: 'Lowland Alluvial', lat: 10.562, lng: 125.168 },
+  'Imelda': { puroks: 4, terrain: 'Upland Terrace', lat: 10.495, lng: 125.155 },
+  'Katipunan': { puroks: 4, terrain: 'Upland Terrace', lat: 10.510, lng: 125.138 },
+  'Laguna': { puroks: 5, terrain: 'Lowland Alluvial', lat: 10.548, lng: 125.160 },
+  'Mercedes': { puroks: 4, terrain: 'Lowland Alluvial', lat: 10.512, lng: 125.155 },
+  'Poblacion District 1': { puroks: 5, terrain: 'River Basin Irrigated', lat: 10.5335, lng: 125.162 },
+  'Poblacion District 2': { puroks: 4, terrain: 'River Basin Irrigated', lat: 10.5365, lng: 125.165 },
+  'Puntana': { puroks: 4, terrain: 'Lowland Alluvial', lat: 10.555, lng: 125.152 },
+  'Salvacion': { puroks: 4, terrain: 'Upland Terrace', lat: 10.528, lng: 125.148 },
+  'San Isidro': { puroks: 5, terrain: 'Lowland Alluvial', lat: 10.575, lng: 125.162 },
+  'San Roque': { puroks: 4, terrain: 'Lowland Alluvial & Coast', lat: 10.535, lng: 125.170 },
+  'Sap-ang': { puroks: 4, terrain: 'Lowland Alluvial & Coastal', lat: 10.522, lng: 125.163 }
+};
+
+export const BARANGAYS: Barangay[] = OFFICIAL_15_BARANGAYS.map((name) => {
+  const meta = OFFICIAL_BARANGAY_METADATA[name];
   return {
-    ...b,
-    focalPerson: b.focalPerson || '',
-    contactNumber: b.contactNumber || '',
-    username: b.username || ''
+    name,
+    puroks: meta.puroks,
+    terrain: meta.terrain,
+    registeredSwine: 0,
+    registeredRaisers: 0,
+    totalAreaHa: 0,
+    irrigatedAreaHa: 0,
+    rainfedAreaHa: 0,
+    focalPerson: '',
+    contactNumber: '',
+    username: '',
+    lat: meta.lat,
+    lng: meta.lng,
+    asfStatus: 'Registered Sector'
   };
 });
-
-// Ensure all official Silago barangays are present in masterlist
-const requiredBarangays: Partial<Barangay>[] = [
-  {
-    name: 'Sap-ang',
-    puroks: 4,
-    terrain: 'Lowland Alluvial & Coastal',
-    registeredSwine: 0,
-    registeredRaisers: 0,
-    totalAreaHa: 0,
-    irrigatedAreaHa: 0,
-    rainfedAreaHa: 0,
-    lat: 10.522,
-    lng: 125.163,
-    asfStatus: 'Registered Sector'
-  },
-  {
-    name: 'Kikilo',
-    puroks: 3,
-    terrain: 'North Sloping Foothills',
-    registeredSwine: 0,
-    registeredRaisers: 0,
-    totalAreaHa: 0,
-    irrigatedAreaHa: 0,
-    rainfedAreaHa: 0,
-    lat: 10.595,
-    lng: 125.150,
-    asfStatus: 'Registered Sector'
-  },
-  {
-    name: 'Bulak',
-    puroks: 3,
-    terrain: 'Terraced Upland',
-    registeredSwine: 0,
-    registeredRaisers: 0,
-    totalAreaHa: 0,
-    irrigatedAreaHa: 0,
-    rainfedAreaHa: 0,
-    lat: 10.585,
-    lng: 125.142,
-    asfStatus: 'Registered Sector'
-  },
-  {
-    name: 'Pinamananagan',
-    puroks: 4,
-    terrain: 'Inland River Watershed',
-    registeredSwine: 0,
-    registeredRaisers: 0,
-    totalAreaHa: 0,
-    irrigatedAreaHa: 0,
-    rainfedAreaHa: 0,
-    lat: 10.540,
-    lng: 125.142,
-    asfStatus: 'Registered Sector'
-  },
-  {
-    name: 'Sudmon',
-    puroks: 3,
-    terrain: 'Coastline & Estuary Lowland',
-    registeredSwine: 0,
-    registeredRaisers: 0,
-    totalAreaHa: 0,
-    irrigatedAreaHa: 0,
-    rainfedAreaHa: 0,
-    lat: 10.542,
-    lng: 125.176,
-    asfStatus: 'Registered Sector'
-  },
-  {
-    name: 'Calubian',
-    puroks: 4,
-    terrain: 'Upland & River Basin',
-    registeredSwine: 0,
-    registeredRaisers: 0,
-    totalAreaHa: 0,
-    irrigatedAreaHa: 0,
-    rainfedAreaHa: 0,
-    lat: 10.530,
-    lng: 125.150,
-    asfStatus: 'Registered Sector'
-  },
-  {
-    name: 'San Roque',
-    puroks: 4,
-    terrain: 'Lowland Alluvial & Coast',
-    registeredSwine: 0,
-    registeredRaisers: 0,
-    totalAreaHa: 0,
-    irrigatedAreaHa: 0,
-    rainfedAreaHa: 0,
-    lat: 10.535,
-    lng: 125.170,
-    asfStatus: 'Registered Sector'
-  }
-];
-
-requiredBarangays.forEach((item) => {
-  if (!rawList.some((b) => b.name.toLowerCase() === item.name!.toLowerCase())) {
-    rawList.push({
-      name: item.name!,
-      puroks: item.puroks || 3,
-      terrain: item.terrain || 'Lowland Alluvial',
-      registeredSwine: 0,
-      registeredRaisers: 0,
-      totalAreaHa: 0,
-      irrigatedAreaHa: 0,
-      rainfedAreaHa: 0,
-      focalPerson: '',
-      contactNumber: '',
-      username: '',
-      lat: item.lat || 10.538,
-      lng: item.lng || 125.172,
-      asfStatus: item.asfStatus || 'Registered Sector'
-    });
-  }
-});
-
-export const BARANGAYS: Barangay[] = rawList;
 
 export const TOTAL_SILAGO_STATS = {
   totalBarangays: 15,
@@ -270,17 +180,24 @@ export function matchBarangay(recordBarangay: string, targetBarangay: string): b
  */
 export function getDisplayBarangay(name: string): string {
   if (!name) return '';
-  const lower = name.trim().toLowerCase();
-  if (lower === 'pd1' || lower.includes('poblacion district 1') || lower === 'pob1') return 'Poblacion District 1';
-  if (lower === 'pd2' || lower.includes('poblacion district 2') || lower === 'pob2') return 'Poblacion District 2';
-  if (lower === 'sap-ang' || lower === 'sapang') return 'Sap-ang';
+  const clean = name.trim();
+  const lower = clean.toLowerCase();
+  if (lower === 'pd1' || lower.includes('poblacion district 1') || lower === 'pob1' || lower === 'poblacion 1') return 'Poblacion District 1';
+  if (lower === 'pd2' || lower.includes('poblacion district 2') || lower === 'pob2' || lower === 'poblacion 2') return 'Poblacion District 2';
+  if (lower === 'sap-ang' || lower === 'sapang' || lower.includes('sap-ang')) return 'Sap-ang';
   if (lower.includes('salvacion')) return 'Salvacion';
-  if (lower === 'laguma' || lower.includes('lagu')) return 'Laguna';
+  if (lower === 'laguma' || lower.includes('laguna') || lower.includes('lagu')) return 'Laguna';
   if (lower.includes('mercedes')) return 'Mercedes';
   if (lower.includes('katipunan')) return 'Katipunan';
   if (lower.includes('puntana')) return 'Puntana';
   if (lower.includes('hingatungan')) return 'Hingatungan';
-  return name;
+  if (lower.includes('balagawan')) return 'Balagawan';
+  if (lower.includes('catmon')) return 'Catmon';
+  if (lower.includes('calubian')) return 'Calubian';
+  if (lower.includes('imelda')) return 'Imelda';
+  if (lower.includes('san isidro')) return 'San Isidro';
+  if (lower.includes('san roque')) return 'San Roque';
+  return clean;
 }
 
 /**

@@ -639,21 +639,21 @@ export const SeasonalCropCalendar: React.FC = () => {
                 <td className="py-2.5 px-2.5">Irrigated / Rainfed · 106-114 days</td>
                 <td className="py-2.5 px-2.5 font-mono font-bold text-emerald-600">6.1 – 10.0 MT</td>
                 <td className="py-2.5 px-2.5">High lodging resistance, moderate BLB tolerance</td>
-                <td className="py-2.5 px-2.5 text-slate-600">Poblacion 1 &amp; 2, Hingatungan, Lagoma</td>
+                <td className="py-2.5 px-2.5 text-slate-600">Poblacion 1 &amp; 2, Hingatungan, Laguna</td>
               </tr>
               <tr className="hover:bg-white transition">
                 <td className="py-2.5 px-2.5 font-bold text-blue-700">NSIC Rc 182 (Submarino 1)</td>
                 <td className="py-2.5 px-2.5">Flood-prone Lowland · 118 days</td>
                 <td className="py-2.5 px-2.5 font-mono font-bold text-emerald-600">4.8 – 7.2 MT</td>
                 <td className="py-2.5 px-2.5 text-blue-600 font-semibold">Withstands 14 days complete submerged flooding</td>
-                <td className="py-2.5 px-2.5 text-slate-600">Balagawan, Catmon, Sap-ang, Tuba-on</td>
+                <td className="py-2.5 px-2.5 text-slate-600">Balagawan, Catmon, Sap-ang, Salvacion</td>
               </tr>
               <tr className="hover:bg-white transition">
                 <td className="py-2.5 px-2.5 font-bold text-blue-700">Mestiso 20 (M20 Hybrid)</td>
                 <td className="py-2.5 px-2.5">Intensive Irrigated · 110 days</td>
                 <td className="py-2.5 px-2.5 font-mono font-bold text-emerald-600">7.5 – 11.2 MT</td>
                 <td className="py-2.5 px-2.5">High tillering, superior milling &amp; eating quality</td>
-                <td className="py-2.5 px-2.5 text-slate-600">San Isidro, Sutrina, Poblacion District 1</td>
+                <td className="py-2.5 px-2.5 text-slate-600">San Isidro, San Roque, Poblacion District 1</td>
               </tr>
               <tr className="hover:bg-white transition">
                 <td className="py-2.5 px-2.5 font-bold text-blue-700">NSIC Rc 480 (Upland)</td>

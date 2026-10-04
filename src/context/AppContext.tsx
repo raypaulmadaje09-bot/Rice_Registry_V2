@@ -554,6 +554,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [syncWithSupabase]);
 
+  // Online / Offline connectivity listener & auto-sync trigger
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      setSyncNotification('Network connection detected. Synchronizing offline queue...');
+      syncOfflineQueue();
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      setSyncNotification('Offline mode: Records will be saved locally and queued for automatic cloud synchronization.');
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+
+      // If online and there are pending offline records on mount, trigger sync
+      if (typeof navigator !== 'undefined' && navigator.onLine) {
+        const pending = getOfflinePendingFarms();
+        if (pending.length > 0) {
+          syncOfflineQueue();
+        }
+      }
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+      }
+    };
+  }, [syncOfflineQueue]);
+
   // Handle App Settings updates from Realtime
   const handleSettingUpsert = useCallback((key: string, value: any) => {
     if (key === 'silago_language') setLanguageState(value);
