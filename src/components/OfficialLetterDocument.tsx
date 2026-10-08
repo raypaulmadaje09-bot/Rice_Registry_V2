@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { OfficialReportLetter } from '../data/reportLetters';
 import { BagongPilipinasLogo, SilagoSeal, SouthernLeyteSeal } from './Seals';
 import { useApp } from '../context/AppContext';
+import { ReportLogoEditorModal, ReportLogoType } from './ReportLogoEditorModal';
 import { OfficialSignatory } from '../types';
 import {
   Edit3,
@@ -44,17 +45,12 @@ export const OfficialLetterDocument: React.FC<OfficialLetterDocumentProps> = ({
 }) => {
   const {
     bagongPilipinasLogoUrl,
-    setBagongPilipinasLogoUrl,
     southernLeyteLogoUrl,
-    setSouthernLeyteLogoUrl,
-    silagoLogoUrl,
-    setSilagoLogoUrl
+    silagoLogoUrl
   } = useApp();
 
   const [justSaved, setJustSaved] = useState(false);
-  const [editingLogo, setEditingLogo] = useState<'bagongPilipinas' | 'southernLeyte' | 'silago' | null>(null);
-  const [logoInputUrl, setLogoInputUrl] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [editingLogo, setEditingLogo] = useState<ReportLogoType | null>(null);
 
   const handleFieldChange = (field: keyof OfficialReportLetter, value: any) => {
     if (!onUpdateLetter) return;
@@ -145,41 +141,8 @@ export const OfficialLetterDocument: React.FC<OfficialLetterDocumentProps> = ({
   };
 
   // Logo uploader handlers
-  const handleOpenLogoEditor = (which: 'bagongPilipinas' | 'southernLeyte' | 'silago') => {
+  const handleOpenLogoEditor = (which: ReportLogoType) => {
     setEditingLogo(which);
-    if (which === 'bagongPilipinas') setLogoInputUrl(bagongPilipinasLogoUrl || '');
-    if (which === 'southernLeyte') setLogoInputUrl(southernLeyteLogoUrl || '');
-    if (which === 'silago') setLogoInputUrl(silagoLogoUrl || '');
-  };
-
-  const handleApplyLogoUrl = () => {
-    if (!editingLogo) return;
-    if (editingLogo === 'bagongPilipinas') setBagongPilipinasLogoUrl(logoInputUrl.trim() || undefined);
-    if (editingLogo === 'southernLeyte') setSouthernLeyteLogoUrl(logoInputUrl.trim() || undefined);
-    if (editingLogo === 'silago') setSilagoLogoUrl(logoInputUrl.trim() || undefined);
-    setEditingLogo(null);
-  };
-
-  const handleResetLogo = () => {
-    if (!editingLogo) return;
-    if (editingLogo === 'bagongPilipinas') setBagongPilipinasLogoUrl(undefined);
-    if (editingLogo === 'southernLeyte') setSouthernLeyteLogoUrl(undefined);
-    if (editingLogo === 'silago') setSilagoLogoUrl(undefined);
-    setEditingLogo(null);
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !editingLogo) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      if (editingLogo === 'bagongPilipinas') setBagongPilipinasLogoUrl(dataUrl);
-      if (editingLogo === 'southernLeyte') setSouthernLeyteLogoUrl(dataUrl);
-      if (editingLogo === 'silago') setSilagoLogoUrl(dataUrl);
-      setEditingLogo(null);
-    };
-    reader.readAsDataURL(file);
   };
 
   // Dynamic replacement of variables in letter body
@@ -683,85 +646,19 @@ export const OfficialLetterDocument: React.FC<OfficialLetterDocumentProps> = ({
         </div>
       </div>
 
-      {/* POPUP / MODAL: DIRECT LOGO CHANGER (Screen-Only) */}
-      {editingLogo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs print:hidden animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <ImageIcon className="w-5 h-5 text-blue-600" />
-                <h3 className="font-bold text-sm text-slate-900">
-                  {editingLogo === 'bagongPilipinas' && 'Configure Bagong Pilipinas Logo'}
-                  {editingLogo === 'southernLeyte' && 'Configure Southern Leyte Province Seal'}
-                  {editingLogo === 'silago' && 'Configure Municipality of Silago Seal'}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditingLogo(null)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
-              >
-                <X size={16} />
-              </button>
-            </div>
+      {/* Word-Style Official Print Document Footer */}
+      <div className="hidden print:flex items-center justify-between text-[8pt] font-mono text-slate-700 border-t border-black pt-1.5 mt-4">
+        <span>MEMO REF: {letter.memoRef || 'SLG-MAO-RICE-2024-02B'}</span>
+        <span>DATE PRINTED: {letter.date || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+        <span className="print-page-number"></span>
+      </div>
 
-            <p className="text-xs text-slate-600">
-              Update the official seal shown on the letter header. You can upload an image file from your device, provide an image web URL, or revert to the official default vector emblem.
-            </p>
-
-            <div className="space-y-3">
-              {/* Option 1: File Upload */}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full py-2.5 px-3 border-2 border-dashed border-blue-300 hover:border-blue-500 bg-blue-50/50 hover:bg-blue-50 text-blue-800 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer"
-              >
-                <Upload size={15} />
-                <span>Upload Logo File from Computer</span>
-              </button>
-
-              {/* Option 2: Image Web URL */}
-              <div className="space-y-1">
-                <label className="text-[10.5px] font-bold text-slate-600 uppercase">Or Enter Image URL</label>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    value={logoInputUrl}
-                    onChange={(e) => setLogoInputUrl(e.target.value)}
-                    placeholder="https://example.com/seal.png"
-                    className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs outline-hidden focus:border-blue-500 font-mono"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleApplyLogoUrl}
-                    className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold cursor-pointer transition"
-                  >
-                    Apply
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={handleResetLogo}
-                className="px-3 py-1.5 text-xs text-slate-600 hover:text-rose-600 font-semibold flex items-center gap-1 cursor-pointer transition"
-              >
-                <RotateCcw size={13} />
-                <span>Reset to Default Seal</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setEditingLogo(null)}
-                className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer transition"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Unified Global Logo Editor Modal */}
+      <ReportLogoEditorModal
+        isOpen={editingLogo !== null}
+        onClose={() => setEditingLogo(null)}
+        logoType={editingLogo}
+      />
     </div>
   );
 };

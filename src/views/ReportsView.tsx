@@ -32,7 +32,8 @@ import {
   Trash2,
   Layers,
   ChevronDown,
-  Settings2
+  Settings2,
+  Camera
 } from 'lucide-react';
 import { FarmParcel, OfficialSignatory } from '../types';
 import {
@@ -69,6 +70,7 @@ import { OfficialLetterDocument } from '../components/OfficialLetterDocument';
 import { OfficialRegistryTable } from '../components/OfficialRegistryTable';
 import { OfficialIrrigatorsDirectoryDocument } from '../components/OfficialIrrigatorsDirectoryDocument';
 import { MpcsrsPalayReportDocument } from '../components/MpcsrsPalayReportDocument';
+import { ReportLogoEditorModal, ReportLogoType } from '../components/ReportLogoEditorModal';
 import { FloatingReportActionDock } from '../components/FloatingReportActionDock';
 import { DocumentParametersModal } from '../components/DocumentParametersModal';
 import { SmartColumnDrawer, OFFICIAL_REGISTRY_COLUMNS } from '../components/SmartColumnDrawer';
@@ -195,6 +197,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
   const [isLetterModalOpen, setIsLetterModalOpen] = useState(false);
   const [editingLetter, setEditingLetter] = useState<OfficialReportLetter | null>(null);
   const [isDirectEditingLetter, setIsDirectEditingLetter] = useState(false);
+  const [editingSeasonalLogo, setEditingSeasonalLogo] = useState<ReportLogoType | null>(null);
 
   const currentLetter = useMemo(() => {
     return letters.find((l) => l.id === activeLetterId) || letters[0] || DEFAULT_REPORT_LETTERS[0];
@@ -550,6 +553,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
     const cloned = printContent.cloneNode(true) as HTMLElement;
     cloned.querySelectorAll('.no-print, button, select, input[type="file"]').forEach((el) => el.remove());
 
+    const isPortrait = orientation === 'portrait';
+    const printPageSize = isPortrait ? '8.5in 13in portrait' : '13in 8.5in landscape';
+    const printMargin = isPortrait ? '15mm' : '10mm';
+
     const doc = (iframeDoc as any).document || iframeDoc;
     doc.open();
     doc.write(`
@@ -560,8 +567,11 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
           <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
           <style>
             @page {
-              size: legal landscape;
-              margin: 8mm;
+              size: ${printPageSize};
+              margin: ${printMargin};
+            }
+            .print-page-number::after {
+              content: "Page " counter(page) " of " counter(pages);
             }
             html, body {
               width: 100% !important;
@@ -961,13 +971,18 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
         @media print {
           @page {
             size: ${
-              paperSize === 'folio'
-                ? 'legal landscape'
-                : paperSize === 'letter'
-                ? 'letter landscape'
-                : 'A4 landscape'
+              orientation === 'portrait'
+                ? (paperSize === 'letter' ? '8.5in 11in portrait' : paperSize === 'a4' ? 'A4 portrait' : '8.5in 13in portrait')
+                : (paperSize === 'letter' ? '11in 8.5in landscape' : paperSize === 'a4' ? 'A4 landscape' : '13in 8.5in landscape')
             };
-            margin: ${margins === 'narrow' ? '5mm' : margins === 'wide' ? '12mm' : '8mm'};
+            margin: ${
+              orientation === 'portrait'
+                ? (margins === 'narrow' ? '10mm' : margins === 'wide' ? '20mm' : '15mm')
+                : (margins === 'narrow' ? '5mm' : margins === 'wide' ? '12mm' : '10mm')
+            };
+          }
+          .print-page-number::after {
+            content: "Page " counter(page) " of " counter(pages);
           }
           html, body, #root {
             height: auto !important;
@@ -1481,14 +1496,61 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
               {/* Government Official Header with 3 Seals Center-Aligned */}
               <div className="text-center border-b-2 border-slate-900 pb-5 mb-5 space-y-2">
                 <div className="flex items-center justify-center gap-6 mb-2">
-                  <div className="h-16 w-auto max-w-[70px] flex items-center justify-center">
-                    <BagongPilipinasLogo size={58} showText={true} className="h-16 w-auto max-w-[70px] object-contain drop-shadow-xs" />
+                  {/* Logo 1: Bagong Pilipinas */}
+                  <div className="relative group/logo h-16 w-auto max-w-[80px] flex items-center justify-center">
+                    <div
+                      onClick={() => setEditingSeasonalLogo('bagongPilipinas')}
+                      className="h-16 w-auto max-w-[80px] flex items-center justify-center cursor-pointer hover:opacity-90"
+                      title="Click to change or upload Bagong Pilipinas Logo"
+                    >
+                      <BagongPilipinasLogo size={58} showText={true} className="h-16 w-auto max-w-[80px] object-contain drop-shadow-xs" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditingSeasonalLogo('bagongPilipinas')}
+                      className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
+                      title="Change or upload Bagong Pilipinas Logo"
+                    >
+                      <Camera size={11} />
+                    </button>
                   </div>
-                  <div className="h-16 w-auto max-w-[70px] flex items-center justify-center">
-                    <SilagoSeal size={58} className="h-16 w-auto max-w-[70px] object-contain drop-shadow-xs" />
+
+                  {/* Logo 2: Silago Seal */}
+                  <div className="relative group/logo h-16 w-auto max-w-[80px] flex items-center justify-center">
+                    <div
+                      onClick={() => setEditingSeasonalLogo('silago')}
+                      className="h-16 w-auto max-w-[80px] flex items-center justify-center cursor-pointer hover:opacity-90"
+                      title="Click to change or upload Municipality of Silago Seal"
+                    >
+                      <SilagoSeal size={58} className="h-16 w-auto max-w-[80px] object-contain drop-shadow-xs" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditingSeasonalLogo('silago')}
+                      className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
+                      title="Change or upload Municipality of Silago Seal"
+                    >
+                      <Camera size={11} />
+                    </button>
                   </div>
-                  <div className="h-16 w-auto max-w-[70px] flex items-center justify-center">
-                    <DaLogo size={58} className="h-16 w-auto max-w-[70px] object-contain drop-shadow-xs" />
+
+                  {/* Logo 3: DA Logo */}
+                  <div className="relative group/logo h-16 w-auto max-w-[80px] flex items-center justify-center">
+                    <div
+                      onClick={() => setEditingSeasonalLogo('da')}
+                      className="h-16 w-auto max-w-[80px] flex items-center justify-center cursor-pointer hover:opacity-90"
+                      title="Click to change or upload Department of Agriculture Seal"
+                    >
+                      <DaLogo size={58} className="h-16 w-auto max-w-[80px] object-contain drop-shadow-xs" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditingSeasonalLogo('da')}
+                      className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
+                      title="Change or upload Department of Agriculture Seal"
+                    >
+                      <Camera size={11} />
+                    </button>
                   </div>
                 </div>
 
@@ -1800,6 +1862,13 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
             <span>Security Hash: SHA256-SLG-MAO-RICE-{reportDate.replace(/\s+/g, '')}</span>
             <span>Page 1 of 1 • System Generated by Silago MAO Digital Agriculture Portal</span>
           </div>
+
+          {/* Word-Style Official Print Document Footer */}
+          <div className="hidden print:flex items-center justify-between text-[8pt] font-mono text-slate-700 border-t border-black pt-1.5 mt-4">
+            <span>REF NO: {memoRef || 'SLG-MAO-PRODUCTION-REPORT'}</span>
+            <span>DATE PRINTED: {reportDate || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+            <span className="print-page-number"></span>
+          </div>
         </div>
       )}
         </div>
@@ -1930,6 +1999,13 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
         onDeselectAll={handleDeselectAllColumns}
         onResetToTemplate={handleResetColumnsToTemplate}
         parcels={reportParcels}
+      />
+
+      {/* Seasonal Report Logo Editor Modal */}
+      <ReportLogoEditorModal
+        isOpen={editingSeasonalLogo !== null}
+        onClose={() => setEditingSeasonalLogo(null)}
+        logoType={editingSeasonalLogo}
       />
     </div>
   );

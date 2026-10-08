@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { FarmParcel, OfficialSignatory } from '../types';
 import { BagongPilipinasLogo, SilagoSeal, SouthernLeyteSeal, DaLogo } from './Seals';
 import { CustomTableData } from './TableEditorModal';
-import { Plus, Trash2, Edit3, CheckCircle2, RotateCcw } from 'lucide-react';
+import { Plus, Trash2, Edit3, CheckCircle2, RotateCcw, Camera } from 'lucide-react';
 import { supabaseDb, sortParcelsAlphabetically } from '../utils/supabaseClient';
+import { ReportLogoEditorModal, ReportLogoType } from './ReportLogoEditorModal';
 
 interface OfficialRegistryTableProps {
   reportParcels: FarmParcel[];
@@ -100,6 +101,7 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
   columnOrder
 }) => {
   const isLandscape = orientation === 'landscape';
+  const [editingLogo, setEditingLogo] = useState<ReportLogoType | null>(null);
 
   const DEFAULT_SEQUENCE = [
     'rsbsaNo',
@@ -384,14 +386,67 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
       <div className="flex flex-col items-center justify-center pb-3 border-b-2 border-black">
         {/* 3 Government Logos: Bagong Pilipinas, Municipal Seal ng Silago, at Department of Agriculture */}
         <div className="flex items-center justify-center gap-6 mb-2">
-          <div className="h-16 w-auto max-w-[70px] flex items-center justify-center">
-            <BagongPilipinasLogo size={58} showText={true} className="h-16 w-auto max-w-[70px] object-contain" />
+          {/* Logo 1: Bagong Pilipinas */}
+          <div className="relative group/logo h-16 w-auto max-w-[80px] flex items-center justify-center">
+            <div
+              onClick={() => isEditable && setEditingLogo('bagongPilipinas')}
+              className={`h-16 w-auto max-w-[80px] flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
+              title={isEditable ? 'Click to change or upload Bagong Pilipinas Logo' : undefined}
+            >
+              <BagongPilipinasLogo size={58} showText={true} className="h-16 w-auto max-w-[80px] object-contain" />
+            </div>
+            {isEditable && (
+              <button
+                type="button"
+                onClick={() => setEditingLogo('bagongPilipinas')}
+                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
+                title="Change or upload Bagong Pilipinas Logo"
+              >
+                <Camera size={11} />
+              </button>
+            )}
           </div>
-          <div className="h-16 w-auto max-w-[70px] flex items-center justify-center">
-            <SilagoSeal size={58} className="h-16 w-auto max-w-[70px] object-contain" />
+
+          {/* Logo 2: Silago Seal */}
+          <div className="relative group/logo h-16 w-auto max-w-[80px] flex items-center justify-center">
+            <div
+              onClick={() => isEditable && setEditingLogo('silago')}
+              className={`h-16 w-auto max-w-[80px] flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
+              title={isEditable ? 'Click to change or upload Municipality of Silago Seal' : undefined}
+            >
+              <SilagoSeal size={58} className="h-16 w-auto max-w-[80px] object-contain" />
+            </div>
+            {isEditable && (
+              <button
+                type="button"
+                onClick={() => setEditingLogo('silago')}
+                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
+                title="Change or upload Municipality of Silago Seal"
+              >
+                <Camera size={11} />
+              </button>
+            )}
           </div>
-          <div className="h-16 w-auto max-w-[70px] flex items-center justify-center">
-            <DaLogo size={58} className="h-16 w-auto max-w-[70px] object-contain" />
+
+          {/* Logo 3: DA Logo */}
+          <div className="relative group/logo h-16 w-auto max-w-[80px] flex items-center justify-center">
+            <div
+              onClick={() => isEditable && setEditingLogo('da')}
+              className={`h-16 w-auto max-w-[80px] flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
+              title={isEditable ? 'Click to change or upload Department of Agriculture Seal' : undefined}
+            >
+              <DaLogo size={58} className="h-16 w-auto max-w-[80px] object-contain" />
+            </div>
+            {isEditable && (
+              <button
+                type="button"
+                onClick={() => setEditingLogo('da')}
+                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
+                title="Change or upload Department of Agriculture Seal"
+              >
+                <Camera size={11} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -964,6 +1019,20 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
           ))}
         </div>
       </div>
+
+      {/* Word-Style Official Print Document Footer */}
+      <div className="hidden print:flex items-center justify-between text-[8pt] font-mono text-slate-700 border-t border-black pt-1.5 mt-4">
+        <span>REF NO: {memoRef || 'SLG-MAO-RICE-REGISTRY'}</span>
+        <span>DATE PRINTED: {reportDate || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+        <span className="print-page-number"></span>
+      </div>
+
+      {/* Unified Global Logo Editor Modal */}
+      <ReportLogoEditorModal
+        isOpen={editingLogo !== null}
+        onClose={() => setEditingLogo(null)}
+        logoType={editingLogo}
+      />
     </div>
   );
 };

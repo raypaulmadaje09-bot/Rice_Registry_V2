@@ -12,16 +12,19 @@ export const DaLogo: React.FC<SealProps> = ({ className = '', size = 40, customU
   const { daLogoUrl } = useApp();
   const url = customUrl !== undefined ? customUrl : daLogoUrl;
 
+  const defaultSizeClass = !className ? 'h-16 w-auto max-w-[80px]' : '';
+  const inlineStyle = size && !className ? { width: size, height: size } : undefined;
+
   return (
     <div
-      className={`w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-white shadow-sm border border-slate-200/20 aspect-square shrink-0 ${className}`}
-      style={size ? { width: size, height: size } : undefined}
+      className={`overflow-hidden flex items-center justify-center shrink-0 ${defaultSizeClass} ${className}`}
+      style={inlineStyle}
       title="Department of Agriculture - Philippines"
     >
       <img
         src={url || '/assets/da_logo.svg'}
         alt="Department of Agriculture Seal"
-        className="w-full h-full object-contain p-0.5"
+        className="h-full w-auto max-w-[80px] object-contain p-0.5"
         referrerPolicy="no-referrer"
         onError={(e) => {
           const target = e.currentTarget;
@@ -41,16 +44,19 @@ export const SilagoSeal: React.FC<SealProps> = ({ className = '', size = 40, cus
   const { silagoLogoUrl } = useApp();
   const url = customUrl !== undefined ? customUrl : silagoLogoUrl;
 
+  const defaultSizeClass = !className ? 'h-16 w-auto max-w-[80px]' : '';
+  const inlineStyle = size && !className ? { width: size, height: size } : undefined;
+
   return (
     <div
-      className={`w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-white shadow-sm border border-slate-200/20 aspect-square shrink-0 ${className}`}
-      style={size ? { width: size, height: size } : undefined}
+      className={`overflow-hidden flex items-center justify-center shrink-0 ${defaultSizeClass} ${className}`}
+      style={inlineStyle}
       title="Official Seal of the Municipality of Silago, Southern Leyte"
     >
       <img
         src={url || '/assets/silago_seal.png'}
         alt="Municipality of Silago Seal"
-        className="w-full h-full object-contain p-0.5"
+        className="h-full w-auto max-w-[80px] object-contain p-0.5"
         referrerPolicy="no-referrer"
         onError={(e) => {
           const target = e.currentTarget;
@@ -70,16 +76,19 @@ export const BagOngSilagoLogo: React.FC<SealProps> = ({ className = '', size = 4
   const { bagOngSilagoLogoUrl } = useApp();
   const url = customUrl !== undefined ? customUrl : bagOngSilagoLogoUrl;
 
+  const defaultSizeClass = !className ? 'h-16 w-auto max-w-[80px]' : '';
+  const inlineStyle = size && !className ? { width: size, height: size } : undefined;
+
   return (
     <div
-      className={`w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-white shadow-sm border border-slate-200/20 aspect-square shrink-0 ${className}`}
-      style={size ? { width: size, height: size } : undefined}
+      className={`overflow-hidden flex items-center justify-center shrink-0 ${defaultSizeClass} ${className}`}
+      style={inlineStyle}
       title="Aktibo. Pursigido. Bag-ong Silago - Love Peace Hope"
     >
       <img
         src={url || '/assets/bag_ong_silago.svg'}
         alt="Bag-ong Silago Logo"
-        className="w-full h-full object-contain p-0.5"
+        className="h-full w-auto max-w-[80px] object-contain p-0.5"
         referrerPolicy="no-referrer"
         onError={(e) => {
           const target = e.currentTarget;
@@ -181,17 +190,20 @@ export const SouthernLeyteSeal: React.FC<SealProps> = ({ className = '', size = 
   const { southernLeyteLogoUrl } = useApp();
   const url = customUrl !== undefined ? customUrl : southernLeyteLogoUrl;
 
+  const defaultSizeClass = !className ? 'h-16 w-auto max-w-[80px]' : '';
+  const inlineStyle = size && !className ? { width: size, height: size } : undefined;
+
   if (url) {
     return (
       <div
-        className={`relative rounded-full overflow-hidden shrink-0 shadow-xs border border-amber-400/50 bg-white flex items-center justify-center ${className}`}
-        style={{ width: size, height: size }}
+        className={`relative overflow-hidden shrink-0 flex items-center justify-center ${defaultSizeClass} ${className}`}
+        style={inlineStyle}
         title="Official Seal of the Province of Southern Leyte"
       >
         <img
           src={url}
           alt="Province of Southern Leyte Seal"
-          className="w-full h-full object-contain"
+          className="h-full w-auto max-w-[80px] object-contain p-0.5"
           referrerPolicy="no-referrer"
         />
       </div>
@@ -271,11 +283,11 @@ export const BagongPilipinasLogo: React.FC<{ size?: number; className?: string; 
   if (url) {
     return (
       <div className={`flex flex-col items-center justify-center shrink-0 ${className}`}>
-        <div style={{ width: size, height: size }} className="relative flex items-center justify-center overflow-hidden">
+        <div style={size && !className ? { height: size } : undefined} className="h-16 w-auto max-w-[80px] relative flex items-center justify-center overflow-hidden">
           <img
             src={url}
             alt="Bagong Pilipinas Logo"
-            className="w-full h-full object-contain"
+            className="h-full w-auto max-w-[80px] object-contain"
             referrerPolicy="no-referrer"
           />
         </div>

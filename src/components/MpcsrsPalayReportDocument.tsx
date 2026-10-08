@@ -6,7 +6,9 @@ import {
   saveMpcsrsReportData
 } from '../data/mpcsrsData';
 import { OfficialSignatory } from '../types';
-import { Edit3, CheckCircle2, Plus, Trash2, RotateCcw } from 'lucide-react';
+import { DaLogo, SilagoSeal, BagongPilipinasLogo } from './Seals';
+import { ReportLogoEditorModal, ReportLogoType } from './ReportLogoEditorModal';
+import { Edit3, CheckCircle2, Plus, Trash2, RotateCcw, Camera } from 'lucide-react';
 
 interface MpcsrsPalayReportDocumentProps {
   data: MpcsrsReportData;
@@ -22,6 +24,7 @@ export const MpcsrsPalayReportDocument: React.FC<MpcsrsPalayReportDocumentProps>
   orientation = 'landscape'
 }) => {
   const [justSaved, setJustSaved] = useState(false);
+  const [editingLogo, setEditingLogo] = useState<ReportLogoType | null>(null);
 
   const handleFieldChange = <K extends keyof MpcsrsReportData>(
     field: K,
@@ -189,6 +192,91 @@ export const MpcsrsPalayReportDocument: React.FC<MpcsrsPalayReportDocumentProps>
           </div>
         </div>
       )}
+
+      {/* 1. Official Government Letterhead (The 3 Logos Placed Above Republic of the Philippines) */}
+      <div className="flex flex-col items-center justify-center pb-2 border-b-2 border-black">
+        {/* 3 Government Logos: Bagong Pilipinas, Municipal Seal ng Silago, at Department of Agriculture */}
+        <div className="flex items-center justify-center gap-6 mb-1.5">
+          {/* Logo 1: Bagong Pilipinas */}
+          <div className="relative group/logo h-16 w-auto max-w-[80px] flex items-center justify-center">
+            <div
+              onClick={() => isEditable && setEditingLogo('bagongPilipinas')}
+              className={`h-16 w-auto max-w-[80px] flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
+              title={isEditable ? 'Click to change or upload Bagong Pilipinas Logo' : undefined}
+            >
+              <BagongPilipinasLogo size={54} showText={true} className="h-16 w-auto max-w-[80px] object-contain" />
+            </div>
+            {isEditable && (
+              <button
+                type="button"
+                onClick={() => setEditingLogo('bagongPilipinas')}
+                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
+                title="Change or upload Bagong Pilipinas Logo"
+              >
+                <Camera size={11} />
+              </button>
+            )}
+          </div>
+
+          {/* Logo 2: Silago Seal */}
+          <div className="relative group/logo h-16 w-auto max-w-[80px] flex items-center justify-center">
+            <div
+              onClick={() => isEditable && setEditingLogo('silago')}
+              className={`h-16 w-auto max-w-[80px] flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
+              title={isEditable ? 'Click to change or upload Municipality of Silago Seal' : undefined}
+            >
+              <SilagoSeal size={54} className="h-16 w-auto max-w-[80px] object-contain" />
+            </div>
+            {isEditable && (
+              <button
+                type="button"
+                onClick={() => setEditingLogo('silago')}
+                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
+                title="Change or upload Municipality of Silago Seal"
+              >
+                <Camera size={11} />
+              </button>
+            )}
+          </div>
+
+          {/* Logo 3: DA Logo */}
+          <div className="relative group/logo h-16 w-auto max-w-[80px] flex items-center justify-center">
+            <div
+              onClick={() => isEditable && setEditingLogo('da')}
+              className={`h-16 w-auto max-w-[80px] flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
+              title={isEditable ? 'Click to change or upload Department of Agriculture Seal' : undefined}
+            >
+              <DaLogo size={54} className="h-16 w-auto max-w-[80px] object-contain" />
+            </div>
+            {isEditable && (
+              <button
+                type="button"
+                onClick={() => setEditingLogo('da')}
+                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
+                title="Change or upload Department of Agriculture Seal"
+              >
+                <Camera size={11} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Official Header Hierarchy */}
+        <div className="text-center">
+          <p className="text-xs sm:text-[13px] font-sans tracking-wide text-black font-normal leading-tight">
+            Republic of the Philippines
+          </p>
+          <p className="text-xs sm:text-[13px] font-sans tracking-wide text-black font-normal leading-tight">
+            Province of Southern Leyte
+          </p>
+          <p className="text-xs sm:text-[13px] font-sans tracking-wide text-black font-semibold leading-tight">
+            MUNICIPALITY OF SILAGO
+          </p>
+          <h2 className="text-sm sm:text-base font-bold font-sans uppercase tracking-wider text-black mt-1">
+            MONTHLY PALAY AND CORN SITUATION REPORTING SYSTEM (MPCSRS)
+          </h2>
+        </div>
+      </div>
 
       {/* TOP REGION & MUNICIPALITY METADATA (Exact Photo 1 Layout) */}
       <div className="space-y-1 text-xs sm:text-sm font-sans font-bold text-black border-b border-black pb-2 px-1">
@@ -570,6 +658,20 @@ export const MpcsrsPalayReportDocument: React.FC<MpcsrsPalayReportDocumentProps>
           <p>{data.footnote}</p>
         )}
       </div>
+
+      {/* Word-Style Official Print Document Footer */}
+      <div className="hidden print:flex items-center justify-between text-[8pt] font-mono text-slate-700 border-t border-black pt-1.5 mt-4">
+        <span>REF NO: SLG-MAO-MPCSRS-PALAY</span>
+        <span>DATE PRINTED: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+        <span className="print-page-number"></span>
+      </div>
+
+      {/* Unified Global Logo Editor Modal */}
+      <ReportLogoEditorModal
+        isOpen={editingLogo !== null}
+        onClose={() => setEditingLogo(null)}
+        logoType={editingLogo}
+      />
     </div>
   );
 };

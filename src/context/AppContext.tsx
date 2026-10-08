@@ -61,6 +61,15 @@ const DEFAULT_IRRIGATION_ASSOCIATIONS = [
 
 export const INITIAL_LFT_ACCOUNTS: LftAccount[] = [];
 
+export interface SystemLogos {
+  daLogoUrl: string | null;
+  silagoLogoUrl: string | null;
+  bagOngSilagoLogoUrl: string | null;
+  southernLeyteLogoUrl: string | null;
+  bagongPilipinasLogoUrl: string | null;
+  portalBannerUrl: string | null;
+}
+
 interface AppContextType {
   currentUser: User | null;
   setCurrentUser: (user: User | null | ((prev: User | null) => User | null)) => void;
@@ -111,6 +120,9 @@ interface AppContextType {
   setBagongPilipinasLogoUrl: (url: string | null) => void;
   portalBannerUrl: string | null;
   setPortalBannerUrl: (url: string | null) => void;
+  systemLogos: SystemLogos;
+  updateSystemLogo: (key: keyof SystemLogos, url: string | null) => void;
+  setSystemLogos: (logos: Partial<SystemLogos>) => void;
   resetLogos: () => void;
 
   // Central Admin Profile & Password Settings
@@ -596,12 +608,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     else if (key === 'silago_bg_blur') setBgBlurState(Number(value));
     else if (key === 'silago_bg_active') setBgActiveState(value === true || value === 'true');
     else if (key === 'silago_bg_history' && Array.isArray(value)) setBackgroundHistory(value);
-    else if (key === 'silago_da_logo_url') setDaLogoUrlState(value);
-    else if (key === 'silago_seal_url') setSilagoLogoUrlState(value);
-    else if (key === 'silago_bag_ong_logo_url') setBagOngSilagoLogoUrlState(value);
-    else if (key === 'silago_southern_leyte_logo_url') setSouthernLeyteLogoUrlState(value);
-    else if (key === 'silago_bagong_pilipinas_logo_url') setBagongPilipinasLogoUrlState(value);
-    else if (key === 'silago_portal_banner_url') setPortalBannerUrlState(value);
+    else if (key === 'silago_da_logo_url') { setDaLogoUrlState(value); try { if (value) localStorage.setItem('silago_da_logo_url', value); else localStorage.removeItem('silago_da_logo_url'); } catch {} }
+    else if (key === 'silago_seal_url') { setSilagoLogoUrlState(value); try { if (value) localStorage.setItem('silago_seal_url', value); else localStorage.removeItem('silago_seal_url'); } catch {} }
+    else if (key === 'silago_bag_ong_logo_url') { setBagOngSilagoLogoUrlState(value); try { if (value) localStorage.setItem('silago_bag_ong_logo_url', value); else localStorage.removeItem('silago_bag_ong_logo_url'); } catch {} }
+    else if (key === 'silago_southern_leyte_logo_url') { setSouthernLeyteLogoUrlState(value); try { if (value) localStorage.setItem('silago_southern_leyte_logo_url', value); else localStorage.removeItem('silago_southern_leyte_logo_url'); } catch {} }
+    else if (key === 'silago_bagong_pilipinas_logo_url') { setBagongPilipinasLogoUrlState(value); try { if (value) localStorage.setItem('silago_bagong_pilipinas_logo_url', value); else localStorage.removeItem('silago_bagong_pilipinas_logo_url'); } catch {} }
+    else if (key === 'silago_portal_banner_url') { setPortalBannerUrlState(value); try { if (value) localStorage.setItem('silago_portal_banner_url', value); else localStorage.removeItem('silago_portal_banner_url'); } catch {} }
     else if (key === 'silago_admin_profile' && value) setAdminProfile(value);
     else if (key === 'silago_admin_password' && value) setAdminPasswordCache(value);
     else if (key === 'silago_office_contact_info' && value) setOfficeContactInfoState(value);
@@ -621,12 +633,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const handleSettingDelete = useCallback((key: string) => {
-    if (key === 'silago_da_logo_url') setDaLogoUrlState(null);
-    else if (key === 'silago_seal_url') setSilagoLogoUrlState(null);
-    else if (key === 'silago_bag_ong_logo_url') setBagOngSilagoLogoUrlState(null);
-    else if (key === 'silago_southern_leyte_logo_url') setSouthernLeyteLogoUrlState(null);
-    else if (key === 'silago_bagong_pilipinas_logo_url') setBagongPilipinasLogoUrlState(null);
-    else if (key === 'silago_portal_banner_url') setPortalBannerUrlState(null);
+    if (key === 'silago_da_logo_url') { setDaLogoUrlState(null); try { localStorage.removeItem('silago_da_logo_url'); } catch {} }
+    else if (key === 'silago_seal_url') { setSilagoLogoUrlState(null); try { localStorage.removeItem('silago_seal_url'); } catch {} }
+    else if (key === 'silago_bag_ong_logo_url') { setBagOngSilagoLogoUrlState(null); try { localStorage.removeItem('silago_bag_ong_logo_url'); } catch {} }
+    else if (key === 'silago_southern_leyte_logo_url') { setSouthernLeyteLogoUrlState(null); try { localStorage.removeItem('silago_southern_leyte_logo_url'); } catch {} }
+    else if (key === 'silago_bagong_pilipinas_logo_url') { setBagongPilipinasLogoUrlState(null); try { localStorage.removeItem('silago_bagong_pilipinas_logo_url'); } catch {} }
+    else if (key === 'silago_portal_banner_url') { setPortalBannerUrlState(null); try { localStorage.removeItem('silago_portal_banner_url'); } catch {} }
     else if (key === 'silago_slsu_seal_logo_url') setSlsuSealLogoUrlState(null);
   }, []);
 
@@ -1292,49 +1304,114 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     supabaseDb.setSetting('silago_bg_active', false);
   };
 
-  // Logos Settings
-  const [daLogoUrl, setDaLogoUrlState] = useState<string | null>(null);
-  const [silagoLogoUrl, setSilagoLogoUrlState] = useState<string | null>(null);
-  const [bagOngSilagoLogoUrl, setBagOngSilagoLogoUrlState] = useState<string | null>(null);
-  const [southernLeyteLogoUrl, setSouthernLeyteLogoUrlState] = useState<string | null>(null);
-  const [bagongPilipinasLogoUrl, setBagongPilipinasLogoUrlState] = useState<string | null>(null);
-  const [portalBannerUrl, setPortalBannerUrlState] = useState<string | null>(null);
+  // Logos Settings (Synchronously Hydrated from LocalStorage + Supabase Cloud)
+  const [daLogoUrl, setDaLogoUrlState] = useState<string | null>(() => {
+    try { return localStorage.getItem('silago_da_logo_url') || null; } catch { return null; }
+  });
+  const [silagoLogoUrl, setSilagoLogoUrlState] = useState<string | null>(() => {
+    try { return localStorage.getItem('silago_seal_url') || null; } catch { return null; }
+  });
+  const [bagOngSilagoLogoUrl, setBagOngSilagoLogoUrlState] = useState<string | null>(() => {
+    try { return localStorage.getItem('silago_bag_ong_logo_url') || null; } catch { return null; }
+  });
+  const [southernLeyteLogoUrl, setSouthernLeyteLogoUrlState] = useState<string | null>(() => {
+    try { return localStorage.getItem('silago_southern_leyte_logo_url') || null; } catch { return null; }
+  });
+  const [bagongPilipinasLogoUrl, setBagongPilipinasLogoUrlState] = useState<string | null>(() => {
+    try { return localStorage.getItem('silago_bagong_pilipinas_logo_url') || null; } catch { return null; }
+  });
+  const [portalBannerUrl, setPortalBannerUrlState] = useState<string | null>(() => {
+    try { return localStorage.getItem('silago_portal_banner_url') || null; } catch { return null; }
+  });
 
   const setDaLogoUrl = (url: string | null) => {
     setDaLogoUrlState(url);
+    try {
+      if (url) localStorage.setItem('silago_da_logo_url', url);
+      else localStorage.removeItem('silago_da_logo_url');
+    } catch {}
     if (url) supabaseDb.setSetting('silago_da_logo_url', url);
     else supabaseDb.removeSetting('silago_da_logo_url');
   };
 
   const setSilagoLogoUrl = (url: string | null) => {
     setSilagoLogoUrlState(url);
+    try {
+      if (url) localStorage.setItem('silago_seal_url', url);
+      else localStorage.removeItem('silago_seal_url');
+    } catch {}
     if (url) supabaseDb.setSetting('silago_seal_url', url);
     else supabaseDb.removeSetting('silago_seal_url');
   };
 
   const setBagOngSilagoLogoUrl = (url: string | null) => {
     setBagOngSilagoLogoUrlState(url);
+    try {
+      if (url) localStorage.setItem('silago_bag_ong_logo_url', url);
+      else localStorage.removeItem('silago_bag_ong_logo_url');
+    } catch {}
     if (url) supabaseDb.setSetting('silago_bag_ong_logo_url', url);
     else supabaseDb.removeSetting('silago_bag_ong_logo_url');
   };
 
   const setSouthernLeyteLogoUrl = (url: string | null) => {
     setSouthernLeyteLogoUrlState(url);
+    try {
+      if (url) localStorage.setItem('silago_southern_leyte_logo_url', url);
+      else localStorage.removeItem('silago_southern_leyte_logo_url');
+    } catch {}
     if (url) supabaseDb.setSetting('silago_southern_leyte_logo_url', url);
     else supabaseDb.removeSetting('silago_southern_leyte_logo_url');
   };
 
   const setBagongPilipinasLogoUrl = (url: string | null) => {
     setBagongPilipinasLogoUrlState(url);
+    try {
+      if (url) localStorage.setItem('silago_bagong_pilipinas_logo_url', url);
+      else localStorage.removeItem('silago_bagong_pilipinas_logo_url');
+    } catch {}
     if (url) supabaseDb.setSetting('silago_bagong_pilipinas_logo_url', url);
     else supabaseDb.removeSetting('silago_bagong_pilipinas_logo_url');
   };
 
   const setPortalBannerUrl = (url: string | null) => {
     setPortalBannerUrlState(url);
+    try {
+      if (url) localStorage.setItem('silago_portal_banner_url', url);
+      else localStorage.removeItem('silago_portal_banner_url');
+    } catch {}
     if (url) supabaseDb.setSetting('silago_portal_banner_url', url);
     else supabaseDb.removeSetting('silago_portal_banner_url');
   };
+
+  const updateSystemLogo = (key: keyof SystemLogos, url: string | null) => {
+    switch (key) {
+      case 'daLogoUrl': setDaLogoUrl(url); break;
+      case 'silagoLogoUrl': setSilagoLogoUrl(url); break;
+      case 'bagOngSilagoLogoUrl': setBagOngSilagoLogoUrl(url); break;
+      case 'southernLeyteLogoUrl': setSouthernLeyteLogoUrl(url); break;
+      case 'bagongPilipinasLogoUrl': setBagongPilipinasLogoUrl(url); break;
+      case 'portalBannerUrl': setPortalBannerUrl(url); break;
+    }
+  };
+
+  const setSystemLogos = (logos: Partial<SystemLogos>) => {
+    if (logos.daLogoUrl !== undefined) setDaLogoUrl(logos.daLogoUrl);
+    if (logos.silagoLogoUrl !== undefined) setSilagoLogoUrl(logos.silagoLogoUrl);
+    if (logos.bagOngSilagoLogoUrl !== undefined) setBagOngSilagoLogoUrl(logos.bagOngSilagoLogoUrl);
+    if (logos.southernLeyteLogoUrl !== undefined) setSouthernLeyteLogoUrl(logos.southernLeyteLogoUrl);
+    if (logos.bagongPilipinasLogoUrl !== undefined) setBagongPilipinasLogoUrl(logos.bagongPilipinasLogoUrl);
+    if (logos.portalBannerUrl !== undefined) setPortalBannerUrl(logos.portalBannerUrl);
+  };
+
+  const systemLogos: SystemLogos = useMemo(() => ({
+    daLogoUrl,
+    silagoLogoUrl,
+    bagOngSilagoLogoUrl,
+    southernLeyteLogoUrl,
+    bagongPilipinasLogoUrl,
+    portalBannerUrl
+  }), [daLogoUrl, silagoLogoUrl, bagOngSilagoLogoUrl, southernLeyteLogoUrl, bagongPilipinasLogoUrl, portalBannerUrl]);
 
   const resetLogos = () => {
     setDaLogoUrl(null);
@@ -1343,6 +1420,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSouthernLeyteLogoUrl(null);
     setBagongPilipinasLogoUrl(null);
     setPortalBannerUrl(null);
+    try {
+      localStorage.removeItem('silago_da_logo_url');
+      localStorage.removeItem('silago_seal_url');
+      localStorage.removeItem('silago_bag_ong_logo_url');
+      localStorage.removeItem('silago_southern_leyte_logo_url');
+      localStorage.removeItem('silago_bagong_pilipinas_logo_url');
+      localStorage.removeItem('silago_portal_banner_url');
+    } catch {}
     supabaseDb.removeSetting('silago_da_logo_url');
     supabaseDb.removeSetting('silago_seal_url');
     supabaseDb.removeSetting('silago_bag_ong_logo_url');
@@ -1806,12 +1891,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (cloudBgBlur !== null && cloudBgBlur !== undefined) setBgBlurState(Number(cloudBgBlur));
         if (cloudBgActive !== null && cloudBgActive !== undefined) setBgActiveState(cloudBgActive === true || cloudBgActive === 'true');
         if (Array.isArray(cloudBgHistory) && cloudBgHistory.length > 0) setBackgroundHistory(cloudBgHistory);
-        if (cloudDaLogo) setDaLogoUrlState(cloudDaLogo);
-        if (cloudSeal) setSilagoLogoUrlState(cloudSeal);
-        if (cloudBagOng) setBagOngSilagoLogoUrlState(cloudBagOng);
-        if (cloudSouthernLeyte) setSouthernLeyteLogoUrlState(cloudSouthernLeyte);
-        if (cloudBagongPilipinas) setBagongPilipinasLogoUrlState(cloudBagongPilipinas);
-        if (cloudPortalBanner) setPortalBannerUrlState(cloudPortalBanner);
+        if (cloudDaLogo) { setDaLogoUrlState(cloudDaLogo); try { localStorage.setItem('silago_da_logo_url', cloudDaLogo); } catch {} }
+        if (cloudSeal) { setSilagoLogoUrlState(cloudSeal); try { localStorage.setItem('silago_seal_url', cloudSeal); } catch {} }
+        if (cloudBagOng) { setBagOngSilagoLogoUrlState(cloudBagOng); try { localStorage.setItem('silago_bag_ong_logo_url', cloudBagOng); } catch {} }
+        if (cloudSouthernLeyte) { setSouthernLeyteLogoUrlState(cloudSouthernLeyte); try { localStorage.setItem('silago_southern_leyte_logo_url', cloudSouthernLeyte); } catch {} }
+        if (cloudBagongPilipinas) { setBagongPilipinasLogoUrlState(cloudBagongPilipinas); try { localStorage.setItem('silago_bagong_pilipinas_logo_url', cloudBagongPilipinas); } catch {} }
+        if (cloudPortalBanner) { setPortalBannerUrlState(cloudPortalBanner); try { localStorage.setItem('silago_portal_banner_url', cloudPortalBanner); } catch {} }
         if (cloudAdminProfile) setAdminProfile(cloudAdminProfile);
         if (cloudAdminPass) setAdminPasswordCache(cloudAdminPass);
         if (cloudOfficeContact) setOfficeContactInfoState(cloudOfficeContact);
@@ -1888,6 +1973,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setBagongPilipinasLogoUrl,
         portalBannerUrl,
         setPortalBannerUrl,
+        systemLogos,
+        updateSystemLogo,
+        setSystemLogos,
         resetLogos,
         adminProfile,
         updateAdminProfile,

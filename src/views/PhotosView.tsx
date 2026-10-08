@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { PRESET_BACKGROUNDS, SLSU_EXTENSION_PRESETS, DEFAULT_BG_PHOTO, DEFAULT_SLSU_PHOTO } from '../data/photos';
-import { DaLogo, SilagoSeal, BagOngSilagoLogo, SlsuBadge, SlsuSealSvg } from '../components/Seals';
+import { DaLogo, SilagoSeal, BagOngSilagoLogo, SouthernLeyteSeal, BagongPilipinasLogo, SlsuBadge, SlsuSealSvg } from '../components/Seals';
 import {
   Image as ImageIcon,
   Camera,
@@ -47,6 +47,10 @@ export const PhotosView: React.FC<PhotosViewProps> = () => {
     setSilagoLogoUrl,
     bagOngSilagoLogoUrl,
     setBagOngSilagoLogoUrl,
+    southernLeyteLogoUrl,
+    setSouthernLeyteLogoUrl,
+    bagongPilipinasLogoUrl,
+    setBagongPilipinasLogoUrl,
     portalBannerUrl,
     setPortalBannerUrl,
     resetLogos,
@@ -81,6 +85,8 @@ export const PhotosView: React.FC<PhotosViewProps> = () => {
   const [draftDaLogoUrl, setDraftDaLogoUrl] = useState(daLogoUrl);
   const [draftSilagoLogoUrl, setDraftSilagoLogoUrl] = useState(silagoLogoUrl);
   const [draftBagOngLogoUrl, setDraftBagOngLogoUrl] = useState(bagOngSilagoLogoUrl);
+  const [draftSouthernLeyteLogoUrl, setDraftSouthernLeyteLogoUrl] = useState(southernLeyteLogoUrl);
+  const [draftBagongPilipinasLogoUrl, setDraftBagongPilipinasLogoUrl] = useState(bagongPilipinasLogoUrl);
 
   const [draftSlsuUrl, setDraftSlsuUrl] = useState(slsuPhotoUrl);
   const [draftSlsuTitle, setDraftSlsuTitle] = useState(slsuCenterTitle);
@@ -97,6 +103,8 @@ export const PhotosView: React.FC<PhotosViewProps> = () => {
     setDraftDaLogoUrl(daLogoUrl);
     setDraftSilagoLogoUrl(silagoLogoUrl);
     setDraftBagOngLogoUrl(bagOngSilagoLogoUrl);
+    setDraftSouthernLeyteLogoUrl(southernLeyteLogoUrl);
+    setDraftBagongPilipinasLogoUrl(bagongPilipinasLogoUrl);
     setDraftSlsuUrl(slsuPhotoUrl);
     setDraftSlsuTitle(slsuCenterTitle);
     setDraftSlsuSubtitle(slsuCenterSubtitle);
@@ -110,6 +118,8 @@ export const PhotosView: React.FC<PhotosViewProps> = () => {
     daLogoUrl,
     silagoLogoUrl,
     bagOngSilagoLogoUrl,
+    southernLeyteLogoUrl,
+    bagongPilipinasLogoUrl,
     slsuPhotoUrl,
     slsuCenterTitle,
     slsuCenterSubtitle,
@@ -127,6 +137,8 @@ export const PhotosView: React.FC<PhotosViewProps> = () => {
       draftDaLogoUrl !== daLogoUrl ||
       draftSilagoLogoUrl !== silagoLogoUrl ||
       draftBagOngLogoUrl !== bagOngSilagoLogoUrl ||
+      draftSouthernLeyteLogoUrl !== southernLeyteLogoUrl ||
+      draftBagongPilipinasLogoUrl !== bagongPilipinasLogoUrl ||
       draftSlsuUrl !== slsuPhotoUrl ||
       draftSlsuTitle !== slsuCenterTitle ||
       draftSlsuSubtitle !== slsuCenterSubtitle ||
@@ -141,6 +153,8 @@ export const PhotosView: React.FC<PhotosViewProps> = () => {
     draftDaLogoUrl,
     draftSilagoLogoUrl,
     draftBagOngLogoUrl,
+    draftSouthernLeyteLogoUrl,
+    draftBagongPilipinasLogoUrl,
     draftSlsuUrl,
     draftSlsuTitle,
     draftSlsuSubtitle,
@@ -153,6 +167,8 @@ export const PhotosView: React.FC<PhotosViewProps> = () => {
     daLogoUrl,
     silagoLogoUrl,
     bagOngSilagoLogoUrl,
+    southernLeyteLogoUrl,
+    bagongPilipinasLogoUrl,
     slsuPhotoUrl,
     slsuCenterTitle,
     slsuCenterSubtitle,
@@ -180,6 +196,8 @@ export const PhotosView: React.FC<PhotosViewProps> = () => {
   const silagoSealFileRef = useRef<HTMLInputElement | null>(null);
   const bagOngFileRef = useRef<HTMLInputElement | null>(null);
   const daSealFileRef = useRef<HTMLInputElement | null>(null);
+  const southernLeyteSealFileRef = useRef<HTMLInputElement | null>(null);
+  const bagongPilipinasSealFileRef = useRef<HTMLInputElement | null>(null);
 
   // Apply All Draft Changes to Global System
   const handleSaveAndApply = () => {
@@ -191,6 +209,8 @@ export const PhotosView: React.FC<PhotosViewProps> = () => {
     setDaLogoUrl(draftDaLogoUrl);
     setSilagoLogoUrl(draftSilagoLogoUrl);
     setBagOngSilagoLogoUrl(draftBagOngLogoUrl);
+    setSouthernLeyteLogoUrl(draftSouthernLeyteLogoUrl);
+    setBagongPilipinasLogoUrl(draftBagongPilipinasLogoUrl);
 
     setSlsuPhotoUrl(draftSlsuUrl);
     setSlsuCenterTitle(draftSlsuTitle);
@@ -210,6 +230,8 @@ export const PhotosView: React.FC<PhotosViewProps> = () => {
     setDraftDaLogoUrl(daLogoUrl);
     setDraftSilagoLogoUrl(silagoLogoUrl);
     setDraftBagOngLogoUrl(bagOngSilagoLogoUrl);
+    setDraftSouthernLeyteLogoUrl(southernLeyteLogoUrl);
+    setDraftBagongPilipinasLogoUrl(bagongPilipinasLogoUrl);
     setDraftSlsuUrl(slsuPhotoUrl);
     setDraftSlsuTitle(slsuCenterTitle);
     setDraftSlsuSubtitle(slsuCenterSubtitle);
@@ -642,68 +664,70 @@ export const PhotosView: React.FC<PhotosViewProps> = () => {
             </div>
           )}
 
-          {/* Official 3-Seal Logos */}
+          {/* Official Government Logos (5 Seals) */}
           {(activeMediaTab === 'all' || activeMediaTab === 'seals') && (
             <div className="bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
               <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
                   <Shield className="w-4 h-4 text-emerald-700" />
                   <h3 className="font-serif font-bold text-base text-slate-900">
-                    Official 3-Seal Government Logos
+                    Official Government Seals & Logos
                   </h3>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => {
-                    setDraftDaLogoUrl('');
+                    setDraftBagongPilipinasLogoUrl('');
                     setDraftSilagoLogoUrl('');
+                    setDraftDaLogoUrl('');
+                    setDraftSouthernLeyteLogoUrl('');
                     setDraftBagOngLogoUrl('');
                     showToast('Reset seals to official vector seals');
                   }}
                   className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-[11px] rounded-lg transition flex items-center gap-1 cursor-pointer border border-slate-300"
                 >
                   <RotateCcw className="w-3 h-3" />
-                  <span>Reset Seals</span>
+                  <span>Reset All Seals</span>
                 </button>
               </div>
 
               <div className="space-y-3">
-                {/* 1. DA Logo */}
+                {/* 1. Bagong Pilipinas Logo */}
                 <div className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/70 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center p-1 shadow-2xs">
-                      <DaLogo size={36} customUrl={draftDaLogoUrl} />
+                      <BagongPilipinasLogo size={36} customUrl={draftBagongPilipinasLogoUrl} showText={false} />
                     </div>
                     <div>
                       <h4 className="font-bold text-xs text-slate-900">
-                        Department of Agriculture (DA)
+                        Bagong Pilipinas Official Logo
                       </h4>
                       <p className="text-[11px] text-slate-500">
-                        National government agricultural header seal
+                        National administration header logo across all reports
                       </p>
                     </div>
                   </div>
 
                   <input
                     type="file"
-                    ref={daSealFileRef}
+                    ref={bagongPilipinasSealFileRef}
                     accept="image/*"
                     className="hidden"
                     onChange={(e) =>
-                      handleGenericFileUpload(e, (dataUrl) => setDraftDaLogoUrl(dataUrl))
+                      handleGenericFileUpload(e, (dataUrl) => setDraftBagongPilipinasLogoUrl(dataUrl))
                     }
                   />
                   <button
                     type="button"
-                    onClick={() => daSealFileRef.current?.click()}
+                    onClick={() => bagongPilipinasSealFileRef.current?.click()}
                     className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-[11px] rounded-lg shadow-2xs transition cursor-pointer"
                   >
                     Change
                   </button>
                 </div>
 
-                {/* 2. Silago LGU Seal */}
+                {/* 2. Municipality of Silago Seal */}
                 <div className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/70 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center p-1 shadow-2xs">
@@ -737,7 +761,75 @@ export const PhotosView: React.FC<PhotosViewProps> = () => {
                   </button>
                 </div>
 
-                {/* 3. Bag-Ong Silago Logo */}
+                {/* 3. DA Logo */}
+                <div className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/70 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center p-1 shadow-2xs">
+                      <DaLogo size={36} customUrl={draftDaLogoUrl} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-xs text-slate-900">
+                        Department of Agriculture (DA)
+                      </h4>
+                      <p className="text-[11px] text-slate-500">
+                        National government agricultural header seal
+                      </p>
+                    </div>
+                  </div>
+
+                  <input
+                    type="file"
+                    ref={daSealFileRef}
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) =>
+                      handleGenericFileUpload(e, (dataUrl) => setDraftDaLogoUrl(dataUrl))
+                    }
+                  />
+                  <button
+                    type="button"
+                    onClick={() => daSealFileRef.current?.click()}
+                    className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-[11px] rounded-lg shadow-2xs transition cursor-pointer"
+                  >
+                    Change
+                  </button>
+                </div>
+
+                {/* 4. Province of Southern Leyte Seal */}
+                <div className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/70 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center p-1 shadow-2xs">
+                      <SouthernLeyteSeal size={36} customUrl={draftSouthernLeyteLogoUrl} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-xs text-slate-900">
+                        Province of Southern Leyte Seal
+                      </h4>
+                      <p className="text-[11px] text-slate-500">
+                        Provincial seal for official municipal transmittals
+                      </p>
+                    </div>
+                  </div>
+
+                  <input
+                    type="file"
+                    ref={southernLeyteSealFileRef}
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) =>
+                      handleGenericFileUpload(e, (dataUrl) => setDraftSouthernLeyteLogoUrl(dataUrl))
+                    }
+                  />
+                  <button
+                    type="button"
+                    onClick={() => southernLeyteSealFileRef.current?.click()}
+                    className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-[11px] rounded-lg shadow-2xs transition cursor-pointer"
+                  >
+                    Change
+                  </button>
+                </div>
+
+                {/* 5. Bag-Ong Silago Logo */}
                 <div className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/70 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center p-1 shadow-2xs">

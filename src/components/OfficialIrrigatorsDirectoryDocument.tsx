@@ -7,6 +7,7 @@ import {
 import { OfficialSignatory } from '../types';
 import { SilagoSeal, BagongPilipinasLogo } from './Seals';
 import { useApp } from '../context/AppContext';
+import { ReportLogoEditorModal, ReportLogoType } from './ReportLogoEditorModal';
 import {
   Edit3,
   CheckCircle2,
@@ -35,6 +36,7 @@ export const OfficialIrrigatorsDirectoryDocument: React.FC<OfficialIrrigatorsDir
 }) => {
   const { silagoLogoUrl, bagongPilipinasLogoUrl } = useApp();
   const [justSaved, setJustSaved] = useState(false);
+  const [editingLogo, setEditingLogo] = useState<ReportLogoType | null>(null);
 
   const handleFieldChange = <K extends keyof IrrigatorsDirectoryLetterData>(
     field: K,
@@ -167,8 +169,24 @@ export const OfficialIrrigatorsDirectoryDocument: React.FC<OfficialIrrigatorsDir
       {/* TOP HEADER: Silago Seal (Left) • Headers (Center) • Bagong Pilipinas (Right) */}
       <div className="flex items-center justify-between pb-3 pt-1 px-4 sm:px-8 relative border-b border-transparent">
         {/* Left: Silago Municipal Seal */}
-        <div className="flex-shrink-0">
-          <SilagoSeal size={isLandscape ? 68 : 58} customUrl={silagoLogoUrl} />
+        <div className="relative group/logo flex-shrink-0 h-16 w-auto max-w-[80px] flex items-center justify-center">
+          <div
+            onClick={() => isEditable && setEditingLogo('silago')}
+            className={`h-16 w-auto max-w-[80px] flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
+            title={isEditable ? 'Click to change or upload Municipality of Silago Seal' : undefined}
+          >
+            <SilagoSeal size={isLandscape ? 68 : 58} customUrl={silagoLogoUrl} className="h-16 w-auto max-w-[80px] object-contain" />
+          </div>
+          {isEditable && (
+            <button
+              type="button"
+              onClick={() => setEditingLogo('silago')}
+              className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
+              title="Change Municipality of Silago Seal"
+            >
+              <Camera size={11} />
+            </button>
+          )}
         </div>
 
         {/* Center: Official Government Sub-headers */}
@@ -210,8 +228,24 @@ export const OfficialIrrigatorsDirectoryDocument: React.FC<OfficialIrrigatorsDir
         </div>
 
         {/* Right: Bagong Pilipinas Official Logo */}
-        <div className="flex-shrink-0 flex flex-col items-center">
-          <BagongPilipinasLogo size={isLandscape ? 58 : 50} showText={true} customUrl={bagongPilipinasLogoUrl} />
+        <div className="relative group/logo flex-shrink-0 h-16 w-auto max-w-[80px] flex flex-col items-center justify-center">
+          <div
+            onClick={() => isEditable && setEditingLogo('bagongPilipinas')}
+            className={`h-16 w-auto max-w-[80px] flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
+            title={isEditable ? 'Click to change or upload Bagong Pilipinas Logo' : undefined}
+          >
+            <BagongPilipinasLogo size={isLandscape ? 58 : 50} showText={true} customUrl={bagongPilipinasLogoUrl} className="h-16 w-auto max-w-[80px] object-contain" />
+          </div>
+          {isEditable && (
+            <button
+              type="button"
+              onClick={() => setEditingLogo('bagongPilipinas')}
+              className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
+              title="Change Bagong Pilipinas Logo"
+            >
+              <Camera size={11} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -502,6 +536,20 @@ export const OfficialIrrigatorsDirectoryDocument: React.FC<OfficialIrrigatorsDir
           ))}
         </div>
       </div>
+
+      {/* Word-Style Official Print Document Footer */}
+      <div className="hidden print:flex items-center justify-between text-[8pt] font-mono text-slate-700 border-t border-black pt-1.5 mt-4">
+        <span>REF NO: SLG-MAO-IA-DIRECTORY</span>
+        <span>DATE PRINTED: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+        <span className="print-page-number"></span>
+      </div>
+
+      {/* Unified Global Logo Editor Modal */}
+      <ReportLogoEditorModal
+        isOpen={editingLogo !== null}
+        onClose={() => setEditingLogo(null)}
+        logoType={editingLogo}
+      />
     </div>
   );
 };
