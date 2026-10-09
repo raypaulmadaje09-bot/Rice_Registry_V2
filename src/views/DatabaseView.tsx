@@ -9,7 +9,7 @@ import {
   isUserAuthorizedForBarangay,
   getAssignedLftForBarangay
 } from '../data/barangays';
-import { CROPPING_SEASONS, ACTIVE_SEASON } from '../data/seasonalProduction';
+import { CROPPING_SEASONS, ACTIVE_SEASON, matchesSeasonFilter, getShortSeasonName } from '../data/seasonalProduction';
 import { FarmParcel, SeasonalProductionRecord } from '../types';
 import { getLandPhoto, getFarmerPhoto } from '../data/photos';
 import { calculateCropGrowthStage, RICE_VARIETIES } from '../data/riceVarieties';
@@ -28,6 +28,7 @@ import {
   Globe,
   CheckCircle2,
   X,
+  History,
   Edit2,
   Trash2,
   AlertTriangle,
@@ -276,8 +277,10 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
         (selectedEcosystem === 'RAINFED' && p.purpose.toLowerCase().includes('rainfed')) ||
         (selectedEcosystem === 'UPLAND' && p.purpose.toLowerCase().includes('upland'));
 
-      const currentRecord = p.seasonalRecords?.find((r) => r.season === selectedSeason);
-      const activeBreed = currentRecord ? currentRecord.seedVariety : p.breed;
+      const currentRecord = selectedSeason === 'ALL_SEASONS'
+        ? p.seasonalRecords?.[0]
+        : p.seasonalRecords?.find((r) => matchesSeasonFilter(r.season, selectedSeason) || matchesSeasonFilter(r.seasonName, selectedSeason));
+      const activeBreed = currentRecord ? (currentRecord.varietyPlanted || currentRecord.seedVariety) : p.breed;
 
       const matchesVariety =
         selectedVariety === 'ALL' ||
@@ -302,18 +305,34 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
 
   const seasonalProductionStats = useMemo(() => {
     let totalProdMt = 0;
+    let totalBags = 0;
     filteredParcels.forEach((p) => {
-      const rec = p.seasonalRecords?.find((r) => r.season === selectedSeason) || p.seasonalRecords?.[0];
-      if (rec) {
-        totalProdMt += rec.actualProductionVolumeMt;
+      const records = p.seasonalRecords || [];
+      if (selectedSeason === 'ALL_SEASONS') {
+        if (records.length > 0) {
+          records.forEach((r) => {
+            totalProdMt += (r.actualProductionVolumeMt || r.yieldMetricTons || 0);
+            totalBags += (r.yieldBags ?? r.actualProductionBags ?? Math.round((r.actualProductionVolumeMt || 0) * 20));
+          });
+        } else {
+          totalProdMt += (p.weightKg || 1) * 4.8;
+          totalBags += Math.round((p.weightKg || 1) * 4.8 * 20);
+        }
       } else {
-        totalProdMt += (p.weightKg || 1) * 4.8;
+        const rec = records.find((r) => matchesSeasonFilter(r.season, selectedSeason) || matchesSeasonFilter(r.seasonName, selectedSeason)) || records[0];
+        if (rec) {
+          totalProdMt += (rec.actualProductionVolumeMt || rec.yieldMetricTons || 0);
+          totalBags += (rec.yieldBags ?? rec.actualProductionBags ?? Math.round((rec.actualProductionVolumeMt || 0) * 20));
+        } else {
+          totalProdMt += (p.weightKg || 1) * 4.8;
+          totalBags += Math.round((p.weightKg || 1) * 4.8 * 20);
+        }
       }
     });
     const avgYield = totalAreaMapped > 0 ? Number((totalProdMt / totalAreaMapped).toFixed(2)) : 0;
     return {
       totalProdMt: Number(totalProdMt.toFixed(2)),
-      totalBags: Math.round(totalProdMt * 20),
+      totalBags: totalBags || Math.round(totalProdMt * 20),
       avgYieldMtPerHa: avgYield
     };
   }, [filteredParcels, selectedSeason, totalAreaMapped]);
@@ -859,13 +878,38 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                 onChange={(e) => setSelectedSeason(e.target.value)}
                 className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-800 cursor-pointer shadow-2xs"
               >
+                <option value="ALL_SEASONS">All Seasons (Historical Timeline)</option>
                 {CROPPING_SEASONS.map((s) => (
                   <option key={s} value={s}>
-                    {s}
+                    {getShortSeasonName(s)}
                   </option>
                 ))}
               </select>
             </div>
+          </div>
+        </div>
+
+        {/* Cumulative Harvest Summary Badge */}
+        <div className="bg-emerald-50/80 border border-emerald-200/90 rounded-2xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs shadow-2xs">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse" />
+            <span className="font-extrabold text-emerald-950 uppercase tracking-wider text-[11px]">
+              {selectedSeason === 'ALL_SEASONS' ? 'Historical Harvest Timeline (All Seasons)' : `${getShortSeasonName(selectedSeason)} Production`}
+            </span>
+            <span className="text-emerald-700/80 text-[11px]">&bull; {filteredParcels.length} Registered Farms</span>
+          </div>
+          <div className="flex items-center gap-3 font-mono text-[11.5px] text-emerald-900 flex-wrap">
+            <span>
+              Total Ani: <strong className="font-bold text-emerald-950">{seasonalProductionStats.totalBags.toLocaleString()} Cavans</strong>
+            </span>
+            <span className="text-emerald-300">&bull;</span>
+            <span>
+              Volume: <strong className="font-bold text-emerald-950">{seasonalProductionStats.totalProdMt.toFixed(2)} MT</strong>
+            </span>
+            <span className="text-emerald-300">&bull;</span>
+            <span>
+              Avg Yield: <strong className="font-bold text-emerald-950">{seasonalProductionStats.avgYieldMtPerHa.toFixed(2)} MT/ha</strong>
+            </span>
           </div>
         </div>
       </div>
@@ -1038,11 +1082,22 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                   );
 
                   // Extract active seasonal record for this cropping season
-                  const seasonalRecord =
-                    parcel.seasonalRecords?.find((r) => r.season === selectedSeason) ||
-                    parcel.seasonalRecords?.[0];
+                  const seasonalRecord = selectedSeason === 'ALL_SEASONS'
+                    ? parcel.seasonalRecords?.[0]
+                    : (parcel.seasonalRecords?.find((r) => matchesSeasonFilter(r.season, selectedSeason) || matchesSeasonFilter(r.seasonName, selectedSeason)) || parcel.seasonalRecords?.[0]);
 
-                  const activeVariety = seasonalRecord ? seasonalRecord.seedVariety : parcel.breed;
+                  const activeVariety = seasonalRecord ? (seasonalRecord.varietyPlanted || seasonalRecord.seedVariety) : parcel.breed;
+
+                  const parcelTotalBags = (parcel.seasonalRecords || []).reduce(
+                    (sum, r) => sum + (r.yieldBags ?? r.actualProductionBags ?? Math.round((r.actualProductionVolumeMt || 0) * 20)),
+                    0
+                  );
+                  const parcelTotalMt = (parcel.seasonalRecords || []).reduce(
+                    (sum, r) => sum + (r.actualProductionVolumeMt || r.yieldMetricTons || 0),
+                    0
+                  );
+                  const latestHarvestRecord = (parcel.seasonalRecords || [])[0];
+                  const latestHarvestDate = latestHarvestRecord?.harvestDate || latestHarvestRecord?.actualHarvestDate || latestHarvestRecord?.estimatedHarvestDate || '';
 
                   if (isEditing && inlineEditData) {
                     return (
@@ -1292,7 +1347,8 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                   return (
                     <tr
                       key={parcel.tagNumber}
-                      className={`hover:bg-blue-50/50 transition-colors group ${
+                      onClick={() => onSelectParcel(parcel)}
+                      className={`hover:bg-blue-50/50 transition-colors group cursor-pointer ${
                         isSelected
                           ? 'bg-blue-50/90 font-medium ring-1 ring-inset ring-blue-300'
                           : idx % 2 === 1
@@ -1384,13 +1440,33 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                       </td>
 
                       {/* 7. COMMODITY / VARIETY */}
-                      <td className="py-2.5 px-3.5 whitespace-nowrap text-slate-800 text-xs w-[180px] min-w-[180px]">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-slate-900">{parcel.commodity || 'Rice'}</span>
-                          <span className="text-slate-400">/</span>
-                          <span className="text-blue-900 font-medium text-[11px] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/70">
-                            {activeVariety || 'NSIC Rc 222'}
-                          </span>
+                      <td className="py-2.5 px-3.5 whitespace-nowrap text-slate-800 text-xs w-[190px] min-w-[190px]">
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-semibold text-slate-900">{parcel.commodity || 'Rice'}</span>
+                            <span className="text-slate-400">/</span>
+                            <span className="text-blue-900 font-medium text-[11px] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/70">
+                              {activeVariety || 'NSIC Rc 222'}
+                            </span>
+                          </div>
+                          {selectedSeason === 'ALL_SEASONS' ? (
+                            <div className="flex items-center gap-1 text-[10px] text-emerald-800 font-mono">
+                              <span className="font-bold bg-emerald-50 text-emerald-800 px-1.5 py-0.2 rounded border border-emerald-200">
+                                🌾 {parcelTotalBags} Bags ({parcelTotalMt.toFixed(1)} MT)
+                              </span>
+                              {latestHarvestDate && (
+                                <span className="text-slate-500 text-[9.5px]">
+                                  &bull; Ani: {latestHarvestDate}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            seasonalRecord && (
+                              <div className="text-[10px] text-slate-500 font-mono">
+                                🌾 {(seasonalRecord.yieldBags ?? seasonalRecord.actualProductionBags ?? Math.round((seasonalRecord.actualProductionVolumeMt || 0) * 20))} Bags ({(seasonalRecord.actualProductionVolumeMt || seasonalRecord.yieldMtPerHa || 0).toFixed(1)} MT)
+                              </div>
+                            )
+                          )}
                         </div>
                       </td>
 
@@ -1407,6 +1483,19 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                       {/* 15. ACTIONS: Governed strictly by RBAC & GIS locate */}
                       <td className={`py-2.5 px-2.5 text-center whitespace-nowrap sticky right-0 z-10 ${rowBg} group-hover:bg-blue-50/70 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.06)] w-[115px] min-w-[115px]`}>
                         <div className="flex items-center justify-center gap-1.5">
+                          {/* 0. View Details & Harvest History Button */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSelectParcel(parcel);
+                            }}
+                            className="p-1.5 rounded-lg border border-purple-200 bg-white hover:bg-purple-50 text-purple-700 hover:text-purple-900 transition cursor-pointer inline-flex items-center justify-center shadow-2xs hover:border-purple-300"
+                            title="View Farmer Dossier & Seasonal Harvest History"
+                          >
+                            <History className="w-3.5 h-3.5 text-purple-600" />
+                          </button>
+
                           {/* 1. Locate on GIS Map (MapPin Icon) */}
                           {hasGpsCoordinates ? (
                             <button

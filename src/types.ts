@@ -19,15 +19,22 @@ export interface SeasonalProductionRecord {
   id: string; // Unique seasonal record ID e.g. "PROD-2026WS-001"
   parcelTag: string; // Foreign key linking to FarmParcel.tagNumber
   season: string; // e.g. "Wet Season (WS) 2026", "Dry Season (DS) 2026"
+  seasonName?: string; // e.g. "Dry Season (DS) 2025", "Wet Season (WS) 2025"
   seedVariety: string; // e.g. "NSIC Rc 222", "NSIC Rc 488H"
+  varietyPlanted?: string; // alias for seedVariety (e.g. "NSIC Rc 222")
   seedType: 'INBRED' | 'HYBRID' | 'UNKNOWN';
   plantingDate: string; // YYYY-MM-DD
   estimatedHarvestDate: string; // YYYY-MM-DD (calculated based on variety maturity)
   actualHarvestDate?: string; // YYYY-MM-DD
+  harvestDate?: string; // alias for actualHarvestDate / harvest date
   actualProductionVolumeMt: number; // in Metric Tons (MT)
   actualProductionBags?: number; // in 50-kg cavans/bags (= MT * 20)
+  yieldBags?: number; // alias for actualProductionBags (ihap sa sako/kaban)
   yieldMtPerHa: number; // MT per hectare = actualProductionVolumeMt / weightKg
+  yieldMetricTons?: number; // alias for yieldMtPerHa
+  grossIncome?: number; // Gross income in PHP (e.g. yieldBags * ₱1,150)
   productionStatus: 'Standing Crop' | 'Harvest Completed' | 'Crop Failure / Damaged';
+  status?: 'Harvested' | 'Damaged' | 'Ongoing'; // status alias
   growthStage?: string; // e.g. "Tillering (Vegetative)", "Panicle Initiation"
   elapsedDas?: number; // Days after sowing
   maturityPercentage?: number; // % maturity

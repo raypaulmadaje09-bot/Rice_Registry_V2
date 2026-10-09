@@ -3,7 +3,7 @@ import { User, FarmParcel, Language, BackgroundPreset, LftAccount, SeasonalProdu
 import { BARANGAYS, getAssignedLftForBarangay } from '../data/barangays';
 import { DEFAULT_BG_PHOTO, DEFAULT_SLSU_PHOTO, SLSU_DEFAULTS, PRESET_BACKGROUNDS } from '../data/photos';
 import { RiceVariety, RICE_VARIETIES } from '../data/riceVarieties';
-import { generateInitialSeasonalRecords, CROPPING_SEASONS, ACTIVE_SEASON } from '../data/seasonalProduction';
+import { generateInitialSeasonalRecords, normalizeSeasonalRecord, CROPPING_SEASONS, ACTIVE_SEASON } from '../data/seasonalProduction';
 import { supabase } from '../supabase';
 import {
   mapFarmerRowToParcel,
@@ -1098,34 +1098,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     parcelTag: string,
     record: Omit<SeasonalProductionRecord, 'id' | 'parcelTag' | 'recordedAt'>
   ) => {
-    const newRecord: SeasonalProductionRecord = {
+    const newRecord: SeasonalProductionRecord = normalizeSeasonalRecord({
       ...record,
-      id: `PROD-${parcelTag}-${Date.now().toString().slice(-6)}`,
-      parcelTag,
-      recordedAt: new Date().toISOString()
-    };
+      parcelTag
+    }, parcelTag);
 
     let targetUpdated: FarmParcel | null = null;
     const updated = parcels.map((p) => {
       if (p.tagNumber === parcelTag) {
         const existing = p.seasonalRecords || [];
-        const filtered = existing.filter((r) => r.season !== record.season);
+        const filtered = existing.filter((r) => r.season !== record.season && r.seasonName !== record.season);
         targetUpdated = {
           ...p,
           seasonalRecords: [newRecord, ...filtered],
-          breed: record.seedVariety,
-          plantingDate: record.plantingDate,
-          croppingSeason: record.season,
-          targetYieldMt: record.yieldMtPerHa,
+          breed: newRecord.seedVariety,
+          variety: newRecord.seedVariety,
+          plantingDate: newRecord.plantingDate,
+          croppingSeason: newRecord.season,
+          targetYieldMt: newRecord.yieldMtPerHa,
           healthStatus:
-            record.growthStage ||
-            (record.productionStatus === 'Harvest Completed' ? 'Harvested' : 'Active Crop')
+            newRecord.growthStage ||
+            (newRecord.productionStatus === 'Harvest Completed' || newRecord.status === 'Harvested' ? 'Harvested' : 'Active Crop')
         };
         return targetUpdated;
       }
       return p;
     });
     setParcels(updated);
+    try {
+      localStorage.setItem('rice_registry_parcels', JSON.stringify(updated));
+      localStorage.setItem('silago_cached_parcels', JSON.stringify(updated));
+    } catch {}
     if (targetUpdated) {
       supabaseDb.upsertParcel(targetUpdated);
     }
@@ -1141,7 +1144,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (p.tagNumber === parcelTag) {
         const existing = p.seasonalRecords || [];
         const newRecords = existing.map((r) =>
-          r.id === recordId ? { ...r, ...updatedFields } : r
+          r.id === recordId ? normalizeSeasonalRecord({ ...r, ...updatedFields, parcelTag }, parcelTag) : r
         );
         targetUpdated = {
           ...p,
@@ -1152,6 +1155,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return p;
     });
     setParcels(updated);
+    try {
+      localStorage.setItem('rice_registry_parcels', JSON.stringify(updated));
+      localStorage.setItem('silago_cached_parcels', JSON.stringify(updated));
+    } catch {}
     if (targetUpdated) {
       supabaseDb.upsertParcel(targetUpdated);
     }
@@ -1170,6 +1177,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return p;
     });
     setParcels(updated);
+    try {
+      localStorage.setItem('rice_registry_parcels', JSON.stringify(updated));
+      localStorage.setItem('silago_cached_parcels', JSON.stringify(updated));
+    } catch {}
     if (targetUpdated) {
       supabaseDb.upsertParcel(targetUpdated);
     }

@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
 import { FarmParcel, LftAccount, User } from '../types';
+import { generateInitialSeasonalRecords, normalizeSeasonalRecord } from '../data/seasonalProduction';
 
 // Supabase project environment configuration
 const supabaseUrl =
@@ -233,8 +234,16 @@ export function mapFarmerRowToParcel(row: any): FarmParcel {
     gpsAccuracyMeters: Number(row.gpsAccuracyMeters || row.gps_accuracy_meters || 3.5),
     polygonCoords: row.polygonCoords || row.polygon_coords || undefined,
     boundaryCoords: row.boundaryCoords || row.boundary_coords || undefined,
-    seasonalRecords: row.seasonalRecords || row.seasonal_records || []
+    seasonalRecords: (Array.isArray(row.seasonalRecords || row.seasonal_records) && (row.seasonalRecords || row.seasonal_records).length > 0)
+      ? (row.seasonalRecords || row.seasonal_records).map((sr: any) => normalizeSeasonalRecord(sr, tagNumber))
+      : []
   };
+
+  if (!parcel.seasonalRecords || parcel.seasonalRecords.length === 0) {
+    parcel.seasonalRecords = generateInitialSeasonalRecords(parcel);
+  }
+
+  return parcel;
 }
 
 /**
@@ -974,7 +983,33 @@ export function sanitizeFarmerPayload(parcel: FarmParcel) {
     harvest_date: norm.harvestDate || null,
     photo_url: safePhotoUrl,
     field_photo_url: safeFieldPhotoUrl,
-    sync_status: 'Live Synced'
+    sync_status: 'Live Synced',
+    seasonal_records: (norm.seasonalRecords || []).map((r) => ({
+      id: r.id,
+      season: r.season,
+      seasonName: r.seasonName || r.season,
+      seedVariety: r.seedVariety,
+      varietyPlanted: r.varietyPlanted || r.seedVariety,
+      seedType: r.seedType || 'INBRED',
+      plantingDate: r.plantingDate,
+      estimatedHarvestDate: r.estimatedHarvestDate,
+      actualHarvestDate: r.actualHarvestDate,
+      harvestDate: r.harvestDate || r.actualHarvestDate || r.estimatedHarvestDate,
+      actualProductionVolumeMt: r.actualProductionVolumeMt,
+      actualProductionBags: r.actualProductionBags || r.yieldBags,
+      yieldBags: r.yieldBags || r.actualProductionBags,
+      yieldMtPerHa: r.yieldMtPerHa || r.yieldMetricTons,
+      yieldMetricTons: r.yieldMetricTons || r.yieldMtPerHa,
+      grossIncome: r.grossIncome || ((r.yieldBags || r.actualProductionBags || 0) * 1150),
+      productionStatus: r.productionStatus,
+      status: r.status,
+      growthStage: r.growthStage,
+      elapsedDas: r.elapsedDas,
+      maturityPercentage: r.maturityPercentage,
+      lftOfficerName: r.lftOfficerName,
+      recordedAt: r.recordedAt,
+      remarks: r.remarks
+    }))
   };
 }
 

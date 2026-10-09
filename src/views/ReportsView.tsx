@@ -9,7 +9,7 @@ import {
   getDisplayBarangay,
   getAssignedLftForBarangay
 } from '../data/barangays';
-import { CROPPING_SEASONS, ACTIVE_SEASON } from '../data/seasonalProduction';
+import { CROPPING_SEASONS, ACTIVE_SEASON, matchesSeasonFilter, getShortSeasonName } from '../data/seasonalProduction';
 import { DaLogo, SilagoSeal, BagOngSilagoLogo, BagongPilipinasLogo } from '../components/Seals';
 import {
   Printer,
@@ -314,20 +314,62 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
   const parcelsWithSeason = useMemo(() => {
     return reportParcels.map((p) => {
       const records = p.seasonalRecords || [];
+      if (selectedSeason === 'ALL_SEASONS') {
+        const totalVol = records.reduce((sum, r) => sum + (r.actualProductionVolumeMt || r.yieldMetricTons || 0), 0);
+        const totalBags = records.reduce((sum, r) => sum + (r.yieldBags ?? r.actualProductionBags ?? Math.round((r.actualProductionVolumeMt || 0) * 20)), 0);
+        const area = Number(p.weightKg || p.areaHa || (p as any).farm_area_ha || 1);
+        const avgYield = area > 0 ? Number((totalVol / area).toFixed(2)) : 0;
+        const latestRec = records[0];
+
+        const consolidated: SeasonalProductionRecord = {
+          id: `PROD-${p.tagNumber}-CONSOLIDATED`,
+          parcelTag: p.tagNumber,
+          season: 'All Seasons (Consolidated Historical)',
+          seasonName: 'All Seasons (Consolidated)',
+          seedVariety: latestRec?.seedVariety || p.breed || 'NSIC Rc 222',
+          varietyPlanted: latestRec?.varietyPlanted || p.breed || 'NSIC Rc 222',
+          seedType: (p.seedType as any) || 'INBRED',
+          plantingDate: latestRec?.plantingDate || p.plantingDate || '2026-07-20',
+          estimatedHarvestDate: latestRec?.estimatedHarvestDate || '2026-11-15',
+          actualHarvestDate: latestRec?.actualHarvestDate,
+          harvestDate: latestRec?.harvestDate || latestRec?.actualHarvestDate || '2026-11-15',
+          actualProductionVolumeMt: Number(totalVol.toFixed(2)),
+          actualProductionBags: totalBags,
+          yieldBags: totalBags,
+          yieldMtPerHa: avgYield,
+          yieldMetricTons: avgYield,
+          productionStatus: 'Harvest Completed',
+          status: 'Harvested',
+          growthStage: 'Historical Total',
+          lftOfficerName: p.focalPerson || getAssignedLftForBarangay(p.barangay).name,
+          recordedAt: new Date().toISOString()
+        };
+
+        return {
+          parcel: p,
+          seasonRecord: consolidated
+        };
+      }
+
       const matched =
-        records.find((r) => r.season === selectedSeason) ||
+        records.find((r) => matchesSeasonFilter(r.season, selectedSeason) || matchesSeasonFilter(r.seasonName, selectedSeason)) ||
         records[0] || {
           id: `PROD-${p.tagNumber}-TEMP`,
           parcelTag: p.tagNumber,
           season: selectedSeason,
+          seasonName: getShortSeasonName(selectedSeason),
           seedVariety: p.breed || 'NSIC Rc 222',
+          varietyPlanted: p.breed || 'NSIC Rc 222',
           seedType: (p.seedType as any) || 'INBRED',
           plantingDate: p.plantingDate || '2026-07-20',
           estimatedHarvestDate: '2026-11-15',
           actualProductionVolumeMt: Number(((p.weightKg || 1) * 4.8).toFixed(2)),
           actualProductionBags: Math.round(((p.weightKg || 1) * 4.8) * 20),
+          yieldBags: Math.round(((p.weightKg || 1) * 4.8) * 20),
           yieldMtPerHa: 4.8,
+          yieldMetricTons: 4.8,
           productionStatus: 'Standing Crop',
+          status: 'Ongoing',
           growthStage: 'Tillering (Vegetative)',
           lftOfficerName: p.focalPerson || getAssignedLftForBarangay(p.barangay).name,
           recordedAt: new Date().toISOString()
@@ -1253,9 +1295,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
               onChange={(e) => setSelectedSeason(e.target.value)}
               className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-emerald-600 cursor-pointer shadow-2xs truncate"
             >
+              <option value="ALL_SEASONS">All Seasons (Consolidated Historical)</option>
               {CROPPING_SEASONS.map((s) => (
                 <option key={s} value={s}>
-                  {s}
+                  {getShortSeasonName(s)}
                 </option>
               ))}
             </select>
@@ -1572,7 +1615,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
                 {/* Memorandum Subhead */}
                 <div className="pt-2 flex items-center justify-between text-xs font-mono border-t border-slate-200 mt-2 px-1 text-slate-600">
                   <span>MEMO REF: <strong>{memoRef}</strong></span>
-                  <span>ACTIVE SEASON: <strong>{selectedSeason.split('(')[0].trim()}</strong></span>
+                  <span>ACTIVE SEASON: <strong>{getShortSeasonName(selectedSeason)}</strong></span>
                   <span>DATE: <strong>{reportDate}</strong></span>
                 </div>
               </div>
@@ -1585,7 +1628,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
                   </span>
                   <h2 className="text-sm sm:text-base font-serif font-bold uppercase tracking-wide">
                     {reportType === 'seasonal_production'
-                      ? `Seasonal Rice Production & Harvest Volume Report (${selectedSeason.split('(')[0].trim()})`
+                      ? `Seasonal Rice Production & Harvest Volume Report (${getShortSeasonName(selectedSeason)})`
                       : reportType === 'barangay_consolidated'
                       ? '10 Assigned Barangays Rice Production Summary & Yield Ranking'
                       : 'Rice Farmer Profile Registry & Land Holding Masterlist'}
