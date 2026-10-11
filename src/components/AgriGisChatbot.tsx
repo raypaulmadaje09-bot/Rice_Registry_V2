@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { PortalTab, FarmParcel } from '../types';
-import { BARANGAYS } from '../data/barangays';
+import { BARANGAYS, OFFICIAL_15_BARANGAYS } from '../data/barangays';
 import { RICE_VARIETIES } from '../data/riceVarieties';
 import { ACTIVE_SEASON } from '../data/seasonalProduction';
 import { RiceSsistantLogo } from './RiceSsistantLogo';
 import { RiceSsistantMarkdown } from './RiceSsistantMarkdown';
+import { parseFarmerName } from '../utils/supabaseClient';
 import * as XLSX from 'xlsx';
 import {
   X,
@@ -33,7 +34,8 @@ import {
   VolumeX,
   Paperclip,
   FileSpreadsheet,
-  Upload
+  Upload,
+  UploadCloud
 } from 'lucide-react';
 
 export type ChatActionType =
@@ -1182,6 +1184,7 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
   const [isTtsEnabled, setIsTtsEnabled] = useState(true);
   const recognitionRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
 
   // Web Speech API Voice Recognition Toggle
   const toggleListening = () => {
@@ -1276,11 +1279,19 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
     }
   };
 
-  // Smart Excel File Parsing using 'xlsx' library
-  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = '';
+  // Smart Excel/CSV File Parsing & Data Cleaning using 'xlsx' (SheetJS)
+  const processExcelFile = async (file: File) => {
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (!ext || !['xlsx', 'xls', 'csv'].includes(ext)) {
+      const errorMsg: ChatMessage = {
+        id: `msg-${Date.now()}`,
+        sender: 'assistant',
+        text: `⚠️ **Dili suportado nga file type**: Ang gi-upload nga file \`${file.name}\` dili usa ka Excel (.xlsx, .xls) o CSV (.csv) file. Palihug gamita ang balido nga spreadsheet file.`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages((prev) => [...prev, errorMsg]);
+      return;
+    }
 
     setIsLoading(true);
 
@@ -1289,16 +1300,24 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
       const workbook = XLSX.read(data, { type: 'array' });
       const firstSheetName = workbook.SheetNames[0];
       if (!firstSheetName) {
-        throw new Error('Walay sheet nga nakit-an sa Excel file.');
+        throw new Error('Walay sheet o worksheet nga nakit-an sa spreadsheet file.');
       }
       const worksheet = workbook.Sheets[firstSheetName];
       const rawRows = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet, { defval: '' });
 
-      if (!rawRows || rawRows.length === 0) {
+      // Filter out completely blank rows
+      const validRows = (rawRows || []).filter((row) => {
+        if (!row || typeof row !== 'object') return false;
+        return Object.values(row).some(
+          (val) => val !== undefined && val !== null && String(val).trim() !== ''
+        );
+      });
+
+      if (!validRows || validRows.length === 0) {
         const errorMsg: ChatMessage = {
           id: `msg-${Date.now()}`,
           sender: 'assistant',
-          text: `⚠️ **Walay sulod ang file**: Walay nakit-an nga datos o rows sulod sa gi-upload nga file \`${file.name}\`. Palihug siguroha nga aduna kini talaan sa mga mag-uuma.`,
+          text: `⚠️ **Walay sulod ang file**: Walay nakit-an nga balido nga talaan o rows sulod sa file \`${file.name}\`. Palihug siguroha nga aduna kini talaan sa mga mag-uuma.`,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
         setMessages((prev) => [...prev, errorMsg]);
@@ -1306,8 +1325,15 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
         return;
       }
 
-      // Flexible Key Normalization
-      const stagedList: StagedFarmerRecord[] = rawRows.map((row, idx) => {
+      const seenFileRsbsa = new Set<string>();
+      const existingDbRsbsa = new Set(
+        parcels
+          .map((p) => (p.swineNameOrId || p.rsbsa_no || '').trim().toLowerCase())
+          .filter(Boolean)
+      );
+
+      // Flexible Key Normalization & Column Extraction
+      const stagedList: StagedFarmerRecord[] = validRows.map((row, idx) => {
         const getVal = (patterns: RegExp[]): string => {
           for (const key of Object.keys(row)) {
             for (const pat of patterns) {
@@ -1320,65 +1346,154 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
           return '';
         };
 
-        const rsbsa =
-          getVal([/rsbsa/i, /stub/i, /swine.*id/i, /reference/i, /^id$/i]) ||
+        // 1. RSBSA Reference Number
+        let rsbsa =
+          getVal([/rsbsa/i, /stub/i, /swine.*id/i, /reference/i, /^id$/i, /sys.*id/i]) ||
           `RSBSA-SLG-${String(idx + 1).padStart(4, '0')}`;
 
-        let farmerName = getVal([/full.*name/i, /farmer.*name/i, /pangalan/i, /ngalan/i, /raiser.*name/i, /^name$/i, /tiller/i]);
+        // 2. Farmer Name (Handle combined or separated given/family columns)
+        let farmerName = '';
+        const fn = getVal([/first.*name/i, /given.*name/i, /^first$/i, /^given$/i]);
+        const ln = getVal([/last.*name/i, /family.*name/i, /apelyido/i, /^last$/i, /^family$/i, /^surname$/i]);
+        const mn = getVal([/middle.*name/i, /^middle$/i, /m\.i\./i]);
+        const suffix = getVal([/suffix/i, /ext/i, /extension/i]);
+
+        if (ln || fn) {
+          const middlePart = mn ? ` ${mn}` : '';
+          const suffixPart = suffix ? ` ${suffix}` : '';
+          farmerName = `${ln || ''}, ${fn || ''}${middlePart}${suffixPart}`.replace(/^,\s*/, '').trim();
+        } else {
+          farmerName = getVal([
+            /full.*name/i,
+            /farmer.*name/i,
+            /pangalan/i,
+            /ngalan/i,
+            /raiser.*name/i,
+            /^name$/i,
+            /tiller/i,
+            /magsasaka/i
+          ]);
+        }
+
         if (!farmerName) {
-          const fn = getVal([/first.*name/i, /given.*name/i]);
-          const ln = getVal([/last.*name/i, /family.*name/i, /apelyido/i]);
-          const mn = getVal([/middle.*name/i]);
-          if (fn || ln) {
-            farmerName = [ln, fn, mn].filter(Boolean).join(', ');
+          farmerName = `Magsasaka #${idx + 1}`;
+        }
+
+        // 3. Barangay matching against Official 15 Barangays of Silago
+        const rawBrgy = getVal([/barangay/i, /brgy/i, /lokasyon/i, /location/i, /baranggay/i]);
+        let matchedBrgyName = 'Balagawan';
+        let isBrgyMatched = false;
+
+        if (rawBrgy) {
+          const cleanBrgy = rawBrgy.toLowerCase().replace(/^(brgy\.?|barangay)\s*/i, '').trim();
+          const found = OFFICIAL_15_BARANGAYS.find((b) => b.toLowerCase() === cleanBrgy);
+          if (found) {
+            matchedBrgyName = found;
+            isBrgyMatched = true;
+          } else if (/pob.*1|district 1/i.test(cleanBrgy)) {
+            matchedBrgyName = 'Poblacion District 1';
+            isBrgyMatched = true;
+          } else if (/pob.*2|district 2/i.test(cleanBrgy)) {
+            matchedBrgyName = 'Poblacion District 2';
+            isBrgyMatched = true;
+          } else if (/sap-?ang/i.test(cleanBrgy)) {
+            matchedBrgyName = 'Sap-ang';
+            isBrgyMatched = true;
+          } else if (/hingatungan|hingatongan/i.test(cleanBrgy)) {
+            matchedBrgyName = 'Hingatungan';
+            isBrgyMatched = true;
+          } else {
+            const partial = OFFICIAL_15_BARANGAYS.find(
+              (b) => cleanBrgy.includes(b.toLowerCase()) || b.toLowerCase().includes(cleanBrgy)
+            );
+            if (partial) {
+              matchedBrgyName = partial;
+              isBrgyMatched = true;
+            }
           }
         }
-        if (!farmerName) farmerName = `Magsasaka #${idx + 1}`;
 
-        let brgy = getVal([/barangay/i, /brgy/i, /lokasyon/i, /location/i]);
-        if (!brgy) brgy = 'Balagawan';
-        const matchedBrgy = BARANGAYS.find(
-          (b) => b.name.toLowerCase() === brgy.toLowerCase() || brgy.toLowerCase().includes(b.name.toLowerCase())
-        );
-        if (matchedBrgy) brgy = matchedBrgy.name;
+        // 4. Purok / Sitio
+        const rawPurok = getVal([/purok/i, /sitio/i, /zone/i]);
+        const hasPurok = Boolean(rawPurok);
+        const purok = rawPurok || 'Purok 1';
 
-        const purok = getVal([/purok/i, /sitio/i, /zone/i]) || 'Purok 1';
+        // 5. Farm Area (Hectares)
+        const areaStr = getVal([
+          /area/i,
+          /hektar/i,
+          /hectare/i,
+          /ha/i,
+          /sukod/i,
+          /lot.*area/i,
+          /weight/i,
+          /size/i
+        ]);
+        let areaNum = parseFloat(areaStr.replace(/[^0-9.]/g, '')) || 1.0;
+        if (areaNum > 100) {
+          // If specified in square meters (e.g. 15,000 sq.m -> 1.5 ha)
+          areaNum = Number((areaNum / 10000).toFixed(2));
+        }
 
-        const areaStr = getVal([/area/i, /hektar/i, /hectare/i, /ha/i, /sukod/i, /lot.*area/i, /weight/i]);
-        const areaNum = parseFloat(areaStr.replace(/[^0-9.]/g, '')) || 1.0;
+        // 6. Commodity & Variety
+        const variety =
+          getVal([/variety/i, /binhi/i, /seed/i, /breed/i, /barayti/i, /commodity/i]) || 'NSIC Rc 222';
+        const purpose =
+          getVal([/ecosystem/i, /purpose/i, /irrigat/i, /tubig/i]) || 'Irrigated Lowland (NIA)';
+        const contact = getVal([/contact/i, /phone/i, /mobile/i, /cp/i, /cellphone/i]) || '';
 
-        const variety = getVal([/variety/i, /binhi/i, /seed/i, /breed/i, /barayti/i]) || 'NSIC Rc 222';
-        const purpose = getVal([/ecosystem/i, /purpose/i, /irrigat/i, /tubig/i]) || 'Irrigated Lowland (NIA)';
-        const contact = getVal([/contact/i, /phone/i, /mobile/i, /cp/i]) || '';
-
-        const latStr = getVal([/^lat/i, /latitude/i]);
-        const lngStr = getVal([/^lng/i, /^lon/i, /longitude/i]);
+        // 7. Coordinates (Lat/Lng)
+        const latStr = getVal([/^lat/i, /latitude/i, /^y$/i]);
+        const lngStr = getVal([/^lng/i, /^lon/i, /longitude/i, /^x$/i]);
         let latNum = parseFloat(latStr);
         let lngNum = parseFloat(lngStr);
+
+        const brgyMeta = BARANGAYS.find((b) => b.name.toLowerCase() === matchedBrgyName.toLowerCase());
+        const jitterLat = ((idx % 7) - 3) * 0.0018;
+        const jitterLng = (((idx * 3) % 7) - 3) * 0.0018;
+
         if (isNaN(latNum) || latNum < 10.4 || latNum > 10.7) {
-          latNum = matchedBrgy ? matchedBrgy.lat : 10.53 + (Math.random() - 0.5) * 0.02;
+          latNum = (brgyMeta?.lat || 10.5312) + jitterLat;
         }
         if (isNaN(lngNum) || lngNum < 125.0 || lngNum > 125.3) {
-          lngNum = matchedBrgy ? matchedBrgy.lng : 125.16 + (Math.random() - 0.5) * 0.02;
+          lngNum = (brgyMeta?.lng || 125.1643) + jitterLng;
         }
 
+        // 8. Quality Status & Filter Rules
         let status: 'valid' | 'warning' | 'invalid' = 'valid';
         let validationMsg = 'Kompleto ang mga detalye.';
-        if (!farmerName || farmerName.startsWith('Magsasaka #')) {
+
+        const rsbsaLower = rsbsa.toLowerCase();
+        if (seenFileRsbsa.has(rsbsaLower)) {
           status = 'invalid';
-          validationMsg = 'Kulang ang tinuod nga ngalan sa mag-uuma.';
-        } else if (!brgy) {
-          status = 'warning';
-          validationMsg = 'Awtomatikong gigamit ang Balagawan isip default barangay.';
+          validationMsg = 'Doble nga RSBSA sa file (Skipped)';
+        } else {
+          seenFileRsbsa.add(rsbsaLower);
+        }
+
+        if (status !== 'invalid') {
+          if (!farmerName || farmerName.startsWith('Magsasaka #')) {
+            status = 'invalid';
+            validationMsg = 'Kulang og Ngalan (Missing Farmer Name)';
+          } else if (!hasPurok) {
+            status = 'warning';
+            validationMsg = 'Kulang og Purok (Default: Purok 1)';
+          } else if (!isBrgyMatched) {
+            status = 'warning';
+            validationMsg = 'Kulang og Barangay (Default: Balagawan)';
+          } else if (existingDbRsbsa.has(rsbsaLower)) {
+            status = 'warning';
+            validationMsg = 'Naa na sa database (Mag-update)';
+          }
         }
 
         return {
           id: `staged-${Date.now()}-${idx}`,
           rsbsaNo: rsbsa,
           farmerName,
-          barangay: brgy,
+          barangay: matchedBrgyName,
           purok,
-          areaHa: areaNum,
+          areaHa: Number(areaNum.toFixed(2)),
           variety,
           purpose,
           contactNumber: contact,
@@ -1401,37 +1516,47 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
       const validCount = stagedList.filter((s) => s.status === 'valid').length;
       const warnCount = stagedList.filter((s) => s.status === 'warning').length;
       const invalidCount = stagedList.filter((s) => s.status === 'invalid').length;
+      const totalArea = stagedList.reduce((acc, s) => acc + (s.areaHa || 0), 0);
 
       const assistantMsg: ChatMessage = {
         id: `asst-stg-${Date.now()}`,
         sender: 'assistant',
         text:
           `Hello ${politeName}! Nadawat ug nasabtan nako ang imong Excel file **"${file.name}"**.\n\n` +
-          `📊 **Buod sa Pagsala (Summary):**\n` +
-          `* Kinatibuk-ang talaan: **${stagedList.length} ka records**\n` +
-          `* 🟢 Kompleto ug andam i-save: **${validCount}**\n` +
-          (warnCount > 0 ? `* 🟡 May default / warning: **${warnCount}**\n` : '') +
-          (invalidCount > 0 ? `* 🔴 Kulang og detalye: **${invalidCount}**\n` : '') +
-          `\nPalihug susiha ang **Filtered Staging Preview** sa ubos sa dili pa nato opisyal nga i-save sa atong database.`,
+          `📊 **Buod sa Pagsala ug Normalization (Summary):**\n` +
+          `* Kinatibuk-ang talaan nga nakit-an: **${stagedList.length} ka records** (${totalArea.toFixed(2)} ha)\n` +
+          `* 🟢 Kompleto ug andam i-save: **${validCount} ka mag-uuma**\n` +
+          (warnCount > 0 ? `* 🟡 May pasidaan / Kulang og Purok: **${warnCount}**\n` : '') +
+          (invalidCount > 0 ? `* 🔴 Gi-filter / Kulang og ngalan: **${invalidCount}**\n` : '') +
+          `\n🛡️ **Staging Mode (Pakitaa Ko Daan):** Dili pa kini opisyal nga gisulod sa database. Palihug susiha ang **Filtered Staging Preview Card** sa ubos. Kung husto na ang tanan, i-click ang **[✅ I-upload Tanan sa Database]** aron ma-save!`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         stagedFarmers: stagedList,
         stagingStatus: 'pending'
       };
 
       setMessages((prev) => [...prev, userUploadMsg, assistantMsg]);
-      speakAiResponse(`Nadawat nako ang imong file nga may ${stagedList.length} ka talaan. Palihug susiha ang preview sa dili pa i-save.`);
+      speakAiResponse(
+        `Nadawat nako ang imong file nga may ${stagedList.length} ka talaan. Gi-andam na nako ang staging preview card sa ubos.`
+      );
     } catch (err: any) {
       console.error('Excel parse error:', err);
       const errMsg: ChatMessage = {
         id: `asst-err-${Date.now()}`,
         sender: 'assistant',
-        text: `⚠️ **Sayop sa pagbasa sa Excel file**: ${err?.message || 'Wala mabasa ang spreadsheet format. Palihug siguroha nga standard .xlsx o .csv file kini.'}`,
+        text: `⚠️ **Sayop sa pagbasa sa Excel file**: ${err?.message || 'Wala mabasa ang spreadsheet format. Palihug siguroha nga standard .xlsx, .xls, o .csv file kini.'}`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages((prev) => [...prev, errMsg]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    await processExcelFile(file);
   };
 
   // Commit Staged Records to Database / AppContext
@@ -1441,18 +1566,27 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
     try {
       for (const rec of records) {
         if (rec.status === 'invalid') continue;
+        const parsedName = parseFarmerName(rec.farmerName);
         const newParcel: FarmParcel = {
           tagNumber: `SLG-${rec.barangay.slice(0, 3).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
           swineNameOrId: rec.rsbsaNo,
+          rsbsa_no: rec.rsbsaNo,
           raiserName: rec.farmerName,
+          farmerFamilyName: parsedName.family,
+          farmerGivenName: parsedName.given,
+          farmerMiddleName: parsedName.middle,
           barangay: rec.barangay,
           purok: rec.purok,
-          address: `Brgy. ${rec.barangay}, ${rec.purok}, Silago`,
+          address: `Brgy. ${rec.barangay}, ${rec.purok}, Silago, Southern Leyte`,
+          residential_address: `Brgy. ${rec.barangay}, ${rec.purok}, Silago, Southern Leyte`,
+          farmLocation: rec.barangay.toUpperCase(),
           contactNumber: rec.contactNumber && rec.contactNumber.length === 11 ? rec.contactNumber : '09123456789',
           breed: rec.variety,
+          commodity: 'Rice',
           sex: 'Owner-Cultivator',
           ageMonths: 35,
           weightKg: rec.areaHa,
+          areaHa: rec.areaHa,
           scale: rec.areaHa > 2 ? 'Medium Farm (2-5 ha)' : 'Smallholder (<2 ha)',
           purpose: rec.purpose || 'Irrigated Lowland (NIA)',
           vaccinationStatus: 'RSBSA Enrolled & PCIC Insured',
@@ -1462,6 +1596,7 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
           focalPerson: 'Assigned LFT Officer',
           lat: rec.lat,
           lng: rec.lng,
+          gps_coordinates: `${rec.lat}, ${rec.lng}`,
           syncStatus: 'GIS Synced',
           targetYieldMt: Number((rec.areaHa * 4.2).toFixed(2)),
           seasonalRecords: []
@@ -1469,8 +1604,8 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
         try {
           await addParcel(newParcel);
           successCount++;
-        } catch (e) {
-          console.warn('addParcel item error:', e);
+        } catch (e: any) {
+          console.warn('addParcel item error:', e?.message || e);
         }
       }
 
@@ -1480,13 +1615,15 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
             ? {
                 ...m,
                 stagingStatus: 'saved',
-                text: m.text + `\n\n✅ **Kumpirmado:** Malampusong na-save ang **${successCount} ka mag-uuma** sa atong database!`
+                text:
+                  m.text +
+                  `\n\n🎉 **Malampusong na-upload ang mga talaan!**\nNaka-save na ang **${successCount} ka mag-uuma** sa atong opisyal nga database sa Silago. Makita na kini sa GIS Farm Map ug sa Masterlist Registry!`
               }
             : m
         )
       );
 
-      speakAiResponse(`Malampusong na-save ang ${successCount} ka mag-uuma sa atong database!`);
+      speakAiResponse(`Malampusong na-upload ang mga talaan! Naka-save na ang ${successCount} ka mag-uuma sa database.`);
     } catch (err: any) {
       console.error('Commit staging error:', err);
     } finally {
@@ -1501,7 +1638,9 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
           ? {
               ...m,
               stagingStatus: 'canceled',
-              text: m.text + `\n\n❌ **Gikanselar:** Gi-discard ang staging cache. Walay datos nga gisulod sa database.`
+              text:
+                m.text +
+                `\n\n❌ **Gikanselar ang Staging:** Gi-discard ang temporary staged cache. Walay datos nga gisulod sa database.`
             }
           : m
       )
@@ -2338,29 +2477,44 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
       }
     }
 
-    // C. Check for Excel / Spreadsheet upload intent
+    // C. Check for Excel / Spreadsheet upload intent (Natural Language & Staging Intent)
     const isExcelQuery =
-      /excel|\.xlsx|\.csv|spreadsheet|gikapuy ko ug input|upload.*database.*file|file.*sauna|parse.*excel|staging preview/i.test(query) ||
-      (query.toLowerCase().includes('excel') && (query.toLowerCase().includes('file') || query.toLowerCase().includes('upload')));
+      /excel|\.xlsx|\.xls|\.csv|spreadsheet|gikapuy ko ug input|kapoy.*input|kakapagod.*input|tired.*input|record.*sauna|dating.*record|past.*record|sabtan kini|masabtan.*kini|maintindihan.*ba|understand this|upload.*database|isulod.*database|wala pa ma filter|pakitaa ko daan|preview.*daan|before.*isulod|bago.*isulod|staging preview/i.test(
+        query
+      ) ||
+      (query.toLowerCase().includes('excel') &&
+        (query.toLowerCase().includes('file') ||
+          query.toLowerCase().includes('upload') ||
+          query.toLowerCase().includes('record') ||
+          query.toLowerCase().includes('database')));
 
     if (isExcelQuery) {
       const politeName = formatPoliteGreetingName(dynamicUserObj.name, dynamicUserObj.role);
       let replyText = '';
       if (currentLang === 'tagalog') {
-        replyText = `Oo naman, ${politeName}! Naiintindihan ko ang iyong sitwasyon. Huwag kang mag-alala, kayang-kaya kong basahin at linisin ang iyong dating Excel o CSV file (.xlsx / .csv) upang hindi ka na mapagod sa manu-manong pag-input.\n\n` +
-          `Awtomatiko kong sasalain ang mga datos tulad ng **RSBSA Number**, **Pangalan ng Magsasaka**, **Barangay**, **Purok**, **Sukat (Hectares)**, **Binhi**, at **GPS Coordinates**.\n\n` +
-          `🛡️ **Paunawa sa Seguridad ng Datos:** Hindi ito agad direktang ilalagay sa database. Ipapakita muna sa iyo ang isang **Filtered Staging Preview Table** na may validation indicators (🟢 Kompleto, 🟡 Warning, 🔴 Kulang) upang ma-review at makumpirma mo muna bago i-save!\n\n` +
-          `👉 **I-click ang paperclip icon (📎) sa tabi ng chatbox o ang buton sa ibaba upang i-upload ang iyong Excel file:**`;
+        replyText =
+          `Hello, ${politeName}! Naiintindihan ko nang buo ang iyong sitwasyon. Huwag kang mag-alala, kayang-kaya kong basahin, salain, at i-normalize ang iyong dating Excel o CSV file (.xlsx / .xls / .csv) upang hindi ka na mapagod sa manu-manong pag-input!\n\n` +
+          `Awtomatiko kong sasalain at aayusin ang mga datos tulad ng **RSBSA Number**, **Pangalan ng Magsasaka**, **Barangay**, **Purok**, **Sukat (Hectares)**, **Binhi / Variety**, at **GPS Coordinates**.\n\n` +
+          `🛡️ **Ligtas na Staging (Pakita Muna Bago I-save):** Gaya ng iyong hiling, **hindi ito agad direktang ilalagay sa ating database**. Magpapakita muna ako rito ng **Interactive Staging Preview Card** na may validation status (🟢 Ready, 🟡 Kulang sa Purok, 🔴 Kulang sa Pangalan) upang ma-review mo muna bago opisyal na i-save!\n\n` +
+          `👉 **Paano simulan:**\n` +
+          `1. **I-drag at i-drop** ang file diretso rito sa chat window, O\n` +
+          `2. I-click ang **paperclip icon (📎)** sa tabi ng mic/send buttons o ang buton sa ibaba:`;
       } else if (currentLang === 'english') {
-        replyText = `Certainly, ${politeName}! I completely understand. Rest assured, I can parse, filter, and normalize your historical Excel or CSV files (.xlsx / .csv) to save you from manual data entry fatigue.\n\n` +
-          `I will automatically extract **RSBSA Numbers**, **Farmer Names**, **Barangay**, **Purok**, **Farm Area (ha)**, **Rice Variety**, and **GPS Coordinates**.\n\n` +
-          `🛡️ **Safe Staging Guarantee:** No records will be directly inserted into the database without your approval. You will first see an interactive **Filtered Staging Preview Table** with status indicators (🟢 Ready, 🟡 Warning, 🔴 Incomplete) so you can review before committing!\n\n` +
-          `👉 **Click the paperclip attachment icon (📎) beside the input bar or the button below to upload your Excel file:**`;
+        replyText =
+          `Hello, ${politeName}! I completely understand your situation. Rest assured, I can parse, filter, and normalize your historical Excel or CSV records (.xlsx / .xls / .csv) so you don't have to endure manual data entry fatigue!\n\n` +
+          `I will automatically extract and structure **RSBSA Numbers**, **Farmer Names**, **Barangay**, **Purok/Sitio**, **Farm Area (ha)**, **Rice Variety**, and **GPS Coordinates**.\n\n` +
+          `🛡️ **Safe Staging Guarantee (Preview First):** As you requested, **no records will be directly inserted into the database without your approval**. You will first see an interactive **Filtered Staging Preview Card** with status indicators (🟢 Ready, 🟡 Incomplete Purok, 🔴 Missing Name) so you can review before committing!\n\n` +
+          `👉 **How to proceed:**\n` +
+          `1. **Drag and drop** your file directly onto this chat window, OR\n` +
+          `2. Click the **paperclip attachment icon (📎)** beside the mic/send buttons or the button below:`;
       } else {
-        replyText = `Oo pud, ${politeName}! Nasabtan nako ang imong kahimtang. Ayaw kabalaka kay andam kong mosala ug mobasa sa imong karaang Excel o CSV file (.xlsx / .csv) aron dili na ka mahago og usa-usa nga pag-input.\n\n` +
-          `Awtomatiko nakong kuhaon ang **RSBSA No.**, **Pangalan sa Mag-uuma**, **Barangay**, **Purok**, **Gidak-on (Hectares)**, **Binhi / Variety**, ug **GPS Coordinates**.\n\n` +
-          `🛡️ **Siguro nga Staging:** Dili dayon kini isulod sa atong opisyal nga database. Magpakita una ako dinhi og **Filtered Staging Preview Table** nga adunay status (🟢 Kompleto, 🟡 Warning, 🔴 Kulang) aron imo unang masusi ug ma-kumpirma sa dili pa i-save!\n\n` +
-          `👉 **I-click ang paperclip icon (📎) sa kilid sa chatbox o ang buton sa ubos aron mapili ug ma-upload ang imong Excel file:**`;
+        replyText =
+          `Hello, ${politeName}! Nasabtan nako pag-ayo ang imong sitwasyon. Ayaw kabalaka kay andam kong mobasa, mosala, ug mo-normalize sa imong karaang Excel o CSV file (.xlsx / .xls / .csv) aron dili na ka mahago ug kapuyon sa tagsa-tagsa nga pag-input!\n\n` +
+          `Awtomatiko nakong kuhaon ug ihan-ay ang **RSBSA Reference No.**, **Pangalan sa Mag-uuma**, **Barangay**, **Purok/Sitio**, **Farm Area (ha)**, **Binhi / Variety**, ug **GPS Coordinates**.\n\n` +
+          `🛡️ **Siguro nga Staging (Pakitaa Ko Daan):** Sumala sa imong hangyo, **dili dayon kini diretso nga isulod sa database**. Magpakita una ako dinhi og usa ka **Interactive Staging Preview Card** nga adunay status indicators (🟢 Ready, 🟡 Kulang og Purok, 🔴 Kulang og Ngalan) ug filtered summary aron imo unang masusi ug ma-kumpirma sa dili pa i-save!\n\n` +
+          `👉 **Unsay buhaton:**\n` +
+          `1. **I-drag ug drop** ang file diretso dinhi sa chat window, O\n` +
+          `2. I-click ang **paperclip icon (📎)** sa tupad sa mic/send buttons o ang buton sa ubos:`;
       }
 
       const excelBotMsg: ChatMessage = {
@@ -2377,7 +2531,11 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
         ]
       };
       setMessages((prev) => [...prev, excelBotMsg]);
-      speakAiResponse(currentLang === 'english' ? 'You can upload your Excel file and I will prepare a staging preview table for you.' : 'Pwede nimo i-upload ang imong Excel file ug mag-andam ko og staging preview para nimo.');
+      speakAiResponse(
+        currentLang === 'english'
+          ? 'You can drag and drop your Excel file here or click the attachment icon, and I will prepare a staging preview table for you.'
+          : 'Pwede nimo i-drag ug i-drop ang imong Excel file dinhi o i-click ang attachment icon, ug mag-andam ko og staging preview para nimo.'
+      );
       return;
     }
 
@@ -3843,8 +4001,50 @@ ${JSON.stringify(parcelsSummary)}`;
         <div
           role="dialog"
           aria-label="RiceSsistant"
-          className="fixed bottom-6 right-6 z-50 shadow-2xl rounded-2xl border border-slate-200 bg-white flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 ring-1 ring-black/5 transition-all w-[360px] sm:w-[410px] max-w-[94vw] h-[550px] max-h-[86vh]"
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDraggingFile(true);
+          }}
+          onDragEnter={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDraggingFile(true);
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+              setIsDraggingFile(false);
+            }
+          }}
+          onDrop={async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDraggingFile(false);
+            const droppedFiles = e.dataTransfer.files;
+            if (droppedFiles && droppedFiles.length > 0) {
+              await processExcelFile(droppedFiles[0]);
+            }
+          }}
+          className="fixed bottom-6 right-6 z-50 shadow-2xl rounded-2xl border border-slate-200 bg-white flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 ring-1 ring-black/5 transition-all w-[380px] sm:w-[440px] max-w-[96vw] h-[580px] max-h-[88vh] relative"
         >
+          {/* Drag and Drop Visual Dropzone Overlay */}
+          {isDraggingFile && (
+            <div className="absolute inset-0 bg-emerald-950/85 backdrop-blur-xs z-50 flex flex-col items-center justify-center text-white p-6 text-center animate-in fade-in duration-150 border-3 border-dashed border-emerald-400 rounded-2xl m-2 pointer-events-none select-none">
+              <UploadCloud className="w-14 h-14 text-emerald-300 animate-bounce mb-3" />
+              <h4 className="font-extrabold text-sm sm:text-base tracking-wide text-white">
+                I-drop ang imong Excel o CSV file dinhi!
+              </h4>
+              <p className="text-xs text-emerald-100 mt-1.5 max-w-[280px]">
+                Awtomatikong basahon, isala, ug i-normalize ni RiceSsistant ang tanang records (.xlsx, .xls, .csv).
+              </p>
+              <span className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-800/80 text-[11px] font-semibold text-emerald-200 border border-emerald-500/40">
+                🛡️ Safe Staging: Dili diretso i-save sa database
+              </span>
+            </div>
+          )}
+
           {/* Window Header */}
           <div className="bg-gradient-to-r from-[#0B1E38] via-[#102A4E] to-[#123E28] text-white p-3.5 flex items-center justify-between border-b border-slate-700 select-none">
             <div className="flex items-center gap-2.5 flex-1 min-w-0">
@@ -4017,134 +4217,177 @@ ${JSON.stringify(parcelsSummary)}`;
                   )}
 
                   {/* STAGING AREA: FILTERED EXCEL RECORDS PREVIEW */}
-                  {msg.stagedFarmers && msg.stagedFarmers.length > 0 && (
-                    <div className="mt-3 pt-2.5 border-t border-slate-200">
-                      <div className="bg-slate-900 text-white p-2.5 rounded-t-xl flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-                          <span className="font-bold text-[11px] tracking-wide">
-                            Staging Area: {msg.stagedFarmers.length} Filtered Records
+                  {msg.stagedFarmers && msg.stagedFarmers.length > 0 && (() => {
+                    const validCount = msg.stagedFarmers.filter((s) => s.status === 'valid').length;
+                    const warnCount = msg.stagedFarmers.filter((s) => s.status === 'warning').length;
+                    const invalidCount = msg.stagedFarmers.filter((s) => s.status === 'invalid').length;
+                    const totalStagedArea = msg.stagedFarmers.reduce((acc, s) => acc + (s.areaHa || 0), 0);
+
+                    return (
+                      <div className="mt-3 pt-2.5 border-t border-slate-200">
+                        {/* Staging Card Header */}
+                        <div className="bg-slate-900 text-white p-2.5 rounded-t-xl flex items-center justify-between shadow-xs">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <FileSpreadsheet className="w-4 h-4 text-emerald-400 shrink-0" />
+                            <span className="font-bold text-[11px] tracking-wide truncate">
+                              Staging Area: {msg.stagedFarmers.length} Filtered Records
+                            </span>
+                          </div>
+                          <span
+                            className={`text-[9.5px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0 ${
+                              msg.stagingStatus === 'saved'
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                                : msg.stagingStatus === 'canceled'
+                                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                                : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse'
+                            }`}
+                          >
+                            {msg.stagingStatus === 'saved'
+                              ? '✓ Na-upload na sa Database'
+                              : msg.stagingStatus === 'canceled'
+                              ? '✕ Gikanselar'
+                              : 'Pending Confirmation'}
                           </span>
                         </div>
-                        <span
-                          className={`text-[9.5px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                            msg.stagingStatus === 'saved'
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                              : msg.stagingStatus === 'canceled'
-                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                              : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse'
-                          }`}
-                        >
-                          {msg.stagingStatus === 'saved'
-                            ? '✓ Saved to Database'
-                            : msg.stagingStatus === 'canceled'
-                            ? '✕ Gikanselar'
-                            : 'Pending Confirmation'}
-                        </span>
-                      </div>
 
-                      {/* Scrollable mini table */}
-                      <div className="border-x border-b border-slate-200 bg-white rounded-b-xl overflow-hidden shadow-xs">
-                        <div className="max-h-56 overflow-y-auto overflow-x-auto text-[10.5px]">
-                          <table className="w-full border-collapse text-left">
-                            <thead className="bg-slate-100 text-slate-700 font-semibold sticky top-0 border-b border-slate-200 z-10">
-                              <tr>
-                                <th className="py-1.5 px-2">Status</th>
-                                <th className="py-1.5 px-2">RSBSA No</th>
-                                <th className="py-1.5 px-2">Farmer Name</th>
-                                <th className="py-1.5 px-2">Barangay & Purok</th>
-                                <th className="py-1.5 px-2">Area (ha)</th>
-                                <th className="py-1.5 px-2">Variety</th>
-                                <th className="py-1.5 px-2">GPS Coordinates</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 text-slate-800">
-                              {msg.stagedFarmers.map((item, idx) => (
-                                <tr
-                                  key={item.id || idx}
-                                  className={`hover:bg-slate-50 transition ${
-                                    item.status === 'invalid'
-                                      ? 'bg-rose-50/50'
-                                      : item.status === 'warning'
-                                      ? 'bg-amber-50/30'
-                                      : ''
-                                  }`}
-                                >
-                                  <td className="py-1.5 px-2 whitespace-nowrap">
-                                    {item.status === 'valid' && (
-                                      <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
-                                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                                        Ready
-                                      </span>
-                                    )}
-                                    {item.status === 'warning' && (
-                                      <span className="inline-flex items-center gap-1 text-amber-700 font-semibold">
-                                        <span className="w-2 h-2 rounded-full bg-amber-500" />
-                                        Warning
-                                      </span>
-                                    )}
-                                    {item.status === 'invalid' && (
-                                      <span className="inline-flex items-center gap-1 text-rose-700 font-semibold">
-                                        <span className="w-2 h-2 rounded-full bg-rose-500" />
-                                        Incomplete
-                                      </span>
-                                    )}
-                                  </td>
-                                  <td className="py-1.5 px-2 font-mono font-medium text-slate-700 whitespace-nowrap">
-                                    {item.rsbsaNo}
-                                  </td>
-                                  <td className="py-1.5 px-2 font-bold whitespace-nowrap">
-                                    {item.farmerName}
-                                  </td>
-                                  <td className="py-1.5 px-2 whitespace-nowrap">
-                                    Brgy. {item.barangay}, {item.purok}
-                                  </td>
-                                  <td className="py-1.5 px-2 font-mono whitespace-nowrap">
-                                    {item.areaHa.toFixed(2)} ha
-                                  </td>
-                                  <td className="py-1.5 px-2 whitespace-nowrap text-emerald-800 font-medium">
-                                    {item.variety}
-                                  </td>
-                                  <td className="py-1.5 px-2 font-mono text-[9.5px] text-slate-500 whitespace-nowrap">
-                                    {item.lat.toFixed(4)}, {item.lng.toFixed(4)}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                        {/* KPI Summary Filter Badges Bar */}
+                        <div className="bg-slate-100/90 border-x border-slate-200 px-2.5 py-1.5 flex items-center gap-1.5 flex-wrap text-[10px] font-semibold text-slate-700">
+                          <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-300">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                            🟢 {validCount} Ready
+                          </span>
+                          {warnCount > 0 && (
+                            <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-300">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                              🟡 {warnCount} May Pasidaan
+                            </span>
+                          )}
+                          {invalidCount > 0 && (
+                            <span className="inline-flex items-center gap-1 bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full border border-rose-300">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                              🔴 {invalidCount} Gi-filter
+                            </span>
+                          )}
+                          <span className="ml-auto inline-flex items-center gap-1 font-mono text-[9.5px] text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                            🌾 {totalStagedArea.toFixed(2)} ha
+                          </span>
                         </div>
 
-                        {/* Confirmation Actions */}
-                        {msg.stagingStatus === 'pending' && (
-                          <div className="p-2.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2 flex-wrap">
-                            <span className="text-[10px] text-slate-600">
-                              Susiha ang mga talaan sa dili pa kumpirmahon. Ang mga incomplete dili ma-apil sa database.
-                            </span>
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => handleCancelStagedRecords(msg.id)}
-                                disabled={isLoading}
-                                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 shadow-2xs transition hover:scale-[1.02] cursor-pointer flex items-center gap-1"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                                <span>Kanselahon / Usba</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleCommitStagedRecords(msg.id, msg.stagedFarmers!)}
-                                disabled={isLoading}
-                                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white shadow-2xs transition hover:scale-[1.02] cursor-pointer flex items-center gap-1"
-                              >
-                                <Check className="w-3.5 h-3.5" />
-                                <span>Kumpirmaha ug I-save sa Database</span>
-                              </button>
-                            </div>
+                        {/* Scrollable Mini Staging Table */}
+                        <div className="border-x border-b border-slate-200 bg-white rounded-b-xl overflow-hidden shadow-xs">
+                          <div className="max-h-56 overflow-y-auto overflow-x-auto text-[10.5px]">
+                            <table className="w-full border-collapse text-left">
+                              <thead className="bg-slate-100/90 text-slate-700 font-semibold sticky top-0 border-b border-slate-200 z-10 backdrop-blur-xs">
+                                <tr>
+                                  <th className="py-1.5 px-2">Status</th>
+                                  <th className="py-1.5 px-2">RSBSA No</th>
+                                  <th className="py-1.5 px-2">Farmer Name</th>
+                                  <th className="py-1.5 px-2">Barangay & Purok</th>
+                                  <th className="py-1.5 px-2">Area (ha)</th>
+                                  <th className="py-1.5 px-2">Variety</th>
+                                  <th className="py-1.5 px-2">GPS Coordinates</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100 text-slate-800">
+                                {msg.stagedFarmers.map((item, idx) => (
+                                  <tr
+                                    key={item.id || idx}
+                                    className={`hover:bg-slate-50 transition ${
+                                      item.status === 'invalid'
+                                        ? 'bg-rose-50/50'
+                                        : item.status === 'warning'
+                                        ? 'bg-amber-50/30'
+                                        : ''
+                                    }`}
+                                  >
+                                    <td className="py-1.5 px-2 whitespace-nowrap">
+                                      {item.status === 'valid' && (
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold text-[10px]">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                          ✅ Ready
+                                        </span>
+                                      )}
+                                      {item.status === 'warning' && (
+                                        <span
+                                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-semibold text-[10px]"
+                                          title={item.validationMsg}
+                                        >
+                                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                          {item.validationMsg.includes('Purok')
+                                            ? '⚠️ Kulang og Purok'
+                                            : item.validationMsg.includes('Barangay')
+                                            ? '⚠️ Default Brgy'
+                                            : '⚠️ Warning'}
+                                        </span>
+                                      )}
+                                      {item.status === 'invalid' && (
+                                        <span
+                                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-semibold text-[10px]"
+                                          title={item.validationMsg}
+                                        >
+                                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                          {item.validationMsg.includes('Ngalan')
+                                            ? '🔴 Kulang og Ngalan'
+                                            : '🔴 Skipped'}
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td className="py-1.5 px-2 font-mono font-medium text-slate-700 whitespace-nowrap">
+                                      {item.rsbsaNo}
+                                    </td>
+                                    <td className="py-1.5 px-2 font-bold whitespace-nowrap text-slate-900">
+                                      {item.farmerName}
+                                    </td>
+                                    <td className="py-1.5 px-2 whitespace-nowrap">
+                                      Brgy. {item.barangay}, {item.purok}
+                                    </td>
+                                    <td className="py-1.5 px-2 font-mono whitespace-nowrap">
+                                      {item.areaHa.toFixed(2)} ha
+                                    </td>
+                                    <td className="py-1.5 px-2 whitespace-nowrap text-emerald-800 font-medium">
+                                      {item.variety}
+                                    </td>
+                                    <td className="py-1.5 px-2 font-mono text-[9.5px] text-slate-500 whitespace-nowrap">
+                                      {item.lat.toFixed(4)}, {item.lng.toFixed(4)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
                           </div>
-                        )}
+
+                          {/* Confirmation Actions */}
+                          {msg.stagingStatus === 'pending' && (
+                            <div className="p-2.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2 flex-wrap">
+                              <span className="text-[10px] text-slate-600">
+                                Susiha ang mga talaan sa dili pa kumpirmahon. Ang mga incomplete dili ma-apil sa database.
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleCancelStagedRecords(msg.id)}
+                                  disabled={isLoading}
+                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 shadow-2xs transition hover:scale-[1.02] cursor-pointer flex items-center gap-1"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                  <span>❌ I-kansela / Usba ang File</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCommitStagedRecords(msg.id, msg.stagedFarmers!)}
+                                  disabled={isLoading}
+                                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white shadow-2xs transition hover:scale-[1.02] cursor-pointer flex items-center gap-1.5"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                  <span>✅ I-upload Tanan sa Database</span>
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* Explicit Navigation Action Buttons (Only shown if user requested navigation or action) */}
                   {msg.actions && msg.actions.length > 0 && (
