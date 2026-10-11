@@ -4267,56 +4267,6 @@ ${JSON.stringify(parcelsSummary)}`;
               }}
               className="flex items-center gap-1.5"
             >
-              {/* Paperclip Excel Attachment Button */}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading}
-                className="p-2 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition cursor-pointer disabled:opacity-40 shrink-0"
-                title="Upload Excel o CSV file (.xlsx, .csv)"
-              >
-                <Paperclip className="w-4 h-4" />
-              </button>
-
-              {/* Web Speech API Microphone Button with Animated Pulse Indicator */}
-              <button
-                type="button"
-                onClick={toggleListening}
-                disabled={isLoading}
-                className={`p-2 rounded-xl transition cursor-pointer relative shrink-0 ${
-                  isListening
-                    ? 'bg-rose-600 text-white animate-pulse shadow-md ring-2 ring-rose-400'
-                    : 'text-slate-500 hover:text-emerald-700 hover:bg-emerald-50'
-                }`}
-                title={
-                  isListening
-                    ? 'Naminaw si RiceSsistant... Pindota aron mohunong'
-                    : 'Voice Chat (English, Tagalog, Cebuano/Bisaya)'
-                }
-              >
-                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                {isListening && (
-                  <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
-                  </span>
-                )}
-              </button>
-
-              {/* Text-to-Speech (TTS) Voice Toggle */}
-              <button
-                type="button"
-                onClick={() => setIsTtsEnabled(!isTtsEnabled)}
-                className={`p-2 rounded-xl transition cursor-pointer shrink-0 ${
-                  isTtsEnabled
-                    ? 'text-emerald-700 hover:bg-emerald-50'
-                    : 'text-slate-400 hover:bg-slate-100'
-                }`}
-                title={isTtsEnabled ? 'Voice Output: Aktibo (ON)' : 'Voice Output: Naka-mute (OFF)'}
-              >
-                {isTtsEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-              </button>
-
               {/* Chat Input Text Field */}
               <input
                 ref={inputRef}
@@ -4333,18 +4283,71 @@ ${JSON.stringify(parcelsSummary)}`;
                     : 'Pangutana o mag-upload og Excel...'
                 }
                 disabled={isLoading}
-                className="flex-1 px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition min-w-0"
+                className="flex-1 px-3.5 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition min-w-0"
               />
 
-              {/* Send Button */}
-              <button
-                type="submit"
-                disabled={!inputMessage.trim() || isLoading}
-                className="p-2 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-300 text-white rounded-xl transition cursor-pointer disabled:cursor-not-allowed shadow-2xs shrink-0"
-                title="Send message"
-              >
-                <Send className="w-4 h-4" />
-              </button>
+              {/* Action Buttons Grouped Directly Beside Send Button */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {/* Excel File Upload / Attachment Button */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading}
+                  className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-slate-100 rounded-full transition-colors disabled:opacity-40"
+                  title="Upload Excel Records"
+                  aria-label="Upload Excel Records"
+                >
+                  <Paperclip className="w-4 h-4" />
+                </button>
+
+                {/* Voice Recognition / Microphone */}
+                <button
+                  type="button"
+                  onClick={toggleListening}
+                  disabled={isLoading}
+                  className={`p-2 rounded-full transition-colors relative ${
+                    isListening
+                      ? 'bg-rose-50 text-rose-600 ring-2 ring-rose-500 ring-offset-1 animate-pulse'
+                      : 'text-slate-500 hover:text-emerald-600 hover:bg-slate-100'
+                  }`}
+                  title={isListening ? 'Voice Input: Naminaw si RiceSsistant (Click to stop)' : 'Voice Input'}
+                  aria-label="Voice Input"
+                >
+                  {isListening ? <MicOff className="w-4 h-4 text-rose-600" /> : <Mic className="w-4 h-4" />}
+                  {isListening && (
+                    <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                    </span>
+                  )}
+                </button>
+
+                {/* Text-to-Speech (TTS) Voice Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setIsTtsEnabled(!isTtsEnabled)}
+                  className={`p-2 rounded-full transition-colors ${
+                    isTtsEnabled
+                      ? 'text-emerald-600 hover:bg-slate-100'
+                      : 'text-slate-400 hover:bg-slate-100'
+                  }`}
+                  title={isTtsEnabled ? 'Voice Output: ON' : 'Voice Output: Muted'}
+                  aria-label="Toggle Voice Audio Output"
+                >
+                  {isTtsEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                </button>
+
+                {/* Send Button */}
+                <button
+                  type="submit"
+                  disabled={!inputMessage.trim() || isLoading}
+                  className="p-2 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-300 text-white rounded-full transition cursor-pointer disabled:cursor-not-allowed shadow-2xs"
+                  title="Send message"
+                  aria-label="Send message"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
             </form>
           </div>
         </div>

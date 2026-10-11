@@ -32,6 +32,10 @@ import {
   Trash2,
   Layers,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  ZoomOut,
   Settings2,
   Camera
 } from 'lucide-react';
@@ -291,6 +295,11 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
   const [tableDensity, setTableDensity] = useState('compact');
   const [isEditingHeaders, setIsEditingHeaders] = useState(false);
 
+  // Word-Style Manuscript Print Preview & Pagination State
+  const [zoomPercent, setZoomPercent] = useState<number>(100);
+  const [currentPageIndex, setCurrentPageIndex] = useState<number>(1);
+  const [wordViewMode, setWordViewMode] = useState<'all_pages' | 'single_page'>('all_pages');
+
   // Official report memo and signatory parameters (blank by default as per request, fully editable)
   const [memoRef, setMemoRef] = useState('SLG-MAO-RICE-2024-02B');
   const [reportDate, setReportDate] = useState('February 21, 2024');
@@ -444,6 +453,41 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
     return getAssignedLftForBarangay(selectedBarangay);
   }, [selectedBarangay]);
 
+  // Calculate total pages for Word-Style print preview pagination
+  const totalDocumentPages = useMemo(() => {
+    if (reportType !== 'official_registry') return 1;
+    if (documentView === 'complete_package') return 4;
+    return 1;
+  }, [reportType, documentView]);
+
+  useEffect(() => {
+    if (currentPageIndex > totalDocumentPages) {
+      setCurrentPageIndex(1);
+    }
+  }, [totalDocumentPages]);
+
+  // Word-Style Sheet Dimensions (Letter, A4, Folio) with exact 1in or 0.75in margins
+  const getWordSheetStyle = () => {
+    const isPortrait = orientation === 'portrait';
+    if (isPortrait) {
+      if (paperSize === 'letter') {
+        return { width: '8.5in', minHeight: '11in', padding: '1in' };
+      }
+      if (paperSize === 'a4') {
+        return { width: '8.27in', minHeight: '11.69in', padding: '1in' };
+      }
+      return { width: '8.5in', minHeight: '13in', padding: '1in' }; // Folio (8.5" x 13")
+    } else {
+      if (paperSize === 'letter') {
+        return { width: '11in', minHeight: '8.5in', padding: '0.75in' };
+      }
+      if (paperSize === 'a4') {
+        return { width: '11.69in', minHeight: '8.27in', padding: '0.75in' };
+      }
+      return { width: '13in', minHeight: '8.5in', padding: '0.75in' }; // Folio Landscape
+    }
+  };
+
   // Handlers for Letter Management
   const handleOpenAddLetter = () => {
     setEditingLetter(null);
@@ -596,8 +640,13 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
     cloned.querySelectorAll('.no-print, button, select, input[type="file"]').forEach((el) => el.remove());
 
     const isPortrait = orientation === 'portrait';
-    const printPageSize = isPortrait ? '8.5in 13in portrait' : '13in 8.5in landscape';
-    const printMargin = isPortrait ? '15mm' : '10mm';
+    let printPageSize = isPortrait ? 'letter portrait' : 'letter landscape';
+    if (paperSize === 'folio') {
+      printPageSize = isPortrait ? '8.5in 13in portrait' : '13in 8.5in landscape';
+    } else if (paperSize === 'a4') {
+      printPageSize = isPortrait ? 'A4 portrait' : 'A4 landscape';
+    }
+    const printMargin = isPortrait ? '1in' : '0.75in';
 
     const doc = (iframeDoc as any).document || iframeDoc;
     doc.open();
@@ -611,6 +660,15 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
             @page {
               size: ${printPageSize};
               margin: ${printMargin};
+            }
+            .word-paper-sheet {
+              box-shadow: none !important;
+              border: none !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              width: 100% !important;
+              page-break-after: always !important;
+              break-after: page !important;
             }
             .print-page-number::after {
               content: "Page " counter(page) " of " counter(pages);
@@ -1006,9 +1064,66 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
     return Object.values(visibleColumns).filter(Boolean).length;
   }, [visibleColumns]);
 
+  // Render a Word-Style Sheet Container with Running Header and Footer
+  const renderWordSheet = (
+    content: React.ReactNode,
+    pageNumber: number | string,
+    totalPagesDisplay: number | string,
+    sheetSubtitle: string,
+    key?: string | number
+  ) => {
+    const sheetDim = getWordSheetStyle();
+    return (
+      <div
+        key={key}
+        className={`word-paper-sheet bg-white text-black shadow-2xl border border-slate-300 relative mx-auto font-serif leading-relaxed flex flex-col justify-between transition-all print:shadow-none print:border-none print:p-0 print:m-0 print:w-full print:break-after-page text-justify ${
+          isDirectEditingLetter ? 'direct-canvas-edit-active' : ''
+        }`}
+        style={{
+          width: sheetDim.width,
+          minHeight: sheetDim.minHeight,
+          padding: sheetDim.padding,
+          pageBreakAfter: 'always',
+          breakAfter: 'page'
+        }}
+      >
+        {/* Dynamic Running Header on each page */}
+        <div className="word-sheet-header text-[8.5pt] font-sans text-slate-500 border-b border-slate-300 pb-1 mb-4 flex items-center justify-between uppercase tracking-wider select-none print:text-black">
+          <span className="font-bold text-slate-700 print:text-black">
+            Republic of the Philippines &bull; Municipality of Silago &bull; DA-MAO
+          </span>
+          <span className="font-mono text-[7.5pt] text-slate-500 print:text-black truncate max-w-[280px]">
+            {sheetSubtitle}
+          </span>
+        </div>
+
+        {/* Document Content */}
+        <div className="flex-1 flex flex-col justify-between">
+          {content}
+        </div>
+
+        {/* Dynamic Running Footer on each page */}
+        <div className="word-sheet-footer text-[8.5pt] font-sans text-slate-500 border-t border-slate-300 pt-1.5 mt-auto flex items-center justify-between select-none print:text-black">
+          <div className="flex items-center gap-2 text-[8pt]">
+            <span className="font-mono font-bold text-slate-700 print:text-black">
+              {currentLetter.memoRef || memoRef}
+            </span>
+            <span>&bull;</span>
+            <span>Date: {currentLetter.date || reportDate}</span>
+          </div>
+          <div className="text-right font-mono font-bold text-[8.5pt] text-slate-800 print:text-black">
+            {typeof pageNumber === 'number'
+              ? `Page ${pageNumber} of ${totalPagesDisplay}`
+              : `${pageNumber}`}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-5">
-      {/* Strict CSS Dynamic @page Orientation and Print Rules for Native Printing */}
+      {/* Strict CSS Dynamic @page Orientation and Word Manuscript Print Rules */}
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           @page {
@@ -1017,11 +1132,47 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
                 ? (paperSize === 'letter' ? '8.5in 11in portrait' : paperSize === 'a4' ? 'A4 portrait' : '8.5in 13in portrait')
                 : (paperSize === 'letter' ? '11in 8.5in landscape' : paperSize === 'a4' ? 'A4 landscape' : '13in 8.5in landscape')
             };
-            margin: ${
-              orientation === 'portrait'
-                ? (margins === 'narrow' ? '10mm' : margins === 'wide' ? '20mm' : '15mm')
-                : (margins === 'narrow' ? '5mm' : margins === 'wide' ? '12mm' : '10mm')
-            };
+            margin: ${orientation === 'portrait' ? '1in' : '0.75in'};
+          }
+          body * {
+            visibility: hidden;
+          }
+          #official-print-document,
+          #official-print-document *,
+          #printable-manuscript-report,
+          #printable-manuscript-report *,
+          #printable-area,
+          #printable-area * {
+            visibility: visible;
+          }
+          #official-print-document,
+          #printable-manuscript-report {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            transform: none !important;
+            box-shadow: none !important;
+            border: none !important;
+          }
+          .word-paper-sheet {
+            box-shadow: none !important;
+            border: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            page-break-after: always !important;
+            break-after: page !important;
+          }
+          tr, p, div.section-block, .break-inside-avoid, .print-avoid-break, .signatories-block {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          thead {
+            display: table-header-group !important;
           }
           .print-page-number::after {
             content: "Page " counter(page) " of " counter(pages);
@@ -1037,28 +1188,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          /* Hide all UI elements: headers, sidebars, background wrappers, floating dock */
           .no-print, header, nav, aside, .floating-fab-dock, .top-control-bar, #admin-mobile-menu-btn, button, select {
             display: none !important;
           }
-          /* Expand document sheet to full page dimensions with zero clipping */
-          .printable-document-sheet, #official-print-document {
-            box-shadow: none !important;
-            border: none !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100% !important;
-            max-width: none !important;
-            min-height: 0 !important;
-            background: #ffffff !important;
-            color: #000000 !important;
-            page-break-after: avoid;
-            page-break-inside: avoid;
-          }
-          .print-page-break {
-            page-break-before: always !important;
-            break-before: page !important;
-          }
+        }
           table {
             width: 100% !important;
             max-width: 100% !important;
@@ -1384,86 +1517,26 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
         </div>
       )}
 
-      {/* 2. Official Document Paper Preview with Exact Alignment */}
-      <div className="w-full flex justify-center py-2 overflow-x-auto print:overflow-visible print:p-0 print:m-0">
+      {/* 2. Word-Style Sheet Canvas Stage on Screen Preview */}
+      <div className="w-full bg-slate-200/80 p-6 sm:p-8 min-h-screen overflow-x-auto flex flex-col items-center gap-8 rounded-2xl border border-slate-300/80 shadow-inner print:bg-transparent print:p-0 print:m-0 print:border-none print:shadow-none print:min-h-0 print:overflow-visible">
         <div
           id="official-print-document"
           data-printable-area="true"
-          className={`printable-document-sheet bg-white text-slate-900 shadow-2xl rounded-sm border border-slate-300 p-6 sm:p-10 w-full transition-all print:p-0 print:border-none print:shadow-none print:max-w-none print:w-full flex flex-col justify-between ${
-            isDirectEditingLetter ? 'direct-canvas-edit-active' : ''
-          } ${
-            orientation === 'landscape' ? 'max-w-[1300px]' : 'max-w-[850px]'
-          }`}
+          className="transition-transform duration-200 origin-top flex flex-col items-center gap-8 print:transform-none print:gap-0 print:w-full"
           style={{
-            minHeight: orientation === 'landscape' ? '800px' : '1100px'
+            transform: zoomPercent !== 100 ? `scale(${zoomPercent / 100})` : undefined,
+            transformOrigin: 'top center'
           }}
         >
           {reportType === 'official_registry' ? (
             /* ========================================================================= */
             /* OFFICIAL REGISTRY REPORT (LETTER, REGISTRY TABLE, OR COMPLETE PACKAGE)     */
             /* ========================================================================= */
-            <div className="flex flex-col flex-1 justify-between min-h-full">
-              {documentView === 'letter' && (
-                <OfficialLetterDocument
-                  letter={currentLetter}
-                  activeBarangay={selectedBarangay}
-                  activeSeason={selectedSeason}
-                  farmerCount={reportParcels.length}
-                  totalAreaHa={totalAreaHa}
-                  predominantVarieties={predominantVarieties}
-                  assignedLftName={assignedLft.name}
-                  onUpdateLetter={handleSaveLetter}
-                  isEditable={isDirectEditingLetter}
-                  orientation={orientation}
-                />
-              )}
-
-              {documentView === 'irrigators_letter' && (
-                <OfficialIrrigatorsDirectoryDocument
-                  data={irrigatorsData}
-                  onUpdateData={handleSaveIrrigatorsData}
-                  isEditable={isDirectEditingLetter}
-                  orientation={orientation}
-                />
-              )}
-
-              {documentView === 'mpcsrs_report' && (
-                <MpcsrsPalayReportDocument
-                  data={mpcsrsData}
-                  onUpdateData={handleSaveMpcsrsData}
-                  isEditable={isDirectEditingLetter}
-                  orientation={orientation}
-                />
-              )}
-
-              {documentView === 'registry_table' && (
-                <OfficialRegistryTable
-                  reportParcels={reportParcels}
-                  visibleColumns={visibleColumns}
-                  columnOrder={columnOrder}
-                  customTableData={customTableData}
-                  totalAreaHa={totalAreaHa}
-                  memoRef={currentLetter.memoRef || memoRef}
-                  reportDate={currentLetter.date || reportDate}
-                  selectedBarangay={selectedBarangay}
-                  preparedBy={currentLetter.preparedBy || preparedBy}
-                  preparedTitle={currentLetter.preparedTitle || preparedTitle}
-                  reviewedBy={currentLetter.reviewedBy || reviewedBy}
-                  reviewedTitle={currentLetter.reviewedTitle || reviewedTitle}
-                  approvedBy={currentLetter.approvedBy || approvedBy}
-                  approvedTitle={currentLetter.approvedTitle || approvedTitle}
-                  isEditable={isDirectEditingLetter}
-                  orientation={orientation}
-                />
-              )}
-
-              {documentView === 'complete_package' && (
-                <div className="space-y-12">
-                  {/* [Part 1/4] Official Transmittal Letter */}
-                  <div>
-                    <div className="text-center font-black text-xs text-emerald-900 bg-emerald-50 border border-emerald-200 py-1.5 px-3 rounded-lg mb-4 uppercase tracking-wider print:hidden">
-                      ★ DOSSIER DOCUMENT 1 OF 4: OFFICIAL TRANSMITTAL LETTER ★
-                    </div>
+            documentView === 'complete_package' ? (
+              <>
+                {/* [Sheet 1/4] Official Transmittal Letter */}
+                {(wordViewMode === 'all_pages' || currentPageIndex === 1) &&
+                  renderWordSheet(
                     <OfficialLetterDocument
                       letter={currentLetter}
                       activeBarangay={selectedBarangay}
@@ -1475,40 +1548,46 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
                       onUpdateLetter={handleSaveLetter}
                       isEditable={isDirectEditingLetter}
                       orientation={orientation}
-                    />
-                  </div>
+                    />,
+                    1,
+                    4,
+                    'Dossier 1/4: Official Transmittal Letter',
+                    'sheet-complete-1'
+                  )}
 
-                  {/* [Part 2/4] Irrigators Directory */}
-                  <div className="print-page-break pt-8 border-t-4 border-dashed border-slate-300 print:border-none">
-                    <div className="text-center font-black text-xs text-teal-900 bg-teal-50 border border-teal-200 py-1.5 px-3 rounded-lg mb-4 uppercase tracking-wider print:hidden">
-                      ★ DOSSIER DOCUMENT 2 OF 4: IRRIGATORS ASSOCIATION DIRECTORY ★
-                    </div>
+                {/* [Sheet 2/4] Irrigators Directory */}
+                {(wordViewMode === 'all_pages' || currentPageIndex === 2) &&
+                  renderWordSheet(
                     <OfficialIrrigatorsDirectoryDocument
                       data={irrigatorsData}
                       onUpdateData={handleSaveIrrigatorsData}
                       isEditable={isDirectEditingLetter}
                       orientation={orientation}
-                    />
-                  </div>
+                    />,
+                    2,
+                    4,
+                    'Dossier 2/4: Irrigators Association Directory',
+                    'sheet-complete-2'
+                  )}
 
-                  {/* [Part 3/4] MPCSRS Palay Report */}
-                  <div className="print-page-break pt-8 border-t-4 border-dashed border-slate-300 print:border-none">
-                    <div className="text-center font-black text-xs text-amber-900 bg-amber-50 border border-amber-200 py-1.5 px-3 rounded-lg mb-4 uppercase tracking-wider print:hidden">
-                      ★ DOSSIER DOCUMENT 3 OF 4: MONTHLY PALAY CROP STATUS REPORT (MPCSRS) ★
-                    </div>
+                {/* [Sheet 3/4] MPCSRS Palay Report */}
+                {(wordViewMode === 'all_pages' || currentPageIndex === 3) &&
+                  renderWordSheet(
                     <MpcsrsPalayReportDocument
                       data={mpcsrsData}
                       onUpdateData={handleSaveMpcsrsData}
                       isEditable={isDirectEditingLetter}
                       orientation={orientation}
-                    />
-                  </div>
+                    />,
+                    3,
+                    4,
+                    'Dossier 3/4: Monthly Palay Crop Status Report (MPCSRS)',
+                    'sheet-complete-3'
+                  )}
 
-                  {/* [Part 4/4] Masterlist Registry */}
-                  <div className="print-page-break pt-8 border-t-4 border-dashed border-slate-300 print:border-none">
-                    <div className="text-center font-black text-xs text-blue-900 bg-blue-50 border border-blue-200 py-1.5 px-3 rounded-lg mb-4 uppercase tracking-wider print:hidden">
-                      ★ DOSSIER DOCUMENT 4 OF 4: FIELD-VALIDATED MASTERLIST REGISTRY (RSBSA &amp; GIS) ★
-                    </div>
+                {/* [Sheet 4/4] Masterlist Registry */}
+                {(wordViewMode === 'all_pages' || currentPageIndex === 4) &&
+                  renderWordSheet(
                     <OfficialRegistryTable
                       reportParcels={reportParcels}
                       visibleColumns={visibleColumns}
@@ -1526,16 +1605,87 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
                       approvedTitle={currentLetter.approvedTitle || approvedTitle}
                       isEditable={isDirectEditingLetter}
                       orientation={orientation}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
+                    />,
+                    4,
+                    4,
+                    'Dossier 4/4: Field-Validated Masterlist Registry (RSBSA & GIS)',
+                    'sheet-complete-4'
+                  )}
+              </>
+            ) : documentView === 'letter' ? (
+              renderWordSheet(
+                <OfficialLetterDocument
+                  letter={currentLetter}
+                  activeBarangay={selectedBarangay}
+                  activeSeason={selectedSeason}
+                  farmerCount={reportParcels.length}
+                  totalAreaHa={totalAreaHa}
+                  predominantVarieties={predominantVarieties}
+                  assignedLftName={assignedLft.name}
+                  onUpdateLetter={handleSaveLetter}
+                  isEditable={isDirectEditingLetter}
+                  orientation={orientation}
+                />,
+                1,
+                1,
+                'Official Transmittal Letter'
+              )
+            ) : documentView === 'irrigators_letter' ? (
+              renderWordSheet(
+                <OfficialIrrigatorsDirectoryDocument
+                  data={irrigatorsData}
+                  onUpdateData={handleSaveIrrigatorsData}
+                  isEditable={isDirectEditingLetter}
+                  orientation={orientation}
+                />,
+                1,
+                1,
+                'Irrigators Association Directory'
+              )
+            ) : documentView === 'mpcsrs_report' ? (
+              renderWordSheet(
+                <MpcsrsPalayReportDocument
+                  data={mpcsrsData}
+                  onUpdateData={handleSaveMpcsrsData}
+                  isEditable={isDirectEditingLetter}
+                  orientation={orientation}
+                />,
+                1,
+                1,
+                'Monthly Palay Crop Status Report (MPCSRS)'
+              )
+            ) : (
+              /* documentView === 'registry_table' */
+              renderWordSheet(
+                  <OfficialRegistryTable
+                    reportParcels={reportParcels}
+                    visibleColumns={visibleColumns}
+                    columnOrder={columnOrder}
+                    customTableData={customTableData}
+                    totalAreaHa={totalAreaHa}
+                    memoRef={currentLetter.memoRef || memoRef}
+                    reportDate={currentLetter.date || reportDate}
+                    selectedBarangay={selectedBarangay}
+                    preparedBy={currentLetter.preparedBy || preparedBy}
+                    preparedTitle={currentLetter.preparedTitle || preparedTitle}
+                    reviewedBy={currentLetter.reviewedBy || reviewedBy}
+                    reviewedTitle={currentLetter.reviewedTitle || reviewedTitle}
+                    approvedBy={currentLetter.approvedBy || approvedBy}
+                    approvedTitle={currentLetter.approvedTitle || approvedTitle}
+                    isEditable={isDirectEditingLetter}
+                    orientation={orientation}
+                  />,
+                  1,
+                  1,
+                  'Field-Validated Masterlist Registry (RSBSA & GIS)'
+                )
+              )
           ) : (
             /* ========================================================================= */
             /* SEASONAL / CONSOLIDATED PRODUCTION REPORTS FORMAT                          */
             /* ========================================================================= */
-            <div className="flex flex-col flex-1 justify-between min-h-full">
+            renderWordSheet(
+              <div className="flex flex-col flex-1 justify-between min-h-full">
               {/* Government Official Header with 3 Seals Center-Aligned */}
               <div className="text-center border-b-2 border-slate-900 pb-5 mb-5 space-y-2">
                 <div className="flex items-center justify-center gap-6 mb-2">
@@ -1912,9 +2062,130 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
             <span>DATE PRINTED: {reportDate || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
             <span className="print-page-number"></span>
           </div>
+        </div>,
+        1,
+        1,
+        'Consolidated Agricultural Production Report'
+      )
+    )}
         </div>
-      )}
+      </div>
+
+      {/* Word-Style Bottom Navigation & Zoom Toolbar */}
+      <div className="no-print fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 backdrop-blur-md text-white px-4 py-2 rounded-2xl shadow-2xl border border-slate-700/80 flex items-center gap-3.5 text-xs font-sans select-none animate-in fade-in slide-in-from-bottom-2">
+        {/* Page indicator & arrows */}
+        <div className="flex items-center gap-1.5 border-r border-slate-700 pr-3">
+          <button
+            type="button"
+            onClick={() => setCurrentPageIndex((prev) => Math.max(1, prev - 1))}
+            disabled={currentPageIndex <= 1}
+            className="p-1 hover:bg-white/10 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+            title="Previous Page"
+            aria-label="Previous Page"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <span className="font-mono text-xs font-bold px-1.5 whitespace-nowrap">
+            {currentPageIndex} of {totalDocumentPages}
+          </span>
+          <button
+            type="button"
+            onClick={() => setCurrentPageIndex((prev) => Math.min(totalDocumentPages, prev + 1))}
+            disabled={currentPageIndex >= totalDocumentPages}
+            className="p-1 hover:bg-white/10 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+            title="Next Page"
+            aria-label="Next Page"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
+
+        {/* View Mode Switcher: All Pages vs Single Page */}
+        {totalDocumentPages > 1 && (
+          <div className="flex items-center bg-slate-800 rounded-xl p-0.5 border border-slate-700 text-[11px] font-semibold">
+            <button
+              type="button"
+              onClick={() => setWordViewMode('all_pages')}
+              className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                wordViewMode === 'all_pages'
+                  ? 'bg-emerald-600 text-white font-bold'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              All Pages
+            </button>
+            <button
+              type="button"
+              onClick={() => setWordViewMode('single_page')}
+              className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                wordViewMode === 'single_page'
+                  ? 'bg-emerald-600 text-white font-bold'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              Page {currentPageIndex}
+            </button>
+          </div>
+        )}
+
+        {/* Zoom Percentage Slider & Controls */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setZoomPercent((prev) => Math.max(50, prev - 10))}
+            className="p-1 hover:bg-white/10 rounded-lg transition cursor-pointer"
+            title="Zoom Out (-10%)"
+          >
+            <ZoomOut className="w-3.5 h-3.5" />
+          </button>
+          <input
+            type="range"
+            min="50"
+            max="150"
+            step="5"
+            value={zoomPercent}
+            onChange={(e) => setZoomPercent(Number(e.target.value))}
+            className="w-20 accent-emerald-500 cursor-pointer h-1.5 bg-slate-700 rounded-lg"
+          />
+          <button
+            type="button"
+            onClick={() => setZoomPercent((prev) => Math.min(150, prev + 10))}
+            className="p-1 hover:bg-white/10 rounded-lg transition cursor-pointer"
+            title="Zoom In (+10%)"
+          >
+            <ZoomIn className="w-3.5 h-3.5" />
+          </button>
+          <span className="font-mono text-[11px] font-bold w-9 text-center text-emerald-400">
+            {zoomPercent}%
+          </span>
+          <button
+            type="button"
+            onClick={() => setZoomPercent(100)}
+            className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-[10px] font-bold text-slate-200 transition cursor-pointer"
+            title="Reset Zoom to 100%"
+          >
+            100%
+          </button>
+          <button
+            type="button"
+            onClick={() => setZoomPercent(orientation === 'landscape' ? 68 : 88)}
+            className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-[10px] font-bold text-slate-200 transition cursor-pointer"
+            title="Fit to Window"
+          >
+            Fit
+          </button>
+        </div>
+
+        {/* Print Button */}
+        <button
+          type="button"
+          onClick={handlePrint}
+          className="ml-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold flex items-center gap-1.5 shadow-sm transition hover:scale-105 active:scale-95 cursor-pointer"
+          title="Print official document"
+        >
+          <Printer className="w-3.5 h-3.5" />
+          <span>Print</span>
+        </button>
       </div>
 
       {/* Floating Quick Action Dock (Right-Hand Fixed Action Center) */}
