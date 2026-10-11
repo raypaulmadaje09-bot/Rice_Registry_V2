@@ -36,7 +36,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onSelectBarangay
 }) => {
   const { parcels, currentUser, lftAccounts } = useApp();
-  const [showToast, setShowToast] = useState(true);
 
   // Quick Stats Summary Row Data
   const quickStats = useMemo(() => {
@@ -518,32 +517,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Seasonal Crop Calendar & Municipal Agro-Climate Advisory */}
       <SeasonalCropCalendar />
-
-      {/* Floating Toast Notification in Bottom Right matching Image 2 */}
-      {showToast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#0c2340] text-white shadow-2xl border border-white/10 rounded-2xl p-4 flex items-start gap-3 max-w-sm animate-in fade-in slide-in-from-bottom-5 duration-300">
-          <div className="p-0.5 shrink-0 text-emerald-400">
-            <CheckCircle2 className="w-5 h-5" />
-          </div>
-          <div className="min-w-0 flex-1 pr-1">
-            <h4 className="text-xs font-bold text-white truncate">
-              Signed In: {currentUser?.name || (currentUser?.role === 'Central Admin' ? 'Central Admin' : 'Authorized Staff')}
-            </h4>
-            <p className="text-[11px] text-slate-300 mt-0.5 leading-snug">
-              {currentUser?.role === 'Central Admin'
-                ? 'Authenticated as Central Admin (Central Office).'
-                : `Authenticated as ${currentUser?.name || 'LFT'} (${currentUser?.barangay || 'Silago'}).`}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowToast(false)}
-            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition cursor-pointer shrink-0"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
     </div>
   );
 };

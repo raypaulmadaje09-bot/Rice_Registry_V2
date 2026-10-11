@@ -21,7 +21,7 @@ import { BARANGAYS } from './data/barangays';
 import { AdminProfileModal } from './components/AdminProfileModal';
 import { LftAccountSettingsModal } from './components/LftAccountSettingsModal';
 import { UnifiedSidebarNav } from './components/UnifiedSidebarNav';
-import { AgriGisChatbot } from './components/AgriGisChatbot';
+import { RiceSsistantChat } from './components/RiceSsistantChat';
 import { SafeImage } from './components/SafeImage';
 import { supabase } from './supabase';
 import { isAccountActive } from './types';
@@ -920,7 +920,7 @@ const AppContent: React.FC = () => {
       )}
 
       {/* Floating AI Chatbot Assistant (RiceSsistant - Role-restricted to Central Admin & LFT Field Officers) */}
-      <AgriGisChatbot
+      <RiceSsistantChat
         viewMode={viewMode}
         activeTab={activeTab}
         onNavigateTab={(tab) => {

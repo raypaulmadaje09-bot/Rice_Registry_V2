@@ -529,28 +529,28 @@ export const SeasonalCropCalendar: React.FC = () => {
 
       {/* 4. Deep-Dive Stage Detail & LFT Technical Advisory Card */}
       {selectedStage && (
-        <div className="bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-950 text-white rounded-2xl p-5 sm:p-6 shadow-md space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3.5">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3.5">
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-2.5 py-0.5 rounded-full bg-blue-400/20 text-blue-200 border border-blue-400/30 text-[10px] font-extrabold uppercase">
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-extrabold uppercase">
                   Technical LFT Protocol
                 </span>
-                <span className="text-xs text-blue-200 font-medium">
+                <span className="text-xs text-slate-500 font-medium">
                   {selectedStage.calendarPeriod} ({selectedStage.durationDays})
                 </span>
               </div>
-              <h4 className="font-serif font-black text-lg sm:text-xl text-white mt-1">
+              <h4 className="font-serif font-black text-lg sm:text-xl text-slate-900 mt-1">
                 {selectedStage.name}
               </h4>
-              <p className="text-xs text-blue-100 italic">
+              <p className="text-xs text-slate-500 italic">
                 {selectedStage.stageNameTagalog}
               </p>
             </div>
 
-            <div className="bg-white/10 border border-white/15 px-3 py-2 rounded-xl shrink-0 text-center">
-              <span className="text-[10px] text-blue-200 block uppercase font-bold">Recommended Variety</span>
-              <span className="text-xs font-black text-amber-300">
+            <div className="bg-amber-50/80 border border-amber-200 px-3 py-2 rounded-xl shrink-0 text-center">
+              <span className="text-[10px] text-amber-800 block uppercase font-bold">Recommended Variety</span>
+              <span className="text-xs font-black text-amber-900">
                 NSIC Rc 222 / Rc 182 Submarino
               </span>
             </div>
@@ -559,45 +559,45 @@ export const SeasonalCropCalendar: React.FC = () => {
           {/* 4 Technical Columns */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
             {/* Box 1: Water Level & Irrigation */}
-            <div className="bg-white/10 backdrop-blur-xs p-3.5 rounded-xl border border-white/10 space-y-1.5">
-              <div className="flex items-center gap-1.5 text-sky-300 font-bold text-[11px] uppercase tracking-wider">
-                <Droplets className="w-3.5 h-3.5" />
+            <div className="bg-sky-50/70 p-3.5 rounded-xl border border-sky-100 space-y-1.5">
+              <div className="flex items-center gap-1.5 text-sky-800 font-bold text-[11px] uppercase tracking-wider">
+                <Droplets className="w-3.5 h-3.5 text-sky-600" />
                 <span>Water Management (AWD)</span>
               </div>
-              <p className="text-slate-200 text-xs leading-relaxed">
+              <p className="text-slate-600 text-xs leading-relaxed">
                 {selectedStage.waterManagement}
               </p>
             </div>
 
             {/* Box 2: Fertilizer & Nutrient Timing */}
-            <div className="bg-white/10 backdrop-blur-xs p-3.5 rounded-xl border border-white/10 space-y-1.5">
-              <div className="flex items-center gap-1.5 text-emerald-300 font-bold text-[11px] uppercase tracking-wider">
-                <Wheat className="w-3.5 h-3.5" />
+            <div className="bg-emerald-50/70 p-3.5 rounded-xl border border-emerald-100 space-y-1.5">
+              <div className="flex items-center gap-1.5 text-emerald-800 font-bold text-[11px] uppercase tracking-wider">
+                <Wheat className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Fertilizer Split Application</span>
               </div>
-              <p className="text-slate-200 text-xs leading-relaxed">
+              <p className="text-slate-600 text-xs leading-relaxed">
                 {selectedStage.fertilizerAction}
               </p>
             </div>
 
             {/* Box 3: Pest & Disease Surveillance */}
-            <div className="bg-white/10 backdrop-blur-xs p-3.5 rounded-xl border border-white/10 space-y-1.5">
-              <div className="flex items-center gap-1.5 text-rose-300 font-bold text-[11px] uppercase tracking-wider">
-                <AlertTriangle className="w-3.5 h-3.5" />
+            <div className="bg-rose-50/70 p-3.5 rounded-xl border border-rose-100 space-y-1.5">
+              <div className="flex items-center gap-1.5 text-rose-800 font-bold text-[11px] uppercase tracking-wider">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
                 <span>Pest &amp; Disease Warning</span>
               </div>
-              <p className="text-slate-200 text-xs leading-relaxed">
+              <p className="text-slate-600 text-xs leading-relaxed">
                 {selectedStage.pestRiskAdvisory}
               </p>
             </div>
 
             {/* Box 4: LFT Barangay Action Guidance */}
-            <div className="bg-white/10 backdrop-blur-xs p-3.5 rounded-xl border border-white/10 space-y-1.5">
-              <div className="flex items-center gap-1.5 text-amber-300 font-bold text-[11px] uppercase tracking-wider">
-                <Sparkles className="w-3.5 h-3.5" />
+            <div className="bg-amber-50/70 p-3.5 rounded-xl border border-amber-100 space-y-1.5">
+              <div className="flex items-center gap-1.5 text-amber-800 font-bold text-[11px] uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
                 <span>LFT Field Action Plan</span>
               </div>
-              <p className="text-slate-200 text-xs leading-relaxed font-medium">
+              <p className="text-slate-600 text-xs leading-relaxed font-medium">
                 {selectedStage.lftRecommendation}
               </p>
             </div>
