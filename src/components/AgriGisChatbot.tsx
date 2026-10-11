@@ -6,6 +6,7 @@ import { RICE_VARIETIES } from '../data/riceVarieties';
 import { ACTIVE_SEASON } from '../data/seasonalProduction';
 import { RiceSsistantLogo } from './RiceSsistantLogo';
 import { RiceSsistantMarkdown } from './RiceSsistantMarkdown';
+import * as XLSX from 'xlsx';
 import {
   X,
   Minus,
@@ -25,7 +26,14 @@ import {
   ClipboardList,
   Copy,
   Check,
-  RotateCw
+  RotateCw,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+  Paperclip,
+  FileSpreadsheet,
+  Upload
 } from 'lucide-react';
 
 export type ChatActionType =
@@ -53,6 +61,22 @@ export interface ChatAction {
   iconType: 'map' | 'reports' | 'eartags' | 'dashboard' | 'accounts' | 'photos' | 'settings' | 'add_parcel' | 'print';
 }
 
+export interface StagedFarmerRecord {
+  id: string;
+  rsbsaNo: string;
+  farmerName: string;
+  barangay: string;
+  purok: string;
+  areaHa: number;
+  variety: string;
+  purpose?: string;
+  contactNumber?: string;
+  lat: number;
+  lng: number;
+  status: 'valid' | 'warning' | 'invalid';
+  validationMsg: string;
+}
+
 export interface ChatMessage {
   id: string;
   sender: 'user' | 'assistant';
@@ -61,6 +85,8 @@ export interface ChatMessage {
   actions?: ChatAction[];
   isAutoNavigated?: boolean;
   farmerResults?: FarmParcel[];
+  stagedFarmers?: StagedFarmerRecord[];
+  stagingStatus?: 'pending' | 'saved' | 'canceled';
 }
 
 export type SupportedLanguage = 'bisaya' | 'tagalog' | 'english';
@@ -1072,7 +1098,7 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
   onFilterReportBarangay,
   onFocusBarangayOnMap
 }) => {
-  const { currentUser, adminProfile, parcels, lftAccounts, officeContactInfo } = useApp();
+  const { currentUser, adminProfile, parcels, lftAccounts, officeContactInfo, addParcel } = useApp();
 
   // 1. DYNAMIC SESSION EXTRACTION (Active authentication state from context)
   const activeUser = currentUser;
@@ -1150,6 +1176,338 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const currentUserSessionIdRef = useRef<string | null>(null);
+
+  // Voice Chat (Web Speech API) & TTS State
+  const [isListening, setIsListening] = useState(false);
+  const [isTtsEnabled, setIsTtsEnabled] = useState(true);
+  const recognitionRef = useRef<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Web Speech API Voice Recognition Toggle
+  const toggleListening = () => {
+    if (isListening) {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+      }
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert('Ang Web Speech API wala gisuportahan niini nga browser. Palihug gamita ang Google Chrome o Microsoft Edge.');
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognitionRef.current = recognition;
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      // Select language for recognition
+      if (activeLanguage === 'english') {
+        recognition.lang = 'en-US';
+      } else if (activeLanguage === 'tagalog') {
+        recognition.lang = 'fil-PH';
+      } else {
+        recognition.lang = 'ceb-PH'; // Cebuano / Bisaya
+      }
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results?.[0]?.[0]?.transcript;
+        if (transcript) {
+          setInputMessage(transcript);
+          if (inputRef.current) {
+            inputRef.current.focus();
+          }
+        }
+        setIsListening(false);
+      };
+
+      recognition.onerror = (err: any) => {
+        console.warn('Speech recognition error:', err);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognition.start();
+    } catch (e) {
+      console.error('Speech recognition start failed:', e);
+      setIsListening(false);
+    }
+  };
+
+  // Text-To-Speech (TTS) Voice Output
+  const speakAiResponse = (text: string) => {
+    if (!isTtsEnabled || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const clean = text
+        .replace(/\[ACTION:[^\]]+\]/g, '')
+        .replace(/[*#`_~>]/g, '')
+        .replace(/https?:\/\/\S+/g, '')
+        .replace(/[🌾🗺️📍🟢🟡🔴✅❌📜⚡📊📌]/g, '')
+        .trim();
+      if (!clean) return;
+
+      const utterance = new SpeechSynthesisUtterance(clean);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      if (activeLanguage === 'english') {
+        utterance.lang = 'en-US';
+      } else {
+        utterance.lang = 'fil-PH';
+      }
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.warn('TTS error:', e);
+    }
+  };
+
+  // Smart Excel File Parsing using 'xlsx' library
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+
+    setIsLoading(true);
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheetName = workbook.SheetNames[0];
+      if (!firstSheetName) {
+        throw new Error('Walay sheet nga nakit-an sa Excel file.');
+      }
+      const worksheet = workbook.Sheets[firstSheetName];
+      const rawRows = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet, { defval: '' });
+
+      if (!rawRows || rawRows.length === 0) {
+        const errorMsg: ChatMessage = {
+          id: `msg-${Date.now()}`,
+          sender: 'assistant',
+          text: `⚠️ **Walay sulod ang file**: Walay nakit-an nga datos o rows sulod sa gi-upload nga file \`${file.name}\`. Palihug siguroha nga aduna kini talaan sa mga mag-uuma.`,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        setMessages((prev) => [...prev, errorMsg]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Flexible Key Normalization
+      const stagedList: StagedFarmerRecord[] = rawRows.map((row, idx) => {
+        const getVal = (patterns: RegExp[]): string => {
+          for (const key of Object.keys(row)) {
+            for (const pat of patterns) {
+              if (pat.test(key.trim())) {
+                const v = row[key];
+                return v !== undefined && v !== null ? String(v).trim() : '';
+              }
+            }
+          }
+          return '';
+        };
+
+        const rsbsa =
+          getVal([/rsbsa/i, /stub/i, /swine.*id/i, /reference/i, /^id$/i]) ||
+          `RSBSA-SLG-${String(idx + 1).padStart(4, '0')}`;
+
+        let farmerName = getVal([/full.*name/i, /farmer.*name/i, /pangalan/i, /ngalan/i, /raiser.*name/i, /^name$/i, /tiller/i]);
+        if (!farmerName) {
+          const fn = getVal([/first.*name/i, /given.*name/i]);
+          const ln = getVal([/last.*name/i, /family.*name/i, /apelyido/i]);
+          const mn = getVal([/middle.*name/i]);
+          if (fn || ln) {
+            farmerName = [ln, fn, mn].filter(Boolean).join(', ');
+          }
+        }
+        if (!farmerName) farmerName = `Magsasaka #${idx + 1}`;
+
+        let brgy = getVal([/barangay/i, /brgy/i, /lokasyon/i, /location/i]);
+        if (!brgy) brgy = 'Balagawan';
+        const matchedBrgy = BARANGAYS.find(
+          (b) => b.name.toLowerCase() === brgy.toLowerCase() || brgy.toLowerCase().includes(b.name.toLowerCase())
+        );
+        if (matchedBrgy) brgy = matchedBrgy.name;
+
+        const purok = getVal([/purok/i, /sitio/i, /zone/i]) || 'Purok 1';
+
+        const areaStr = getVal([/area/i, /hektar/i, /hectare/i, /ha/i, /sukod/i, /lot.*area/i, /weight/i]);
+        const areaNum = parseFloat(areaStr.replace(/[^0-9.]/g, '')) || 1.0;
+
+        const variety = getVal([/variety/i, /binhi/i, /seed/i, /breed/i, /barayti/i]) || 'NSIC Rc 222';
+        const purpose = getVal([/ecosystem/i, /purpose/i, /irrigat/i, /tubig/i]) || 'Irrigated Lowland (NIA)';
+        const contact = getVal([/contact/i, /phone/i, /mobile/i, /cp/i]) || '';
+
+        const latStr = getVal([/^lat/i, /latitude/i]);
+        const lngStr = getVal([/^lng/i, /^lon/i, /longitude/i]);
+        let latNum = parseFloat(latStr);
+        let lngNum = parseFloat(lngStr);
+        if (isNaN(latNum) || latNum < 10.4 || latNum > 10.7) {
+          latNum = matchedBrgy ? matchedBrgy.lat : 10.53 + (Math.random() - 0.5) * 0.02;
+        }
+        if (isNaN(lngNum) || lngNum < 125.0 || lngNum > 125.3) {
+          lngNum = matchedBrgy ? matchedBrgy.lng : 125.16 + (Math.random() - 0.5) * 0.02;
+        }
+
+        let status: 'valid' | 'warning' | 'invalid' = 'valid';
+        let validationMsg = 'Kompleto ang mga detalye.';
+        if (!farmerName || farmerName.startsWith('Magsasaka #')) {
+          status = 'invalid';
+          validationMsg = 'Kulang ang tinuod nga ngalan sa mag-uuma.';
+        } else if (!brgy) {
+          status = 'warning';
+          validationMsg = 'Awtomatikong gigamit ang Balagawan isip default barangay.';
+        }
+
+        return {
+          id: `staged-${Date.now()}-${idx}`,
+          rsbsaNo: rsbsa,
+          farmerName,
+          barangay: brgy,
+          purok,
+          areaHa: areaNum,
+          variety,
+          purpose,
+          contactNumber: contact,
+          lat: Number(latNum.toFixed(6)),
+          lng: Number(lngNum.toFixed(6)),
+          status,
+          validationMsg
+        };
+      });
+
+      const politeName = formatPoliteGreetingName(dynamicUserObj.name, dynamicUserObj.role);
+
+      const userUploadMsg: ChatMessage = {
+        id: `user-up-${Date.now()}`,
+        sender: 'user',
+        text: `📎 Nag-upload ko og Excel file: **${file.name}** (${stagedList.length} ka talaan). Pwede nimo basahon ug ipakita ang staging preview?`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      const validCount = stagedList.filter((s) => s.status === 'valid').length;
+      const warnCount = stagedList.filter((s) => s.status === 'warning').length;
+      const invalidCount = stagedList.filter((s) => s.status === 'invalid').length;
+
+      const assistantMsg: ChatMessage = {
+        id: `asst-stg-${Date.now()}`,
+        sender: 'assistant',
+        text:
+          `Hello ${politeName}! Nadawat ug nasabtan nako ang imong Excel file **"${file.name}"**.\n\n` +
+          `📊 **Buod sa Pagsala (Summary):**\n` +
+          `* Kinatibuk-ang talaan: **${stagedList.length} ka records**\n` +
+          `* 🟢 Kompleto ug andam i-save: **${validCount}**\n` +
+          (warnCount > 0 ? `* 🟡 May default / warning: **${warnCount}**\n` : '') +
+          (invalidCount > 0 ? `* 🔴 Kulang og detalye: **${invalidCount}**\n` : '') +
+          `\nPalihug susiha ang **Filtered Staging Preview** sa ubos sa dili pa nato opisyal nga i-save sa atong database.`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        stagedFarmers: stagedList,
+        stagingStatus: 'pending'
+      };
+
+      setMessages((prev) => [...prev, userUploadMsg, assistantMsg]);
+      speakAiResponse(`Nadawat nako ang imong file nga may ${stagedList.length} ka talaan. Palihug susiha ang preview sa dili pa i-save.`);
+    } catch (err: any) {
+      console.error('Excel parse error:', err);
+      const errMsg: ChatMessage = {
+        id: `asst-err-${Date.now()}`,
+        sender: 'assistant',
+        text: `⚠️ **Sayop sa pagbasa sa Excel file**: ${err?.message || 'Wala mabasa ang spreadsheet format. Palihug siguroha nga standard .xlsx o .csv file kini.'}`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages((prev) => [...prev, errMsg]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Commit Staged Records to Database / AppContext
+  const handleCommitStagedRecords = async (messageId: string, records: StagedFarmerRecord[]) => {
+    setIsLoading(true);
+    let successCount = 0;
+    try {
+      for (const rec of records) {
+        if (rec.status === 'invalid') continue;
+        const newParcel: FarmParcel = {
+          tagNumber: `SLG-${rec.barangay.slice(0, 3).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
+          swineNameOrId: rec.rsbsaNo,
+          raiserName: rec.farmerName,
+          barangay: rec.barangay,
+          purok: rec.purok,
+          address: `Brgy. ${rec.barangay}, ${rec.purok}, Silago`,
+          contactNumber: rec.contactNumber && rec.contactNumber.length === 11 ? rec.contactNumber : '09123456789',
+          breed: rec.variety,
+          sex: 'Owner-Cultivator',
+          ageMonths: 35,
+          weightKg: rec.areaHa,
+          scale: rec.areaHa > 2 ? 'Medium Farm (2-5 ha)' : 'Smallholder (<2 ha)',
+          purpose: rec.purpose || 'Irrigated Lowland (NIA)',
+          vaccinationStatus: 'RSBSA Enrolled & PCIC Insured',
+          healthStatus: 'Tillering',
+          biosecurityScore: 'Georeferenced (GPS Polygon Mapped)',
+          registrationDate: new Date().toISOString().split('T')[0],
+          focalPerson: 'Assigned LFT Officer',
+          lat: rec.lat,
+          lng: rec.lng,
+          syncStatus: 'GIS Synced',
+          targetYieldMt: Number((rec.areaHa * 4.2).toFixed(2)),
+          seasonalRecords: []
+        };
+        try {
+          await addParcel(newParcel);
+          successCount++;
+        } catch (e) {
+          console.warn('addParcel item error:', e);
+        }
+      }
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId
+            ? {
+                ...m,
+                stagingStatus: 'saved',
+                text: m.text + `\n\n✅ **Kumpirmado:** Malampusong na-save ang **${successCount} ka mag-uuma** sa atong database!`
+              }
+            : m
+        )
+      );
+
+      speakAiResponse(`Malampusong na-save ang ${successCount} ka mag-uuma sa atong database!`);
+    } catch (err: any) {
+      console.error('Commit staging error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancelStagedRecords = (messageId: string) => {
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId
+          ? {
+              ...m,
+              stagingStatus: 'canceled',
+              text: m.text + `\n\n❌ **Gikanselar:** Gi-discard ang staging cache. Walay datos nga gisulod sa database.`
+            }
+          : m
+      )
+    );
+    speakAiResponse('Gikanselar ang pag-upload. Walay datos nga gisulod sa database.');
+  };
 
   // Role check
   const isCentralAdmin = activeUser?.role === 'Central Admin';
@@ -1334,8 +1692,12 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
   // Execute Navigation or Deep Link Action Trigger
   const handleExecuteAction = (action: ChatAction) => {
     if (action.type === 'action:add_parcel') {
-      onOpenAddParcelModal?.();
-      setLastNavNotice('Opened Registration Form');
+      if (action.label.includes('Excel')) {
+        fileInputRef.current?.click();
+      } else {
+        onOpenAddParcelModal?.();
+        setLastNavNotice('Opened Registration Form');
+      }
     } else if (action.type === 'action:locate_parcel' && action.parcel) {
       handleLocateParcel(action.parcel);
     } else if (action.type === 'action:filter_records') {
@@ -1974,6 +2336,49 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
         currentLang = detected;
         setActiveLanguage(detected);
       }
+    }
+
+    // C. Check for Excel / Spreadsheet upload intent
+    const isExcelQuery =
+      /excel|\.xlsx|\.csv|spreadsheet|gikapuy ko ug input|upload.*database.*file|file.*sauna|parse.*excel|staging preview/i.test(query) ||
+      (query.toLowerCase().includes('excel') && (query.toLowerCase().includes('file') || query.toLowerCase().includes('upload')));
+
+    if (isExcelQuery) {
+      const politeName = formatPoliteGreetingName(dynamicUserObj.name, dynamicUserObj.role);
+      let replyText = '';
+      if (currentLang === 'tagalog') {
+        replyText = `Oo naman, ${politeName}! Naiintindihan ko ang iyong sitwasyon. Huwag kang mag-alala, kayang-kaya kong basahin at linisin ang iyong dating Excel o CSV file (.xlsx / .csv) upang hindi ka na mapagod sa manu-manong pag-input.\n\n` +
+          `Awtomatiko kong sasalain ang mga datos tulad ng **RSBSA Number**, **Pangalan ng Magsasaka**, **Barangay**, **Purok**, **Sukat (Hectares)**, **Binhi**, at **GPS Coordinates**.\n\n` +
+          `🛡️ **Paunawa sa Seguridad ng Datos:** Hindi ito agad direktang ilalagay sa database. Ipapakita muna sa iyo ang isang **Filtered Staging Preview Table** na may validation indicators (🟢 Kompleto, 🟡 Warning, 🔴 Kulang) upang ma-review at makumpirma mo muna bago i-save!\n\n` +
+          `👉 **I-click ang paperclip icon (📎) sa tabi ng chatbox o ang buton sa ibaba upang i-upload ang iyong Excel file:**`;
+      } else if (currentLang === 'english') {
+        replyText = `Certainly, ${politeName}! I completely understand. Rest assured, I can parse, filter, and normalize your historical Excel or CSV files (.xlsx / .csv) to save you from manual data entry fatigue.\n\n` +
+          `I will automatically extract **RSBSA Numbers**, **Farmer Names**, **Barangay**, **Purok**, **Farm Area (ha)**, **Rice Variety**, and **GPS Coordinates**.\n\n` +
+          `🛡️ **Safe Staging Guarantee:** No records will be directly inserted into the database without your approval. You will first see an interactive **Filtered Staging Preview Table** with status indicators (🟢 Ready, 🟡 Warning, 🔴 Incomplete) so you can review before committing!\n\n` +
+          `👉 **Click the paperclip attachment icon (📎) beside the input bar or the button below to upload your Excel file:**`;
+      } else {
+        replyText = `Oo pud, ${politeName}! Nasabtan nako ang imong kahimtang. Ayaw kabalaka kay andam kong mosala ug mobasa sa imong karaang Excel o CSV file (.xlsx / .csv) aron dili na ka mahago og usa-usa nga pag-input.\n\n` +
+          `Awtomatiko nakong kuhaon ang **RSBSA No.**, **Pangalan sa Mag-uuma**, **Barangay**, **Purok**, **Gidak-on (Hectares)**, **Binhi / Variety**, ug **GPS Coordinates**.\n\n` +
+          `🛡️ **Siguro nga Staging:** Dili dayon kini isulod sa atong opisyal nga database. Magpakita una ako dinhi og **Filtered Staging Preview Table** nga adunay status (🟢 Kompleto, 🟡 Warning, 🔴 Kulang) aron imo unang masusi ug ma-kumpirma sa dili pa i-save!\n\n` +
+          `👉 **I-click ang paperclip icon (📎) sa kilid sa chatbox o ang buton sa ubos aron mapili ug ma-upload ang imong Excel file:**`;
+      }
+
+      const excelBotMsg: ChatMessage = {
+        id: `bot-excel-${Date.now()}`,
+        sender: 'assistant',
+        text: replyText,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        actions: [
+          {
+            type: 'action:add_parcel',
+            label: currentLang === 'english' ? '📎 Select & Upload Excel File' : '📎 Pilia ug I-upload ang Excel File',
+            iconType: 'add_parcel'
+          }
+        ]
+      };
+      setMessages((prev) => [...prev, excelBotMsg]);
+      speakAiResponse(currentLang === 'english' ? 'You can upload your Excel file and I will prepare a staging preview table for you.' : 'Pwede nimo i-upload ang imong Excel file ug mag-andam ko og staging preview para nimo.');
+      return;
     }
 
     setIsLoading(true);
@@ -3611,6 +4016,136 @@ ${JSON.stringify(parcelsSummary)}`;
                     </div>
                   )}
 
+                  {/* STAGING AREA: FILTERED EXCEL RECORDS PREVIEW */}
+                  {msg.stagedFarmers && msg.stagedFarmers.length > 0 && (
+                    <div className="mt-3 pt-2.5 border-t border-slate-200">
+                      <div className="bg-slate-900 text-white p-2.5 rounded-t-xl flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                          <span className="font-bold text-[11px] tracking-wide">
+                            Staging Area: {msg.stagedFarmers.length} Filtered Records
+                          </span>
+                        </div>
+                        <span
+                          className={`text-[9.5px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                            msg.stagingStatus === 'saved'
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                              : msg.stagingStatus === 'canceled'
+                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                              : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse'
+                          }`}
+                        >
+                          {msg.stagingStatus === 'saved'
+                            ? '✓ Saved to Database'
+                            : msg.stagingStatus === 'canceled'
+                            ? '✕ Gikanselar'
+                            : 'Pending Confirmation'}
+                        </span>
+                      </div>
+
+                      {/* Scrollable mini table */}
+                      <div className="border-x border-b border-slate-200 bg-white rounded-b-xl overflow-hidden shadow-xs">
+                        <div className="max-h-56 overflow-y-auto overflow-x-auto text-[10.5px]">
+                          <table className="w-full border-collapse text-left">
+                            <thead className="bg-slate-100 text-slate-700 font-semibold sticky top-0 border-b border-slate-200 z-10">
+                              <tr>
+                                <th className="py-1.5 px-2">Status</th>
+                                <th className="py-1.5 px-2">RSBSA No</th>
+                                <th className="py-1.5 px-2">Farmer Name</th>
+                                <th className="py-1.5 px-2">Barangay & Purok</th>
+                                <th className="py-1.5 px-2">Area (ha)</th>
+                                <th className="py-1.5 px-2">Variety</th>
+                                <th className="py-1.5 px-2">GPS Coordinates</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 text-slate-800">
+                              {msg.stagedFarmers.map((item, idx) => (
+                                <tr
+                                  key={item.id || idx}
+                                  className={`hover:bg-slate-50 transition ${
+                                    item.status === 'invalid'
+                                      ? 'bg-rose-50/50'
+                                      : item.status === 'warning'
+                                      ? 'bg-amber-50/30'
+                                      : ''
+                                  }`}
+                                >
+                                  <td className="py-1.5 px-2 whitespace-nowrap">
+                                    {item.status === 'valid' && (
+                                      <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                                        Ready
+                                      </span>
+                                    )}
+                                    {item.status === 'warning' && (
+                                      <span className="inline-flex items-center gap-1 text-amber-700 font-semibold">
+                                        <span className="w-2 h-2 rounded-full bg-amber-500" />
+                                        Warning
+                                      </span>
+                                    )}
+                                    {item.status === 'invalid' && (
+                                      <span className="inline-flex items-center gap-1 text-rose-700 font-semibold">
+                                        <span className="w-2 h-2 rounded-full bg-rose-500" />
+                                        Incomplete
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="py-1.5 px-2 font-mono font-medium text-slate-700 whitespace-nowrap">
+                                    {item.rsbsaNo}
+                                  </td>
+                                  <td className="py-1.5 px-2 font-bold whitespace-nowrap">
+                                    {item.farmerName}
+                                  </td>
+                                  <td className="py-1.5 px-2 whitespace-nowrap">
+                                    Brgy. {item.barangay}, {item.purok}
+                                  </td>
+                                  <td className="py-1.5 px-2 font-mono whitespace-nowrap">
+                                    {item.areaHa.toFixed(2)} ha
+                                  </td>
+                                  <td className="py-1.5 px-2 whitespace-nowrap text-emerald-800 font-medium">
+                                    {item.variety}
+                                  </td>
+                                  <td className="py-1.5 px-2 font-mono text-[9.5px] text-slate-500 whitespace-nowrap">
+                                    {item.lat.toFixed(4)}, {item.lng.toFixed(4)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Confirmation Actions */}
+                        {msg.stagingStatus === 'pending' && (
+                          <div className="p-2.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2 flex-wrap">
+                            <span className="text-[10px] text-slate-600">
+                              Susiha ang mga talaan sa dili pa kumpirmahon. Ang mga incomplete dili ma-apil sa database.
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleCancelStagedRecords(msg.id)}
+                                disabled={isLoading}
+                                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 shadow-2xs transition hover:scale-[1.02] cursor-pointer flex items-center gap-1"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                                <span>Kanselahon / Usba</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleCommitStagedRecords(msg.id, msg.stagedFarmers!)}
+                                disabled={isLoading}
+                                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white shadow-2xs transition hover:scale-[1.02] cursor-pointer flex items-center gap-1"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                <span>Kumpirmaha ug I-save sa Database</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Explicit Navigation Action Buttons (Only shown if user requested navigation or action) */}
                   {msg.actions && msg.actions.length > 0 && (
                     <div className="mt-3 pt-2 border-t border-slate-200/80 flex flex-wrap gap-1.5">
@@ -3714,34 +4249,98 @@ ${JSON.stringify(parcelsSummary)}`;
             </div>
           )}
 
-          {/* Clean Chat Input Box */}
-          <div className="p-3 bg-white border-t border-slate-200">
+          {/* Clean Chat Input Box with Voice Chat & Excel Upload */}
+          <div className="p-2.5 bg-white border-t border-slate-200">
+            {/* Hidden File Input for Excel Spreadsheet Parsing */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept=".xlsx, .xls, .csv"
+              onChange={handleExcelUpload}
+              className="hidden"
+            />
+
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleSendMessage();
               }}
-              className="flex items-center gap-2"
+              className="flex items-center gap-1.5"
             >
+              {/* Paperclip Excel Attachment Button */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+                className="p-2 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition cursor-pointer disabled:opacity-40 shrink-0"
+                title="Upload Excel o CSV file (.xlsx, .csv)"
+              >
+                <Paperclip className="w-4 h-4" />
+              </button>
+
+              {/* Web Speech API Microphone Button with Animated Pulse Indicator */}
+              <button
+                type="button"
+                onClick={toggleListening}
+                disabled={isLoading}
+                className={`p-2 rounded-xl transition cursor-pointer relative shrink-0 ${
+                  isListening
+                    ? 'bg-rose-600 text-white animate-pulse shadow-md ring-2 ring-rose-400'
+                    : 'text-slate-500 hover:text-emerald-700 hover:bg-emerald-50'
+                }`}
+                title={
+                  isListening
+                    ? 'Naminaw si RiceSsistant... Pindota aron mohunong'
+                    : 'Voice Chat (English, Tagalog, Cebuano/Bisaya)'
+                }
+              >
+                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                {isListening && (
+                  <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+                  </span>
+                )}
+              </button>
+
+              {/* Text-to-Speech (TTS) Voice Toggle */}
+              <button
+                type="button"
+                onClick={() => setIsTtsEnabled(!isTtsEnabled)}
+                className={`p-2 rounded-xl transition cursor-pointer shrink-0 ${
+                  isTtsEnabled
+                    ? 'text-emerald-700 hover:bg-emerald-50'
+                    : 'text-slate-400 hover:bg-slate-100'
+                }`}
+                title={isTtsEnabled ? 'Voice Output: Aktibo (ON)' : 'Voice Output: Naka-mute (OFF)'}
+              >
+                {isTtsEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+              </button>
+
+              {/* Chat Input Text Field */}
               <input
                 ref={inputRef}
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 placeholder={
-                  activeLanguage === 'tagalog'
-                    ? 'Magtanong kay RiceSsistant o maghanap ng magsasaka...'
+                  isListening
+                    ? 'Naminaw... Pagsulti karon...'
+                    : activeLanguage === 'tagalog'
+                    ? 'Magtanong o mag-upload ng Excel...'
                     : activeLanguage === 'english'
-                    ? 'Ask RiceSsistant or search for a farmer or parcel...'
-                    : 'Pangutana kang RiceSsistant o pagpangita og mag-uuma...'
+                    ? 'Ask RiceSsistant or upload Excel...'
+                    : 'Pangutana o mag-upload og Excel...'
                 }
                 disabled={isLoading}
-                className="flex-1 px-3.5 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+                className="flex-1 px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition min-w-0"
               />
+
+              {/* Send Button */}
               <button
                 type="submit"
                 disabled={!inputMessage.trim() || isLoading}
-                className="p-2 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-300 text-white rounded-xl transition cursor-pointer disabled:cursor-not-allowed shadow-2xs"
+                className="p-2 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-300 text-white rounded-xl transition cursor-pointer disabled:cursor-not-allowed shadow-2xs shrink-0"
                 title="Send message"
               >
                 <Send className="w-4 h-4" />

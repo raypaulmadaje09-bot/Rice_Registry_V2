@@ -5,6 +5,7 @@ import { Barangay, FarmParcel, PortalTab } from '../types';
 import { DaLogo, SilagoSeal, BagOngSilagoLogo, SlsuBadge, OfficialSealsTrio } from './Seals';
 import { BarangayDetailModal } from './BarangayDetailModal';
 import { ParcelDetailModal } from './ParcelDetailModal';
+import { ParcelDetailErrorBoundary } from './ParcelDetailErrorBoundary';
 import {
   ArrowRight,
   FileText,
@@ -1052,10 +1053,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         }}
       />
 
-      <ParcelDetailModal
-        parcel={selectedParcelModal}
-        onClose={() => setSelectedParcelModal(null)}
-      />
+      {selectedParcelModal && (
+        <ParcelDetailErrorBoundary onClose={() => setSelectedParcelModal(null)}>
+          <ParcelDetailModal
+            parcel={selectedParcelModal}
+            onClose={() => setSelectedParcelModal(null)}
+          />
+        </ParcelDetailErrorBoundary>
+      )}
     </div>
   );
 };

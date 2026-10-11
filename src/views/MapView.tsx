@@ -2569,7 +2569,11 @@ export const MapView: React.FC<MapViewProps> = ({
                 {/* Open Full Profile Dossier Button */}
                 <button
                   type="button"
-                  onClick={() => onSelectParcel(selectedParcelForDrawer)}
+                  onClick={() => {
+                    if (selectedParcelForDrawer) {
+                      onSelectParcel(selectedParcelForDrawer);
+                    }
+                  }}
                   className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-xs hover:shadow-md cursor-pointer group"
                 >
                   <span>Open Full Farmer Profile Dossier</span>

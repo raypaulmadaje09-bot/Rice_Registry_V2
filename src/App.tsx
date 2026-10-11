@@ -4,6 +4,7 @@ import { LandingPage } from './components/LandingPage';
 import { LoginModal } from './components/LoginModal';
 import { SignInToast } from './components/SignInToast';
 import { ParcelDetailModal } from './components/ParcelDetailModal';
+import { ParcelDetailErrorBoundary } from './components/ParcelDetailErrorBoundary';
 import { BarangayDetailModal } from './components/BarangayDetailModal';
 import { AddParcelModal } from './components/AddParcelModal';
 import { DaLogo, SilagoSeal, BagOngSilagoLogo, OfficialSealsTrio } from './components/Seals';
@@ -834,18 +835,22 @@ const AppContent: React.FC = () => {
         onSuccess={handleLoginSuccess}
       />
 
-      <ParcelDetailModal
-        parcel={selectedParcel}
-        onClose={() => setSelectedParcel(null)}
-        onEdit={(p) => {
-          setEditingParcel(p);
-          setIsAddParcelOpen(true);
-        }}
-        onDelete={(tag) => {
-          deleteParcel(tag);
-          setSelectedParcel(null);
-        }}
-      />
+      {selectedParcel && (
+        <ParcelDetailErrorBoundary onClose={() => setSelectedParcel(null)}>
+          <ParcelDetailModal
+            parcel={selectedParcel}
+            onClose={() => setSelectedParcel(null)}
+            onEdit={(p) => {
+              setEditingParcel(p);
+              setIsAddParcelOpen(true);
+            }}
+            onDelete={(tag) => {
+              deleteParcel(tag);
+              setSelectedParcel(null);
+            }}
+          />
+        </ParcelDetailErrorBoundary>
+      )}
 
       <BarangayDetailModal
         barangay={selectedBarangay}
