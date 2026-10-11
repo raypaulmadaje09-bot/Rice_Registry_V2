@@ -1169,12 +1169,6 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
   const [activeLanguage, setActiveLanguage] = useState<SupportedLanguage>('bisaya');
   const [isLanguageLocked, setIsLanguageLocked] = useState<boolean>(false);
 
-  // Idle Attention-Seeking State (Magpapansin Effect)
-  const [isIdleBubbleVisible, setIsIdleBubbleVisible] = useState(false);
-  const [isFadingOut, setIsFadingOut] = useState(false);
-  const [isLauncherJiggling, setIsLauncherJiggling] = useState(false);
-  const [idleGreetingIndex, setIdleGreetingIndex] = useState(0);
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const currentUserSessionIdRef = useRef<string | null>(null);
@@ -1737,58 +1731,6 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, streamingText, isOpen, isMinimized, isLoading]);
-
-  // Sleek Idle Attention Capsule (Magpapansin Effect) Timer Lifecycle
-  useEffect(() => {
-    // If chat is open or not in portal mode or not authorized, clear idle prompts
-    if (isOpen || viewMode !== 'portal' || !isAuthorizedStaff) {
-      setIsIdleBubbleVisible(false);
-      setIsFadingOut(false);
-      setIsLauncherJiggling(false);
-      return;
-    }
-
-    let hideTimer: NodeJS.Timeout | null = null;
-    let fadeOutTimer: NodeJS.Timeout | null = null;
-    let repeatInterval: NodeJS.Timeout | null = null;
-
-    const triggerAttentionPrompt = () => {
-      setIsFadingOut(false);
-      setIsIdleBubbleVisible(true);
-      setIsLauncherJiggling(true);
-      setIdleGreetingIndex((prev) => (prev + 1) % IDLE_ATTENTION_GREETINGS.length);
-
-      // Visible for 7 seconds, then initiate smooth fade out
-      if (fadeOutTimer) clearTimeout(fadeOutTimer);
-      fadeOutTimer = setTimeout(() => {
-        setIsFadingOut(true);
-        // Complete unmount after 500ms fade out animation
-        if (hideTimer) clearTimeout(hideTimer);
-        hideTimer = setTimeout(() => {
-          setIsIdleBubbleVisible(false);
-          setIsFadingOut(false);
-          setIsLauncherJiggling(false);
-        }, 500);
-      }, 7000);
-    };
-
-    // Show attention bubble after 10 seconds of idle closed state
-    const initialTimer = setTimeout(() => {
-      triggerAttentionPrompt();
-
-      // Periodically re-trigger softly every 40 seconds of continuous idle time
-      repeatInterval = setInterval(() => {
-        triggerAttentionPrompt();
-      }, 40000);
-    }, 10000);
-
-    return () => {
-      clearTimeout(initialTimer);
-      if (fadeOutTimer) clearTimeout(fadeOutTimer);
-      if (hideTimer) clearTimeout(hideTimer);
-      if (repeatInterval) clearInterval(repeatInterval);
-    };
-  }, [isOpen, viewMode, isAuthorizedStaff]);
 
   // If on public landing page or user is not logged in / not authorized staff, do not render
   if (viewMode !== 'portal' || !isAuthorizedStaff || !currentUser) {
@@ -3887,7 +3829,7 @@ ${JSON.stringify(parcelsSummary)}`;
             setMessages([getFreshWelcomeMessage()]);
             setTimeout(() => inputRef.current?.focus(), 150);
           }}
-          className="fixed bottom-6 right-6 z-[9999] flex items-center gap-2.5 px-4 py-2.5 bg-gradient-to-r from-[#0B1E38] via-[#102A4E] to-[#123E28] text-white rounded-full shadow-2xl border border-emerald-400/40 cursor-pointer hover:scale-105 active:scale-95 transition-all select-none ring-1 ring-white/10 group animate-in fade-in slide-in-from-bottom-2 duration-200"
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-3.5 py-2.5 bg-gradient-to-r from-[#0B1E38] via-[#102A4E] to-[#123E28] text-white rounded-full shadow-2xl border border-emerald-400/40 cursor-pointer hover:scale-105 active:scale-95 transition-all select-none ring-1 ring-white/10 group animate-in fade-in slide-in-from-bottom-2 duration-200"
           title="Restore RiceSsistant window"
         >
           <RiceSsistantLogo size={28} className="ring-1 ring-emerald-300/40 shrink-0" />
@@ -3914,90 +3856,34 @@ ${JSON.stringify(parcelsSummary)}`;
         </div>
       )}
 
-      {/* 2. Floating Circular Launcher Widget Button & Sleek Inline Message Capsule (When Chat is Closed) */}
+      {/* 2. Floating Launcher Button (Closed state: fixed bottom-6 right-6, permanently anchored) */}
       {!isOpen && (
-        <div className="fixed bottom-6 right-6 z-[9999] flex items-center gap-2.5 pointer-events-none">
-          {/* Sleek Inline Message Capsule Beside Launcher */}
-          {isIdleBubbleVisible && (
-            <div
-              onClick={() => {
-                setIsOpen(true);
-                setIsMinimized(false);
-                setIsIdleBubbleVisible(false);
-                setIsFadingOut(false);
-                setIsLauncherJiggling(false);
-                setMessages([getFreshWelcomeMessage()]);
-                setTimeout(() => inputRef.current?.focus(), 150);
-              }}
-              className={`pointer-events-auto flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-900 text-white border border-emerald-500/40 hover:border-emerald-400 backdrop-blur-md shadow-xl shadow-black/30 hover:scale-[1.02] active:scale-[0.98] cursor-pointer select-none max-w-[280px] sm:max-w-[340px] relative group ${
-                isFadingOut ? 'animate-smooth-fade-out' : 'animate-smooth-float-in'
-              }`}
-              title="Click to open RiceSsistant"
-            >
-              {/* Subtle arrow pointing toward the green floating button */}
-              <div className="hidden sm:block absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 bg-slate-900/90 border-r border-t border-emerald-500/40 rotate-45 pointer-events-none" />
-
-              <p className="text-xs text-slate-100 font-medium leading-snug line-clamp-2">
-                {IDLE_ATTENTION_GREETINGS[idleGreetingIndex % IDLE_ATTENTION_GREETINGS.length]}
-              </p>
-
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsFadingOut(true);
-                  setTimeout(() => {
-                    setIsIdleBubbleVisible(false);
-                    setIsFadingOut(false);
-                    setIsLauncherJiggling(false);
-                  }, 500);
-                }}
-                className="text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition cursor-pointer shrink-0 ml-1"
-                title="Dismiss"
-                aria-label="Dismiss message"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
-
-          {/* Floating Launcher Button */}
-          <button
-            type="button"
-            onClick={() => {
-              setIsOpen(true);
-              setIsMinimized(false);
-              setIsIdleBubbleVisible(false);
-              setIsFadingOut(false);
-              setIsLauncherJiggling(false);
-              setMessages([getFreshWelcomeMessage()]);
-              setTimeout(() => inputRef.current?.focus(), 150);
-            }}
-            className={`pointer-events-auto relative p-2.5 bg-gradient-to-tr from-[#0b2340] via-[#103426] to-[#047857] hover:scale-105 active:scale-95 text-white rounded-full shadow-2xl shadow-emerald-950/50 transition-all duration-200 cursor-pointer flex items-center justify-center ring-2 ring-emerald-400/60 group shrink-0 ${
-              isLauncherJiggling ? 'animate-bounce' : ''
-            }`}
-            aria-label="Open RiceSsistant AI Assistant"
-            title="RiceSsistant • Intelligent GIS Guide"
-          >
-            {/* Attention seeking radar pulse ring */}
-            {isLauncherJiggling && (
-              <>
-                <span className="absolute -inset-2 rounded-full bg-emerald-400/30 animate-ping pointer-events-none" />
-                <span className="absolute -inset-1 rounded-full bg-emerald-500/40 animate-pulse pointer-events-none" />
-              </>
-            )}
-
-            <div className="relative flex items-center justify-center">
-              <RiceSsistantLogo size={38} className="ring-1 ring-emerald-300/40" />
-            </div>
-
-            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full animate-ping" />
-            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full" />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setIsOpen(true);
+            setIsMinimized(false);
+            setMessages([getFreshWelcomeMessage()]);
+            setTimeout(() => inputRef.current?.focus(), 150);
+          }}
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-3.5 py-2.5 bg-gradient-to-r from-[#0B1E38] via-[#102A4E] to-[#123E28] hover:from-[#0e2747] hover:to-[#174d32] text-white rounded-full shadow-2xl border border-emerald-400/40 cursor-pointer hover:scale-105 active:scale-95 transition-all select-none ring-1 ring-white/10 group animate-in fade-in slide-in-from-bottom-2 duration-200"
+          title="Pangutana kang RiceSsistant 🌾"
+          aria-label="Pangutana kang RiceSsistant 🌾"
+        >
+          <RiceSsistantLogo size={32} className="ring-1 ring-emerald-300/40 shrink-0" />
+          <div className="flex items-center gap-1.5 pr-1">
+            <span className="text-xs font-bold font-serif text-white tracking-wide">
+              RiceSsistant
+            </span>
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Online
+            </span>
+          </div>
+        </button>
       )}
 
-      {/* 3. Clean Modern Chat Window (When Open and NOT Minimized) */}
+      {/* 3. Clean Modern Chat Window (Open state: fixed bottom-6 right-6 directly over the anchor) */}
       {isOpen && !isMinimized && (
         <div
           role="dialog"
@@ -4033,7 +3919,7 @@ ${JSON.stringify(parcelsSummary)}`;
               await processExcelFile(droppedFiles[0]);
             }
           }}
-          className="fixed bottom-6 right-6 z-[9999] w-[380px] sm:w-[420px] max-h-[620px] h-[580px] max-w-[96vw] flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden relative animate-in zoom-in-95 duration-200 ring-1 ring-black/5"
+          className="fixed bottom-6 right-6 z-50 w-[380px] sm:w-[420px] h-[580px] max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200 relative ring-1 ring-black/5"
         >
           {/* Drag and Drop Visual Dropzone Overlay (Hidden by default with pointer-events-none opacity-0, strictly scoped within chat window) */}
           <div
@@ -4491,7 +4377,7 @@ ${JSON.stringify(parcelsSummary)}`;
                 e.currentTarget.scrollLeft += e.deltaY;
               }
             }}
-            className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1.5 px-2 w-full whitespace-nowrap scroll-smooth select-none bg-slate-50/90 border-t border-slate-200/80"
+            className="overflow-x-auto whitespace-nowrap scrollbar-none no-scrollbar flex items-center gap-2 p-2 bg-slate-50 border-t border-slate-100 select-none scroll-smooth w-full"
           >
             {getQuickPrompts(activeLanguage).map((chip, idx) => (
               <button
