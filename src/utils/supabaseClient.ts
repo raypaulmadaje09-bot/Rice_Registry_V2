@@ -180,7 +180,7 @@ export function mapFarmerRowToParcel(row: any): FarmParcel {
 
   const isPendingSync = Boolean(row.is_pending_sync || row.isPendingSync);
 
-  return {
+  const parcel: FarmParcel = {
     tagNumber,
     swineNameOrId: rsbsaNo || 'NO RSBSA',
     rsbsa_no: rsbsaNo || 'NO RSBSA',

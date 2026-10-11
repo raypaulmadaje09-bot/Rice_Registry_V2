@@ -4476,21 +4476,26 @@ ${JSON.stringify(parcelsSummary)}`;
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick Action Prompt Chips (Shown on fresh start or early conversation) */}
-          {messages.length <= 2 && (
-            <div className="px-3 pt-2 pb-1.5 bg-slate-50/90 border-t border-slate-200/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar select-none">
-              {getQuickPrompts(activeLanguage).map((chip, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handleSendMessage(chip.query)}
-                  className="px-2.5 py-1 rounded-full text-[10.5px] font-semibold bg-white hover:bg-emerald-50 text-emerald-900 border border-emerald-300/80 shrink-0 transition-all duration-150 hover:scale-105 active:scale-95 cursor-pointer shadow-2xs flex items-center gap-1"
-                >
-                  <span>{chip.label}</span>
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Quick Action Prompt Chips (Horizontal side-scroll container) */}
+          <div
+            onWheel={(e) => {
+              if (e.deltaY !== 0) {
+                e.currentTarget.scrollLeft += e.deltaY;
+              }
+            }}
+            className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1.5 px-2 w-full whitespace-nowrap scroll-smooth select-none bg-slate-50/90 border-t border-slate-200/80"
+          >
+            {getQuickPrompts(activeLanguage).map((chip, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleSendMessage(chip.query)}
+                className="shrink-0 text-xs py-1 px-2.5 rounded-full border border-slate-200 bg-white hover:bg-slate-50 shadow-sm cursor-pointer transition-all duration-150 hover:scale-105 active:scale-95 flex items-center gap-1.5 text-slate-700 font-medium"
+              >
+                <span>{chip.label}</span>
+              </button>
+            ))}
+          </div>
 
           {/* Clean Chat Input Box with Voice Chat & Excel Upload */}
           <div className="p-2.5 bg-white border-t border-slate-200">
@@ -4536,8 +4541,8 @@ ${JSON.stringify(parcelsSummary)}`;
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isLoading}
-                  className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-slate-100 rounded-full transition-colors disabled:opacity-40"
-                  title="Upload Excel Records"
+                  className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-slate-100 rounded-full transition-all disabled:opacity-40"
+                  title="Upload Excel Records (.xlsx, .xls, .csv)"
                   aria-label="Upload Excel Records"
                 >
                   <Paperclip className="w-4 h-4" />
@@ -4548,19 +4553,23 @@ ${JSON.stringify(parcelsSummary)}`;
                   type="button"
                   onClick={toggleListening}
                   disabled={isLoading}
-                  className={`p-2 rounded-full transition-colors relative ${
+                  className={`p-2 rounded-full transition-all relative ${
                     isListening
-                      ? 'bg-rose-50 text-rose-600 ring-2 ring-rose-500 ring-offset-1 animate-pulse'
+                      ? 'animate-pulse bg-red-100 text-red-600 ring-2 ring-red-400'
                       : 'text-slate-500 hover:text-emerald-600 hover:bg-slate-100'
                   }`}
-                  title={isListening ? 'Voice Input: Naminaw si RiceSsistant (Click to stop)' : 'Voice Input'}
+                  title={
+                    isListening
+                      ? 'Voice Input: Naminaw si RiceSsistant... Pagsulti karon (Click to stop)'
+                      : 'Voice Input (Bisaya, Tagalog, English)'
+                  }
                   aria-label="Voice Input"
                 >
-                  {isListening ? <MicOff className="w-4 h-4 text-rose-600" /> : <Mic className="w-4 h-4" />}
+                  {isListening ? <MicOff className="w-4 h-4 text-red-600" /> : <Mic className="w-4 h-4" />}
                   {isListening && (
                     <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
                     </span>
                   )}
                 </button>
@@ -4569,12 +4578,12 @@ ${JSON.stringify(parcelsSummary)}`;
                 <button
                   type="button"
                   onClick={() => setIsTtsEnabled(!isTtsEnabled)}
-                  className={`p-2 rounded-full transition-colors ${
+                  className={`p-2 rounded-full transition-all ${
                     isTtsEnabled
                       ? 'text-emerald-600 hover:bg-slate-100'
                       : 'text-slate-400 hover:bg-slate-100'
                   }`}
-                  title={isTtsEnabled ? 'Voice Output: ON' : 'Voice Output: Muted'}
+                  title={isTtsEnabled ? 'Voice Audio Output: ON' : 'Voice Audio Output: Muted'}
                   aria-label="Toggle Voice Audio Output"
                 >
                   {isTtsEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}

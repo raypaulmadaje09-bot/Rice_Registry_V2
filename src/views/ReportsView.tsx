@@ -39,7 +39,7 @@ import {
   Settings2,
   Camera
 } from 'lucide-react';
-import { FarmParcel, OfficialSignatory } from '../types';
+import { FarmParcel, OfficialSignatory, SeasonalProductionRecord } from '../types';
 import {
   exportRegistryTableExcel,
   exportMpcsrsExcel,

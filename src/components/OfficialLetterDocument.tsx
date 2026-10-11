@@ -176,15 +176,6 @@ export const OfficialLetterDocument: React.FC<OfficialLetterDocumentProps> = ({
 
   return (
     <div className={`flex flex-col flex-1 justify-between min-h-full text-black font-sans relative ${containerSpacing} transition-all`}>
-      {/* Hidden File Input for Logo Uploads */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileUpload}
-        accept="image/*"
-        className="hidden"
-      />
-
       {/* Screen-Only Direct-Edit Notification Bar */}
       {onUpdateLetter && isEditable && (
         <div className="print:hidden bg-amber-50/90 border border-amber-300 text-amber-950 px-3.5 py-2 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs shadow-xs">
