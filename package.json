@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx server.ts",
+    "dev": "node --strip-types server.ts",
     "build": "node ./node_modules/vite/bin/vite.js build",
-    "start": "tsx server.ts",
+    "start": "node --strip-types server.ts",
     "preview": "node ./node_modules/vite/bin/vite.js preview",
     "clean": "rm -rf dist server.js",
     "lint": "node ./node_modules/typescript/bin/tsc --noEmit"
