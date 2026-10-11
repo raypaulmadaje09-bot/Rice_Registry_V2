@@ -3829,7 +3829,8 @@ ${JSON.stringify(parcelsSummary)}`;
             setMessages([getFreshWelcomeMessage()]);
             setTimeout(() => inputRef.current?.focus(), 150);
           }}
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-3.5 py-2.5 bg-gradient-to-r from-[#0B1E38] via-[#102A4E] to-[#123E28] text-white rounded-full shadow-2xl border border-emerald-400/40 cursor-pointer hover:scale-105 active:scale-95 transition-all select-none ring-1 ring-white/10 group animate-in fade-in slide-in-from-bottom-2 duration-200"
+          className="fixed bottom-6 right-6 z-[9999] flex items-center gap-2 px-3.5 py-2.5 bg-gradient-to-r from-[#0B1E38] via-[#102A4E] to-[#123E28] text-white rounded-full shadow-2xl border border-emerald-400/40 cursor-pointer hover:scale-105 active:scale-95 transition-all select-none ring-1 ring-white/10 group animate-in fade-in slide-in-from-bottom-2 duration-200"
+          style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999, left: 'auto', top: 'auto' }}
           title="Restore RiceSsistant window"
         >
           <RiceSsistantLogo size={28} className="ring-1 ring-emerald-300/40 shrink-0" />
@@ -3866,7 +3867,8 @@ ${JSON.stringify(parcelsSummary)}`;
             setMessages([getFreshWelcomeMessage()]);
             setTimeout(() => inputRef.current?.focus(), 150);
           }}
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-3.5 py-2.5 bg-gradient-to-r from-[#0B1E38] via-[#102A4E] to-[#123E28] hover:from-[#0e2747] hover:to-[#174d32] text-white rounded-full shadow-2xl border border-emerald-400/40 cursor-pointer hover:scale-105 active:scale-95 transition-all select-none ring-1 ring-white/10 group animate-in fade-in slide-in-from-bottom-2 duration-200"
+          className="fixed bottom-6 right-6 z-[9999] flex items-center gap-2 px-3.5 py-2.5 bg-gradient-to-r from-[#0B1E38] via-[#102A4E] to-[#123E28] hover:from-[#0e2747] hover:to-[#174d32] text-white rounded-full shadow-2xl border border-emerald-400/40 cursor-pointer hover:scale-105 active:scale-95 transition-all select-none ring-1 ring-white/10 group animate-in fade-in slide-in-from-bottom-2 duration-200"
+          style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999, left: 'auto', top: 'auto' }}
           title="Pangutana kang RiceSsistant 🌾"
           aria-label="Pangutana kang RiceSsistant 🌾"
         >
@@ -3919,7 +3921,8 @@ ${JSON.stringify(parcelsSummary)}`;
               await processExcelFile(droppedFiles[0]);
             }
           }}
-          className="fixed bottom-6 right-6 z-50 w-[380px] sm:w-[420px] h-[580px] max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200 relative ring-1 ring-black/5"
+          className="fixed bottom-6 right-6 z-[9999] w-[380px] sm:w-[420px] h-[580px] max-h-[85vh] flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200 ring-1 ring-black/5"
+          style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999, left: 'auto', top: 'auto' }}
         >
           {/* Drag and Drop Visual Dropzone Overlay (Hidden by default with pointer-events-none opacity-0, strictly scoped within chat window) */}
           <div
