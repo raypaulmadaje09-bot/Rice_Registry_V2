@@ -1185,6 +1185,7 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
   const recognitionRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const dragCounterRef = useRef<number>(0);
 
   // Web Speech API Voice Recognition Toggle
   const toggleListening = () => {
@@ -4004,46 +4005,53 @@ ${JSON.stringify(parcelsSummary)}`;
           onDragOver={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            setIsDraggingFile(true);
           }}
           onDragEnter={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            setIsDraggingFile(true);
+            dragCounterRef.current += 1;
+            if (e.dataTransfer?.items && e.dataTransfer.items.length > 0) {
+              setIsDraggingFile(true);
+            }
           }}
           onDragLeave={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+            dragCounterRef.current -= 1;
+            if (dragCounterRef.current <= 0) {
+              dragCounterRef.current = 0;
               setIsDraggingFile(false);
             }
           }}
           onDrop={async (e) => {
             e.preventDefault();
             e.stopPropagation();
+            dragCounterRef.current = 0;
             setIsDraggingFile(false);
             const droppedFiles = e.dataTransfer.files;
             if (droppedFiles && droppedFiles.length > 0) {
               await processExcelFile(droppedFiles[0]);
             }
           }}
-          className="fixed bottom-6 right-6 z-50 shadow-2xl rounded-2xl border border-slate-200 bg-white flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 ring-1 ring-black/5 transition-all w-[380px] sm:w-[440px] max-w-[96vw] h-[580px] max-h-[88vh] relative"
+          className="fixed bottom-6 right-6 z-50 w-[380px] sm:w-[420px] max-h-[600px] h-[580px] max-w-[96vw] flex flex-col shadow-2xl rounded-2xl overflow-hidden border border-slate-200 bg-white relative animate-in zoom-in-95 duration-200 ring-1 ring-black/5"
         >
-          {/* Drag and Drop Visual Dropzone Overlay */}
-          {isDraggingFile && (
-            <div className="absolute inset-0 bg-emerald-950/85 backdrop-blur-xs z-50 flex flex-col items-center justify-center text-white p-6 text-center animate-in fade-in duration-150 border-3 border-dashed border-emerald-400 rounded-2xl m-2 pointer-events-none select-none">
-              <UploadCloud className="w-14 h-14 text-emerald-300 animate-bounce mb-3" />
-              <h4 className="font-extrabold text-sm sm:text-base tracking-wide text-white">
-                I-drop ang imong Excel o CSV file dinhi!
-              </h4>
-              <p className="text-xs text-emerald-100 mt-1.5 max-w-[280px]">
-                Awtomatikong basahon, isala, ug i-normalize ni RiceSsistant ang tanang records (.xlsx, .xls, .csv).
-              </p>
-              <span className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-800/80 text-[11px] font-semibold text-emerald-200 border border-emerald-500/40">
-                🛡️ Safe Staging: Dili diretso i-save sa database
-              </span>
-            </div>
-          )}
+          {/* Drag and Drop Visual Dropzone Overlay (Hidden by default with pointer-events-none opacity-0, strictly scoped within chat window) */}
+          <div
+            className={`absolute inset-0 z-50 flex flex-col items-center justify-center text-white p-6 text-center border-3 border-dashed border-emerald-400 rounded-2xl m-2 bg-emerald-950/90 backdrop-blur-xs select-none transition-all duration-200 ${
+              isDraggingFile ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none hidden'
+            }`}
+          >
+            <UploadCloud className="w-14 h-14 text-emerald-300 animate-bounce mb-3" />
+            <h4 className="font-extrabold text-sm sm:text-base tracking-wide text-white">
+              I-drop ang imong Excel o CSV file dinhi!
+            </h4>
+            <p className="text-xs text-emerald-100 mt-1.5 max-w-[280px]">
+              Awtomatikong basahon, isala, ug i-normalize ni RiceSsistant ang tanang records (.xlsx, .xls, .csv).
+            </p>
+            <span className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-800/80 text-[11px] font-semibold text-emerald-200 border border-emerald-500/40">
+              🛡️ Safe Staging: Dili diretso i-save sa database
+            </span>
+          </div>
 
           {/* Window Header */}
           <div className="bg-gradient-to-r from-[#0B1E38] via-[#102A4E] to-[#123E28] text-white p-3.5 flex items-center justify-between border-b border-slate-700 select-none">
