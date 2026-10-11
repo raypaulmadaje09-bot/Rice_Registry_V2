@@ -3887,7 +3887,7 @@ ${JSON.stringify(parcelsSummary)}`;
             setMessages([getFreshWelcomeMessage()]);
             setTimeout(() => inputRef.current?.focus(), 150);
           }}
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-2.5 bg-gradient-to-r from-[#0B1E38] via-[#102A4E] to-[#123E28] text-white rounded-full shadow-2xl border border-emerald-400/40 cursor-pointer hover:scale-105 active:scale-95 transition-all select-none ring-1 ring-white/10 group animate-in fade-in slide-in-from-bottom-2 duration-200"
+          className="fixed bottom-6 right-6 z-[9999] flex items-center gap-2.5 px-4 py-2.5 bg-gradient-to-r from-[#0B1E38] via-[#102A4E] to-[#123E28] text-white rounded-full shadow-2xl border border-emerald-400/40 cursor-pointer hover:scale-105 active:scale-95 transition-all select-none ring-1 ring-white/10 group animate-in fade-in slide-in-from-bottom-2 duration-200"
           title="Restore RiceSsistant window"
         >
           <RiceSsistantLogo size={28} className="ring-1 ring-emerald-300/40 shrink-0" />
@@ -3916,7 +3916,7 @@ ${JSON.stringify(parcelsSummary)}`;
 
       {/* 2. Floating Circular Launcher Widget Button & Sleek Inline Message Capsule (When Chat is Closed) */}
       {!isOpen && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 pointer-events-none">
+        <div className="fixed bottom-6 right-6 z-[9999] flex items-center gap-2.5 pointer-events-none">
           {/* Sleek Inline Message Capsule Beside Launcher */}
           {isIdleBubbleVisible && (
             <div
@@ -4033,7 +4033,7 @@ ${JSON.stringify(parcelsSummary)}`;
               await processExcelFile(droppedFiles[0]);
             }
           }}
-          className="fixed bottom-6 right-6 z-50 w-[380px] sm:w-[420px] max-h-[600px] h-[580px] max-w-[96vw] flex flex-col shadow-2xl rounded-2xl overflow-hidden border border-slate-200 bg-white relative animate-in zoom-in-95 duration-200 ring-1 ring-black/5"
+          className="fixed bottom-6 right-6 z-[9999] w-[380px] sm:w-[420px] max-h-[620px] h-[580px] max-w-[96vw] flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden relative animate-in zoom-in-95 duration-200 ring-1 ring-black/5"
         >
           {/* Drag and Drop Visual Dropzone Overlay (Hidden by default with pointer-events-none opacity-0, strictly scoped within chat window) */}
           <div
