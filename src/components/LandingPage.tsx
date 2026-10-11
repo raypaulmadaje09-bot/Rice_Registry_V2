@@ -36,6 +36,51 @@ interface LandingPageProps {
   onSelectBarangayForMap?: (barangay: Barangay) => void;
 }
 
+/**
+ * Helper to determine badge color palette, status dot, and icon per ecosystem
+ */
+export function getEcosystemBadgeStyle(ecosystem?: string) {
+  const eco = (ecosystem || '').toLowerCase();
+
+  // Coastal Plains / Lowland Alluvial & Coastal / Lowland Alluvial & Coast -> Cyan/Teal
+  if (eco.includes('coastal') || eco.includes('coast')) {
+    return {
+      badgeClass: 'bg-cyan-50 text-cyan-700 border border-cyan-200',
+      dotClass: 'bg-cyan-500 ring-2 ring-cyan-100',
+      icon: '🌊',
+      label: ecosystem || 'Coastal Plains'
+    };
+  }
+
+  // Upland Terrace / Upland & River Basin -> Amber/Orange
+  if (eco.includes('upland') || eco.includes('terrace')) {
+    return {
+      badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200',
+      dotClass: 'bg-amber-500 ring-2 ring-amber-100',
+      icon: '⛰️',
+      label: ecosystem || 'Upland Terrace'
+    };
+  }
+
+  // River Basin Irrigated -> Emerald/Green
+  if (eco.includes('river basin') || eco.includes('irrigated')) {
+    return {
+      badgeClass: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+      dotClass: 'bg-emerald-500 ring-2 ring-emerald-100',
+      icon: '🌾',
+      label: ecosystem || 'River Basin Irrigated'
+    };
+  }
+
+  // Lowland Alluvial (default) -> Sky/Blue
+  return {
+    badgeClass: 'bg-sky-50 text-sky-700 border border-sky-200',
+    dotClass: 'bg-sky-500 ring-2 ring-sky-100',
+    icon: '💧',
+    label: ecosystem || 'Lowland Alluvial'
+  };
+}
+
 export const LandingPage: React.FC<LandingPageProps> = ({
   onOpenLogin,
   onNavigateToPortalTab,
@@ -749,27 +794,29 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         {/* 15 Barangay Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {filteredBarangays.map((b) => {
+            const ecoStyle = getEcosystemBadgeStyle(b.terrain);
             return (
               <div
                 key={b.name}
                 onClick={() => setSelectedBarangayModal(b)}
                 className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs hover:shadow-md hover:border-blue-400 transition cursor-pointer flex flex-col justify-between space-y-3 group"
               >
-                {/* Top: Name & Blue Status Dot */}
+                {/* Top: Name & Dynamic Ecosystem Status Dot */}
                 <div className="flex items-start justify-between gap-2">
                   <h4 className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-blue-600 transition">
                     {b.name.startsWith('Poblacion') ? b.name : b.name}
                   </h4>
-                  <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0 mt-1" />
+                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 mt-1 transition-all ${ecoStyle.dotClass}`} />
                 </div>
 
-                {/* Bottom: Puroks & Terrain Pill */}
+                {/* Bottom: Puroks & Dynamic Ecosystem Pill Badge */}
                 <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-50">
                   <span className="text-slate-500 font-medium">
                     {b.puroks ?? (b as any).purokCount ?? 7} Puroks
                   </span>
-                  <span className="text-[10px] font-medium text-blue-700 bg-blue-50/80 border border-blue-200 px-2 py-0.5 rounded-full">
-                    {b.terrain}
+                  <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 shadow-2xs ${ecoStyle.badgeClass}`}>
+                    <span className="text-xs leading-none">{ecoStyle.icon}</span>
+                    <span>{b.terrain}</span>
                   </span>
                 </div>
               </div>

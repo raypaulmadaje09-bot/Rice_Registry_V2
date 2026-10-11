@@ -389,8 +389,8 @@ export interface CropGrowthStageCalc {
  * - > [maturityDays] DAS: Harvest Ready / Harvested
  */
 export function calculateCropGrowthStage(
-  plantingDateStr: string,
-  varietyName: string,
+  plantingDateStr?: string,
+  varietyName?: string,
   referenceDate?: Date
 ): CropGrowthStageCalc {
   const refDate = referenceDate ? new Date(referenceDate) : new Date();

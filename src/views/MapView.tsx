@@ -801,25 +801,37 @@ export const MapView: React.FC<MapViewProps> = ({
       const areaHa = focusParcel.weightKg ? `${focusParcel.weightKg.toFixed(2)} ha` : '0.25 ha';
       const rsbsa = focusParcel.swineNameOrId || 'RSBSA Registered';
       const variety = focusParcel.breed || 'NSIC Rc 222';
-      const growthStage = calculateCropGrowthStage(focusParcel.plantingDate, focusParcel.breed);
+      const growthStage = calculateCropGrowthStage(focusParcel.plantingDate || '', focusParcel.breed || '');
       const stageName = focusParcel.healthStatus || growthStage?.stage || 'Active Tillering';
 
       const popupHtml = `
-        <div style="font-family: sans-serif; padding: 6px 8px; min-width: 220px;">
-          <div style="font-size: 10px; font-weight: 800; color: #059669; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;">
-            <span>🌾</span> <span>Silago Rice Parcel</span>
+        <div style="font-family: system-ui, -apple-system, sans-serif; padding: 10px 12px; min-width: 250px; background: #ffffff; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <span style="font-size: 10px; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.5px;">🌾 Silago Rice Parcel</span>
+            <span style="font-family: monospace; font-size: 10px; background: #f1f5f9; padding: 1px 6px; border-radius: 4px; border: 1px solid #e2e8f0; color: #475569; font-weight: 700;">${focusParcel.tagNumber}</span>
           </div>
-          <div style="font-size: 14px; font-weight: 900; color: #0f172a; margin-top: 3px; line-height: 1.2;">
+          <div style="font-size: 14px; font-weight: 900; color: #0f172a; margin-top: 4px; line-height: 1.3;">
             ${farmerDisplayName}
           </div>
-          <div style="font-size: 11px; font-weight: 700; color: #2563eb; margin-top: 2px;">
-            🏷️ RSBSA: <code style="background: #eff6ff; padding: 1px 4px; border-radius: 4px; border: 1px solid #bfdbfe;">${rsbsa}</code>
+          <div style="font-size: 11px; font-weight: 600; color: #2563eb; margin-top: 2px;">
+            🏷️ RSBSA: <code style="background: #eff6ff; padding: 1px 5px; border-radius: 4px; border: 1px solid #bfdbfe; font-family: monospace;">${rsbsa}</code>
           </div>
-          <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #e2e8f0; display: grid; grid-template-columns: 1fr; gap: 3px; font-size: 11px; color: #475569;">
-            <div>📍 Barangay: <strong style="color: #0f172a;">${focusParcel.barangay}</strong></div>
-            <div>📐 Lot Area: <strong style="color: #0f172a;">${areaHa}</strong></div>
-            <div>🌱 Seed Variety: <strong style="color: #0f172a;">${variety}</strong></div>
-            <div style="color: #16a34a; font-weight: 800; margin-top: 2px;">🌾 Crop Stage: <strong>${stageName}</strong></div>
+          <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #f1f5f9; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px;">
+            <div style="background: #f8fafc; padding: 5px 7px; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <span style="font-size: 9.5px; color: #64748b; font-weight: 600; text-transform: uppercase; display: block;">Barangay</span>
+              <strong style="color: #0f172a; font-size: 11px; display: block; margin-top: 2px;">📍 ${focusParcel.barangay}</strong>
+            </div>
+            <div style="background: #ecfdf5; padding: 5px 7px; border-radius: 8px; border: 1px solid #a7f3d0;">
+              <span style="font-size: 9.5px; color: #047857; font-weight: 600; text-transform: uppercase; display: block;">Total Area</span>
+              <strong style="color: #065f46; font-size: 11px; font-family: monospace; display: block; margin-top: 2px;">${areaHa}</strong>
+            </div>
+            <div style="grid-column: span 2; background: #fffbeb; padding: 5px 7px; border-radius: 8px; border: 1px solid #fde68a;">
+              <span style="font-size: 9.5px; color: #92400e; font-weight: 600; text-transform: uppercase; display: block;">Variety &amp; Ecosystem</span>
+              <strong style="color: #78350f; font-size: 11px; display: block; margin-top: 2px;">🌱 ${variety} <span style="font-weight: 400; color: #b45309;">(${focusParcel.purpose})</span></strong>
+            </div>
+          </div>
+          <div style="margin-top: 8px; font-size: 10.5px; color: #16a34a; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
+            <span>🌾 Crop Stage: <strong>${stageName}</strong></span>
           </div>
         </div>
       `;
@@ -1700,8 +1712,8 @@ export const MapView: React.FC<MapViewProps> = ({
               : 'lg:col-span-5 xl:col-span-5 2xl:col-span-5 flex'
           } ${mobileTab === 'map' ? 'hidden lg:flex' : 'flex'}`}
         >
-          {/* 1. TOP HEADER & SEARCH BAR WITH ROYAL BLUE ACCENTS */}
-          <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl p-3.5 shadow-sm space-y-2.5 text-slate-800">
+          {/* 1. TOP HEADER & SEARCH BAR WITH 12PX SPACING & SMOOTH PADDING */}
+          <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border border-slate-200/80 rounded-2xl p-4 shadow-sm space-y-3 text-slate-800">
             <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center">
@@ -1736,7 +1748,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search RSBSA, farmer name, variety, barangay..."
-                className="w-full pl-10 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 shadow-2xs"
+                className="w-full pl-10 pr-9 py-2.5 bg-slate-50/60 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 shadow-2xs transition"
               />
               {searchQuery && (
                 <button
@@ -1749,8 +1761,8 @@ export const MapView: React.FC<MapViewProps> = ({
               )}
             </div>
 
-            {/* Filter Dropdowns Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+            {/* Filter Dropdowns Grid with 12px gap (gap-3) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
               <select
                 value={selectedBarangay}
                 onChange={(e) => {
@@ -1762,7 +1774,7 @@ export const MapView: React.FC<MapViewProps> = ({
                     }
                   }
                 }}
-                className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer text-xs shadow-2xs"
+                className="px-2.5 py-2 bg-slate-50/60 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer text-xs shadow-2xs transition"
               >
                 <option value="ALL">📍 All Barangays</option>
                 {BARANGAYS.map((b) => (
@@ -1775,7 +1787,7 @@ export const MapView: React.FC<MapViewProps> = ({
               <select
                 value={selectedEcosystem}
                 onChange={(e) => setSelectedEcosystem(e.target.value)}
-                className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer text-xs shadow-2xs"
+                className="px-2.5 py-2 bg-slate-50/60 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer text-xs shadow-2xs transition"
               >
                 <option value="ALL">💧 All Ecosystems</option>
                 <option value="IRRIGATED">🟢 Irrigated (NIA)</option>
@@ -1787,7 +1799,7 @@ export const MapView: React.FC<MapViewProps> = ({
               <select
                 value={selectedVariety}
                 onChange={(e) => setSelectedVariety(e.target.value)}
-                className="col-span-2 sm:col-span-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer text-xs shadow-2xs"
+                className="col-span-2 sm:col-span-1 px-2.5 py-2 bg-slate-50/60 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer text-xs shadow-2xs transition"
               >
                 <option value="ALL">🌾 All Varieties</option>
                 {uniqueVarieties.map((v) => (
@@ -1799,7 +1811,7 @@ export const MapView: React.FC<MapViewProps> = ({
             </div>
           </div>
 
-          {/* 2. REQUIREMENT 4: SLEEK ROYAL BLUE GRADIENT SUMMARY BANNER */}
+          {/* 2. SLEEK ROYAL BLUE GRADIENT SUMMARY BANNER */}
           <div className="bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 text-white rounded-2xl p-3.5 shadow-md border border-blue-800/30">
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="bg-white/10 backdrop-blur-xs p-2 rounded-xl border border-white/10">
@@ -1832,8 +1844,8 @@ export const MapView: React.FC<MapViewProps> = ({
             </div>
           </div>
 
-          {/* 3. REQUIREMENT 4: VERTICALLY SCROLLABLE PURE WHITE FARMER SUMMARY CARDS */}
-          <div className="h-[calc(100vh-280px)] min-h-[460px] overflow-y-auto pr-1 space-y-2.5 custom-scrollbar">
+          {/* 3. VERTICALLY SCROLLABLE FARMER SUMMARY CARDS WITH SOFT SHADOW & BREATHING ROOM */}
+          <div className="h-[calc(100vh-280px)] min-h-[460px] overflow-y-auto p-1.5 space-y-3 custom-scrollbar rounded-2xl bg-slate-100/40 shadow-inner">
             {filteredParcels.length === 0 ? (
               <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-500 space-y-3 shadow-xs">
                 <Wheat className="w-8 h-8 text-slate-400 mx-auto" />
@@ -1856,8 +1868,6 @@ export const MapView: React.FC<MapViewProps> = ({
                 const isSelected = activeCardTag === parcel.tagNumber || selectedParcelForDrawer?.tagNumber === parcel.tagNumber;
                 const isHovered = hoveredParcelTag === parcel.tagNumber;
                 const statusInfo = getStatusBadge(parcel.healthStatus);
-                const isIrrigated = parcel.purpose.toLowerCase().includes('irrigated');
-                const isHybrid = parcel.purpose.toLowerCase().includes('hybrid');
 
                 return (
                   <div
@@ -1866,79 +1876,79 @@ export const MapView: React.FC<MapViewProps> = ({
                     onMouseEnter={() => setHoveredParcelTag(parcel.tagNumber)}
                     onMouseLeave={() => setHoveredParcelTag(null)}
                     onClick={() => handleSelectParcelFromList(parcel)}
-                    className={`p-4 rounded-2xl border transition-all duration-150 cursor-pointer relative group bg-white shadow-xs ${
+                    className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer relative group bg-white ${
                       isSelected
-                        ? 'border-blue-600 ring-2 ring-blue-500/30 shadow-md bg-blue-50/30'
+                        ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-md bg-blue-50/20'
                         : isHovered
                         ? 'border-blue-300 shadow-md bg-slate-50/50'
-                        : 'border-slate-200/90 hover:border-slate-300 hover:shadow-xs'
+                        : 'border-slate-100 hover:border-slate-300 shadow-xs hover:shadow-sm'
                     }`}
                   >
-                    {/* Top Header: Farmer Name, RSBSA badge, Lot Tag ID */}
-                    <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5 mb-2.5">
-                      <div>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <h4 className="font-bold text-sm text-blue-700 group-hover:text-blue-800 transition">
-                            {parcel.raiserName}
-                          </h4>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold border border-blue-200">
-                            {parcel.swineNameOrId || 'RSBSA-VERIFIED'}
-                          </span>
-                        </div>
+                    {/* Top Header: Farmer Name on Left, Minimalist Monospace Tags on Right */}
+                    <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-2.5 mb-3">
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-bold text-sm text-slate-900 group-hover:text-blue-700 transition truncate">
+                          {parcel.raiserName}
+                        </h4>
                         <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                          <MapPin className="w-3 h-3 text-rose-500 shrink-0" />
+                          <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
                           <span>Brgy. {parcel.barangay}, Silago</span>
                         </div>
                       </div>
 
-                      {/* Lot Tag Badge */}
-                      <span className="px-2 py-0.5 rounded-lg bg-slate-100 border border-slate-200 font-mono text-[10px] font-extrabold text-slate-700 shrink-0">
-                        {parcel.tagNumber}
-                      </span>
+                      {/* Right-aligned minimalist monospace tags */}
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span className="font-mono text-[11px] px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200/70 text-slate-600 font-medium tracking-tight">
+                          {parcel.swineNameOrId || 'RSBSA-VERIFIED'}
+                        </span>
+                        <span className="font-mono text-[10px] px-2 py-0.5 rounded-md bg-slate-100/70 border border-slate-200/60 text-slate-500 font-semibold tracking-tight">
+                          {parcel.tagNumber}
+                        </span>
+                      </div>
                     </div>
 
-                    {/* Metadata Specs Grid in Charcoal / Slate */}
+                    {/* Metadata Specs Grid: Light-colored chips/badges with appropriate gaps */}
                     <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-                      <div className="bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center justify-between">
-                        <span className="text-[10px] text-slate-500">Total Lot Area:</span>
-                        <span className="font-bold text-emerald-700 font-mono">
+                      <div className="bg-emerald-50/70 border border-emerald-100/80 p-2 rounded-lg flex items-center justify-between">
+                        <span className="text-[10.5px] font-medium text-emerald-800">Total Lot Area:</span>
+                        <span className="font-bold text-emerald-950 font-mono text-xs">
                           {parcel.weightKg} ha
                         </span>
                       </div>
 
-                      <div className="bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center justify-between">
-                        <span className="text-[10px] text-slate-500">Ecosystem:</span>
-                        <span className={`font-bold text-[10.5px] truncate ${isIrrigated ? 'text-blue-700' : isHybrid ? 'text-purple-700' : 'text-amber-700'}`}>
+                      <div className="bg-sky-50/70 border border-sky-100/80 p-2 rounded-lg flex items-center justify-between">
+                        <span className="text-[10.5px] font-medium text-sky-800">Ecosystem:</span>
+                        <span className="font-bold text-sky-950 text-[11px] truncate">
                           {parcel.purpose.split(' ')[0]}
                         </span>
                       </div>
 
-                      <div className="col-span-2 bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 text-slate-500 text-[10.5px]">
+                      <div className="col-span-2 bg-amber-50/60 border border-amber-100/80 p-2 rounded-lg flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-amber-800 text-[10.5px] font-medium">
                           <Wheat className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                           <span>Rice Variety:</span>
                         </div>
-                        <span className="font-bold text-slate-800 text-xs truncate max-w-[190px]">
+                        <span className="font-bold text-amber-950 text-xs truncate max-w-[200px]">
                           {parcel.breed}
                         </span>
                       </div>
                     </div>
 
-                    {/* Status Indicator Tag & Action Buttons */}
-                    <div className="flex items-center justify-between gap-2 pt-1">
-                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1.5 ${statusInfo.bg}`}>
+                    {/* Compact Status Indicator & Aligned Action Buttons with Hover Transitions */}
+                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-50">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border flex items-center gap-1.5 ${statusInfo.bg}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dot} animate-pulse`} />
-                        <span>{statusInfo.label}</span>
+                        <span className="truncate max-w-[120px]">{statusInfo.label}</span>
                       </span>
 
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleSelectParcelFromList(parcel);
                           }}
-                          className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] transition flex items-center gap-1 cursor-pointer shadow-xs"
+                          className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-[11px] transition-all flex items-center gap-1 cursor-pointer shadow-2xs hover:shadow-xs"
                           title="Center and zoom map on this GPS pinpoint"
                         >
                           <MapPin className="w-3 h-3 text-white" />
@@ -1951,11 +1961,11 @@ export const MapView: React.FC<MapViewProps> = ({
                             e.stopPropagation();
                             onSelectParcel(parcel);
                           }}
-                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] border border-slate-200 transition flex items-center gap-1 cursor-pointer"
+                          className="px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-semibold text-[11px] border border-slate-200 hover:border-slate-300 transition-all flex items-center gap-1 cursor-pointer"
                           title="Open full farmer profile dossier"
                         >
                           <span>Details</span>
-                          <ExternalLink className="w-3 h-3 text-slate-500" />
+                          <span className="text-slate-400 font-sans text-xs transition-transform group-hover:translate-x-0.5">→</span>
                         </button>
                       </div>
                     </div>
@@ -2317,8 +2327,8 @@ export const MapView: React.FC<MapViewProps> = ({
               </button>
             </div>
 
-            {/* FLOATING ACTION FIELD TOOLS BAR (BOTTOM CENTER) */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-400 bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-2xl p-1.5 shadow-2xl flex items-center gap-1.5 text-white">
+            {/* FLOATING ACTION FIELD TOOLS BAR (BOTTOM CENTER) - SLIM HORIZONTAL GLASSMORPHISM */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-400 bg-slate-900/80 backdrop-blur-sm border border-slate-700/60 rounded-2xl p-1.5 shadow-2xl flex items-center gap-2 text-white">
               <button
                 type="button"
                 onClick={() => {
@@ -2326,10 +2336,10 @@ export const MapView: React.FC<MapViewProps> = ({
                   setMeasurePoints([]);
                   setDigitizerPoints([]);
                 }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                   activeTool === 'drop_pin'
-                    ? 'bg-rose-600 text-white ring-2 ring-rose-400'
-                    : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200'
+                    ? 'bg-rose-600 text-white ring-2 ring-rose-400/80 shadow-md shadow-rose-600/30'
+                    : 'bg-slate-800/70 hover:bg-slate-700/80 text-slate-200 hover:text-white'
                 }`}
                 title="Click anywhere on the map to pin and register new farm parcel"
               >
@@ -2341,10 +2351,10 @@ export const MapView: React.FC<MapViewProps> = ({
                 type="button"
                 data-testid="draw-boundary-btn"
                 onClick={handleToggleDrawBoundary}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                   activeTool === 'draw_boundary' || activeTool === 'draw_polygon'
-                    ? 'bg-blue-600 text-white ring-2 ring-blue-400 shadow-md shadow-blue-500/30'
-                    : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200'
+                    ? 'bg-blue-600 text-white ring-2 ring-blue-400/80 shadow-md shadow-blue-500/30'
+                    : 'bg-slate-800/70 hover:bg-slate-700/80 text-slate-200 hover:text-white'
                 }`}
                 title="Draw Boundary: Click points on map to define new farm parcel boundaries"
               >
@@ -2359,10 +2369,10 @@ export const MapView: React.FC<MapViewProps> = ({
                   setMeasurePoints([]);
                   setDigitizerPoints([]);
                 }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                   activeTool === 'measure'
-                    ? 'bg-amber-600 text-white ring-2 ring-amber-400'
-                    : 'bg-slate-800/80 hover:bg-slate-700 text-slate-200'
+                    ? 'bg-amber-600 text-white ring-2 ring-amber-400/80 shadow-md shadow-amber-500/30'
+                    : 'bg-slate-800/70 hover:bg-slate-700/80 text-slate-200 hover:text-white'
                 }`}
                 title="Measure distance along irrigation canal or farm road"
               >
@@ -2378,7 +2388,7 @@ export const MapView: React.FC<MapViewProps> = ({
                     setDigitizerPoints([]);
                     setActiveTool('none');
                   }}
-                  className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-900/50 text-slate-300 hover:text-rose-300 transition cursor-pointer"
+                  className="p-1.5 rounded-xl bg-slate-800/80 hover:bg-rose-900/60 text-slate-300 hover:text-rose-200 transition-all cursor-pointer"
                   title="Clear drawing"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
@@ -2476,66 +2486,80 @@ export const MapView: React.FC<MapViewProps> = ({
               </div>
             )}
 
-            {/* SLIDE-OVER DETAIL DRAWER FOR SELECTED PARCEL */}
+            {/* SLIDE-OVER DETAIL DRAWER FOR SELECTED PARCEL - 3 STRUCTURED SEGMENTS & DEEP SHADOW */}
             {selectedParcelForDrawer && (
-              <div className="absolute bottom-16 right-4 z-400 w-80 bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl p-4 shadow-2xl space-y-3 text-slate-800 animate-in slide-in-from-right-4 duration-200">
+              <div className="absolute bottom-16 right-4 z-400 w-84 sm:w-88 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl p-4 shadow-2xl space-y-3 text-slate-800 animate-in slide-in-from-right-4 duration-200 ring-1 ring-black/5">
+                {/* Header: Farmer Name & ID Tags */}
                 <div className="flex items-start justify-between border-b border-slate-100 pb-2.5">
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-extrabold text-[10px] border border-blue-200">
+                  <div className="min-w-0 flex-1 pr-2">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-mono text-[10px] px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-bold border border-blue-200">
                         {selectedParcelForDrawer.tagNumber}
                       </span>
-                      <span className="text-[10.5px] font-mono text-slate-500">
+                      <span className="font-mono text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
                         {selectedParcelForDrawer.swineNameOrId || 'RSBSA'}
                       </span>
                     </div>
-                    <h4 className="font-black text-sm text-slate-900 mt-1">
+                    <h4 className="font-black text-sm text-slate-900 mt-1 truncate">
                       {selectedParcelForDrawer.raiserName}
                     </h4>
                   </div>
                   <button
                     type="button"
                     onClick={() => setSelectedParcelForDrawer(null)}
-                    className="p-1 text-slate-400 hover:text-slate-700 rounded-lg"
+                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition cursor-pointer shrink-0"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
 
+                {/* 3 Structured Segments Grid: Barangay, Total Area, Variety & Ecosystem */}
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-                    <span className="text-[10px] text-slate-500 block">Barangay:</span>
-                    <span className="font-bold text-slate-900 block truncate">
-                      {selectedParcelForDrawer.barangay}
+                  {/* Segment 1: Barangay */}
+                  <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-200/70 flex flex-col justify-between">
+                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Barangay</span>
+                    <span className="font-bold text-slate-900 text-xs mt-1 truncate">
+                      📍 Brgy. {selectedParcelForDrawer.barangay}
                     </span>
                   </div>
 
-                  <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-                    <span className="text-[10px] text-slate-500 block">Total Area:</span>
-                    <span className="font-bold text-emerald-600 font-mono block">
+                  {/* Segment 2: Total Area */}
+                  <div className="bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-200/70 flex flex-col justify-between">
+                    <span className="text-[10px] font-semibold text-emerald-800 uppercase tracking-wider">Total Area</span>
+                    <span className="font-bold text-emerald-800 font-mono text-sm mt-0.5">
                       {selectedParcelForDrawer.weightKg} ha
                     </span>
                   </div>
 
-                  <div className="col-span-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
-                    <span className="text-[10px] text-slate-500 block">Rice Variety &amp; Ecosystem:</span>
-                    <span className="font-bold text-slate-800 block text-xs truncate">
-                      {selectedParcelForDrawer.breed} ({selectedParcelForDrawer.purpose})
+                  {/* Segment 3: Variety & Ecosystem */}
+                  <div className="col-span-2 bg-slate-50/80 p-2.5 rounded-xl border border-slate-200/70 flex items-center justify-between">
+                    <div className="min-w-0 pr-2">
+                      <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider block">Variety &amp; Ecosystem</span>
+                      <span className="font-bold text-slate-900 text-xs mt-0.5 flex items-center gap-1.5 truncate">
+                        <Wheat className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <span className="truncate">{selectedParcelForDrawer.breed}</span>
+                      </span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 font-medium text-[10px] shrink-0">
+                      {selectedParcelForDrawer.purpose}
                     </span>
                   </div>
                 </div>
 
                 {/* Coordinates & Copy */}
-                <div className="flex items-center justify-between p-2 rounded-xl bg-slate-100 border border-slate-200 text-xs">
-                  <div className="text-[11px] font-mono text-slate-700 truncate pr-2">
-                    {Number(selectedParcelForDrawer.lat).toFixed(6)}, {Number(selectedParcelForDrawer.lng).toFixed(6)}
+                <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200/80 text-xs">
+                  <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                    <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span className="text-[11px] font-mono text-slate-700 truncate font-medium">
+                      {Number(selectedParcelForDrawer.lat).toFixed(6)}, {Number(selectedParcelForDrawer.lng).toFixed(6)}
+                    </span>
                   </div>
                   <button
                     type="button"
                     onClick={() =>
                       handleCopyCoordinates(Number(selectedParcelForDrawer.lat), Number(selectedParcelForDrawer.lng))
                     }
-                    className="px-2 py-1 rounded bg-white text-blue-600 hover:bg-blue-50 border border-slate-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                    className="px-2 py-1 rounded-md bg-white text-blue-600 hover:bg-blue-50 border border-slate-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition shadow-2xs shrink-0"
                   >
                     {isCopiedCoords ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                     <span>{isCopiedCoords ? 'Copied' : 'Copy'}</span>
@@ -2546,10 +2570,10 @@ export const MapView: React.FC<MapViewProps> = ({
                 <button
                   type="button"
                   onClick={() => onSelectParcel(selectedParcelForDrawer)}
-                  className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                  className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-xs hover:shadow-md cursor-pointer group"
                 >
                   <span>Open Full Farmer Profile Dossier</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
+                  <ExternalLink className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 </button>
               </div>
             )}
