@@ -15,6 +15,7 @@ import { DatabaseView } from './views/DatabaseView';
 import { ReportsView } from './views/ReportsView';
 import { AccountsView } from './views/AccountsView';
 import { PhotosView } from './views/PhotosView';
+import { EvaluationView } from './views/EvaluationView';
 import { SettingsView } from './views/SettingsView';
 import { FarmParcel, Barangay, PortalTab, User } from './types';
 import { BARANGAYS } from './data/barangays';
@@ -147,11 +148,20 @@ const AppContent: React.FC = () => {
   });
   const hasTriggeredInitialToastRef = useRef(false);
 
-  // Clean up any external OAuth error URL parameters on initial load to maintain a pristine preview
+  // Clean up any external OAuth error URL parameters on initial load and handle ?tab= deep links
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
         const url = new URL(window.location.href);
+        const tabParam = url.searchParams.get('tab');
+        if (tabParam === 'evaluation') {
+          setActiveTab('evaluation');
+          setViewMode('portal');
+        } else if (tabParam && ['dashboard', 'lft_dashboard', 'map', 'eartags', 'reports', 'accounts', 'photos', 'settings'].includes(tabParam)) {
+          setActiveTab(tabParam as PortalTab);
+          setViewMode('portal');
+        }
+
         if (
           url.searchParams.has('error') ||
           url.searchParams.has('error_description') ||
@@ -347,6 +357,8 @@ const AppContent: React.FC = () => {
         return 'LFT Accounts & Settings';
       case 'photos':
         return 'Photo, Media & Municipal Seals Settings';
+      case 'evaluation':
+        return 'ISO/IEC 25010 Software Quality Evaluation';
       case 'settings':
         return isCentralAdmin ? 'System & Admin Settings' : 'LFT Account Settings';
       default:
@@ -819,6 +831,8 @@ const AppContent: React.FC = () => {
               {activeTab === 'photos' && isCentralAdmin && (
                 <PhotosView onNavigateToSettings={() => setActiveTab('settings')} />
               )}
+
+              {activeTab === 'evaluation' && <EvaluationView />}
 
               {activeTab === 'settings' && (
                 <SettingsView onNavigateToLanding={() => setViewMode('landing')} />

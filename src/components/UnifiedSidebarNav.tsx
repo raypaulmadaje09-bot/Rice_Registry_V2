@@ -16,7 +16,8 @@ import {
   Layers,
   Database,
   Sliders,
-  Sparkles
+  Sparkles,
+  ClipboardCheck
 } from 'lucide-react';
 
 interface UnifiedSidebarNavProps {
@@ -55,7 +56,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
       setOpenSections((prev) => ({ ...prev, operations: true }));
     } else if (activeTab === 'map' || activeTab === 'eartags' || activeTab === 'reports') {
       setOpenSections((prev) => ({ ...prev, registry: true }));
-    } else if (activeTab === 'accounts' || activeTab === 'photos' || activeTab === 'settings') {
+    } else if (activeTab === 'accounts' || activeTab === 'photos' || activeTab === 'evaluation' || activeTab === 'settings') {
       setOpenSections((prev) => ({ ...prev, management: true }));
     }
   }, [activeTab]);
@@ -184,6 +185,20 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
             </button>
           )}
 
+          {/* ISO 25010 Evaluation (Icon View) */}
+          <button
+            type="button"
+            onClick={() => onNavigateTab('evaluation')}
+            className={`w-10 h-10 rounded-xl flex items-center justify-center transition cursor-pointer relative ${
+              activeTab === 'evaluation'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'text-slate-300 hover:text-white hover:bg-white/10'
+            }`}
+            title="Management: ISO/IEC 25010 Quality Evaluation"
+          >
+            <ClipboardCheck className="w-4 h-4 text-emerald-400" />
+          </button>
+
           <button
             type="button"
             onClick={() => onNavigateTab('settings')}
@@ -216,11 +231,11 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
   // Full Expanded Sidebar Navigation Menu with Accordions
   const isOperationsActive = activeTab === 'dashboard' || activeTab === 'lft_dashboard';
   const isRegistryActive = activeTab === 'map' || activeTab === 'eartags' || activeTab === 'reports';
-  const isManagementActive = activeTab === 'accounts' || activeTab === 'photos' || activeTab === 'settings';
+  const isManagementActive = activeTab === 'accounts' || activeTab === 'photos' || activeTab === 'evaluation' || activeTab === 'settings';
 
   const operationsCount = 1;
   const registryCount = 3;
-  const managementCount = isCentralAdmin ? 3 : 1;
+  const managementCount = isCentralAdmin ? 4 : 2;
 
   return (
     <div className="flex-1 overflow-y-auto sidebar-scroll px-3 py-2 space-y-3">
@@ -502,6 +517,29 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
                 </span>
               </button>
             )}
+
+            {/* ISO/IEC 25010 Software Quality Evaluation Form */}
+            <button
+              type="button"
+              onClick={() => onNavigateTab('evaluation')}
+              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition cursor-pointer ${
+                activeTab === 'evaluation'
+                  ? 'bg-[#2563eb] text-white font-bold shadow-xs'
+                  : 'text-slate-300 hover:text-white hover:bg-white/5 font-medium'
+              }`}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <ClipboardCheck className="w-4 h-4 shrink-0 text-emerald-400" />
+                <span className="truncate">ISO 25010 Quality Evaluation</span>
+              </div>
+              <span
+                className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                  activeTab === 'evaluation' ? 'bg-white/20 text-white' : 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/30'
+                }`}
+              >
+                ISO
+              </span>
+            </button>
 
             {/* System / Account Settings */}
             <button

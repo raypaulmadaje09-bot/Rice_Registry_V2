@@ -1816,6 +1816,7 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
         reports: 'Print Official Reports & Masterlist',
         accounts: 'LFT Field Accounts',
         photos: 'Photo & Media Gallery',
+        evaluation: 'ISO 25010 Quality Evaluation',
         settings: 'System Settings'
       };
       setLastNavNotice(`Switched to ${tabNames[action.tab] || action.tab}`);

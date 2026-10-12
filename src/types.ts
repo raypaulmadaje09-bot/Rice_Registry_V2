@@ -139,6 +139,7 @@ export interface LftAccount {
   email?: string;
   puroks?: number;
   photoUrl?: string;
+  password?: string;
 }
 
 export const isAccountActive = (status?: string): boolean => {
@@ -160,7 +161,7 @@ export const isAccountActive = (status?: string): boolean => {
 
 export type Language = 'EN' | 'CEB';
 
-export type PortalTab = 'dashboard' | 'lft_dashboard' | 'brgy_dashboard' | 'map' | 'eartags' | 'reports' | 'accounts' | 'photos' | 'settings';
+export type PortalTab = 'dashboard' | 'lft_dashboard' | 'brgy_dashboard' | 'map' | 'eartags' | 'reports' | 'accounts' | 'photos' | 'evaluation' | 'settings';
 
 export interface BackgroundPreset {
   id: string;

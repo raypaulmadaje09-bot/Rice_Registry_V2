@@ -275,7 +275,8 @@ export function normalizeLftAccount(row: any): LftAccount {
     status: row.status || 'Certified Field LFT (Active)',
     email: row.email || `${row.username || 'lft'}@silago-agriculture.gov.ph`,
     puroks: Number(row.puroks || 0),
-    photoUrl: row.photoUrl || row.photo_url
+    photoUrl: row.photoUrl || row.photo_url,
+    password: row.password || undefined
   };
 }
 
@@ -1054,7 +1055,8 @@ export function sanitizeLftPayload(account: LftAccount) {
     terrain: norm.terrain || 'Lowland & Rice Sector',
     areaHa: Number(norm.areaHa || 0),
     status: norm.status || 'Certified Field LFT (Active)',
-    photoUrl: norm.photoUrl || ''
+    photoUrl: norm.photoUrl || '',
+    password: norm.password || undefined
   };
 }
 
