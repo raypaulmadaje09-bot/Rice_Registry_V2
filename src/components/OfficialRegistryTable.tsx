@@ -5,6 +5,7 @@ import { CustomTableData } from './TableEditorModal';
 import { Plus, Trash2, Edit3, CheckCircle2, RotateCcw, Camera } from 'lucide-react';
 import { supabaseDb, sortParcelsAlphabetically } from '../utils/supabaseClient';
 import { ReportLogoEditorModal, ReportLogoType } from './ReportLogoEditorModal';
+import { StandardReportHeader } from './StandardReportHeader';
 
 interface OfficialRegistryTableProps {
   reportParcels: FarmParcel[];
@@ -25,6 +26,10 @@ interface OfficialRegistryTableProps {
   orientation?: 'portrait' | 'landscape';
   customTableData?: CustomTableData | null;
   columnOrder?: string[];
+  pageNumber?: number;
+  totalPages?: number;
+  hideHeader?: boolean;
+  hideSignatories?: boolean;
 }
 
 // Helper to parse names into family, given, middle
@@ -98,7 +103,11 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
   onUpdateSignatories,
   isEditable = false,
   orientation = 'landscape',
-  columnOrder
+  columnOrder,
+  pageNumber,
+  totalPages,
+  hideHeader = false,
+  hideSignatories = false
 }) => {
   const isLandscape = orientation === 'landscape';
   const [editingLogo, setEditingLogo] = useState<ReportLogoType | null>(null);
@@ -382,90 +391,14 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
 
   return (
     <div className="flex flex-col flex-1 justify-between min-h-full space-y-4 text-black font-sans">
-      {/* 1. Official Government Letterhead (The 3 Logos Placed Above Republic of the Philippines) */}
-      <div className="flex flex-col items-center justify-center pb-3 border-b-2 border-black">
-        {/* 3 Government Logos: Bagong Pilipinas, Municipal Seal ng Silago, at Department of Agriculture */}
-        <div className="flex items-center justify-center gap-6 mb-2">
-          {/* Logo 1: Bagong Pilipinas */}
-          <div className="relative group/logo h-16 w-auto max-w-[80px] flex items-center justify-center">
-            <div
-              onClick={() => isEditable && setEditingLogo('bagongPilipinas')}
-              className={`h-16 w-auto max-w-[80px] flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
-              title={isEditable ? 'Click to change or upload Bagong Pilipinas Logo' : undefined}
-            >
-              <BagongPilipinasLogo size={58} showText={true} className="h-16 w-auto max-w-[80px] object-contain" />
-            </div>
-            {isEditable && (
-              <button
-                type="button"
-                onClick={() => setEditingLogo('bagongPilipinas')}
-                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
-                title="Change or upload Bagong Pilipinas Logo"
-              >
-                <Camera size={11} />
-              </button>
-            )}
-          </div>
-
-          {/* Logo 2: Silago Seal */}
-          <div className="relative group/logo h-16 w-auto max-w-[80px] flex items-center justify-center">
-            <div
-              onClick={() => isEditable && setEditingLogo('silago')}
-              className={`h-16 w-auto max-w-[80px] flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
-              title={isEditable ? 'Click to change or upload Municipality of Silago Seal' : undefined}
-            >
-              <SilagoSeal size={58} className="h-16 w-auto max-w-[80px] object-contain" />
-            </div>
-            {isEditable && (
-              <button
-                type="button"
-                onClick={() => setEditingLogo('silago')}
-                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
-                title="Change or upload Municipality of Silago Seal"
-              >
-                <Camera size={11} />
-              </button>
-            )}
-          </div>
-
-          {/* Logo 3: DA Logo */}
-          <div className="relative group/logo h-16 w-auto max-w-[80px] flex items-center justify-center">
-            <div
-              onClick={() => isEditable && setEditingLogo('da')}
-              className={`h-16 w-auto max-w-[80px] flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
-              title={isEditable ? 'Click to change or upload Department of Agriculture Seal' : undefined}
-            >
-              <DaLogo size={58} className="h-16 w-auto max-w-[80px] object-contain" />
-            </div>
-            {isEditable && (
-              <button
-                type="button"
-                onClick={() => setEditingLogo('da')}
-                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
-                title="Change or upload Department of Agriculture Seal"
-              >
-                <Camera size={11} />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Official Header Hierarchy */}
-        <div className="text-center">
-          <p className="text-xs sm:text-[13px] font-sans tracking-wide text-black font-normal leading-tight">
-            Republic of the Philippines
-          </p>
-          <p className="text-xs sm:text-[13px] font-sans tracking-wide text-black font-normal leading-tight">
-            Province of Southern Leyte
-          </p>
-          <h1 className="text-sm sm:text-base font-serif font-black tracking-wider text-black uppercase leading-tight mt-0.5">
-            MUNICIPALITY OF SILAGO
-          </h1>
-          <h2 className="text-xs sm:text-[13px] font-sans font-black tracking-wide text-black uppercase leading-tight mt-0.5">
-            MUNICIPAL AGRICULTURE OFFICE
-          </h2>
-        </div>
-      </div>
+      {/* 1. Official Government Letterhead (DA • Silago Seal • Southern Leyte Seal) */}
+      {!hideHeader && (
+        <StandardReportHeader
+          isEditable={isEditable}
+          onEditLogo={setEditingLogo}
+          className="mb-2"
+        />
+      )}
 
       {/* 2. Official Registry Subheading / Title */}
       <div className="text-center space-y-0.5 pt-1 pb-1">
@@ -880,151 +813,153 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
       </div>
 
       {/* 5. Official Signatories Block (Editable, Dynamic Add/Delete, Perfectly Aligned) */}
-      <div className="mt-auto pt-8 px-2 sm:px-6 pb-2 border-t-2 border-black space-y-3 break-inside-avoid print:break-inside-avoid print:mt-auto">
-        {/* Header & Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="print:hidden text-xs uppercase tracking-wider font-bold text-slate-600">
-            Official Signatures
-          </span>
+      {!hideSignatories && (
+        <div className="mt-auto pt-8 px-2 sm:px-6 pb-2 border-t-2 border-black space-y-3 break-inside-avoid print:break-inside-avoid print:mt-auto signatories-block">
+          {/* Header & Controls */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="print:hidden text-xs uppercase tracking-wider font-bold text-slate-600">
+              Official Signatures
+            </span>
 
-          <div className="print:hidden flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setIsLocalEditing(!isLocalEditing)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition shadow-2xs border ${
-                isEditing
-                  ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 ring-2 ring-amber-300'
-                  : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300'
-              }`}
-              title="Toggle inline editing for signatories"
-            >
-              {isEditing ? <CheckCircle2 size={13} /> : <Edit3 size={13} />}
-              <span>{isEditing ? 'Done Editing Signatures' : 'Edit Signatures'}</span>
-            </button>
+            <div className="print:hidden flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsLocalEditing(!isLocalEditing)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition shadow-2xs border ${
+                  isEditing
+                    ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 ring-2 ring-amber-300'
+                    : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300'
+                }`}
+                title="Toggle inline editing for signatories"
+              >
+                {isEditing ? <CheckCircle2 size={13} /> : <Edit3 size={13} />}
+                <span>{isEditing ? 'Done Editing Signatures' : 'Edit Signatures'}</span>
+              </button>
 
-            {isEditing && (
-              <>
-                <button
-                  type="button"
-                  onClick={handleAddSignatory}
-                  className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition shadow-2xs"
-                  title="Add another signatory block"
-                >
-                  <Plus size={13} />
-                  <span>Add Signatory</span>
-                </button>
+              {isEditing && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleAddSignatory}
+                    className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition shadow-2xs"
+                    title="Add another signatory block"
+                  >
+                    <Plus size={13} />
+                    <span>Add Signatory</span>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={handleResetSignatories}
-                  className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition shadow-2xs"
-                  title="Reset to 3 standard signatories"
-                >
-                  <RotateCcw size={12} />
-                  <span>Reset</span>
-                </button>
-              </>
-            )}
+                  <button
+                    type="button"
+                    onClick={handleResetSignatories}
+                    className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition shadow-2xs"
+                    title="Reset to 3 standard signatories"
+                  >
+                    <RotateCcw size={12} />
+                    <span>Reset</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Dynamic Grid of Signatories */}
+          <div
+            className={`grid gap-8 text-center items-end ${
+              currentSignatories.length === 1
+                ? 'grid-cols-1 max-w-xs mx-auto'
+                : currentSignatories.length === 2
+                ? 'grid-cols-2 max-w-2xl mx-auto'
+                : currentSignatories.length === 3
+                ? 'grid-cols-1 sm:grid-cols-3'
+                : currentSignatories.length === 4
+                ? 'grid-cols-2 sm:grid-cols-4'
+                : 'grid-cols-2 sm:grid-cols-3'
+            }`}
+          >
+            {currentSignatories.map((sig, idx) => (
+              <div
+                key={sig.id || `reg-sig-${idx}`}
+                className="flex flex-col justify-between h-full space-y-1 relative group/sig p-1 rounded-lg"
+              >
+                {/* Delete button (Screen only, in edit mode) */}
+                {isEditing && currentSignatories.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteSignatory(idx)}
+                    className="print:hidden absolute -top-2 -right-2 p-1 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded-full shadow-xs opacity-0 group-hover/sig:opacity-100 transition cursor-pointer z-10"
+                    title="Remove this signatory"
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                )}
+
+                {/* 1. Consistent Role Label */}
+                <div>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={sig.roleLabel}
+                      onChange={(e) => handleSignatoryChange(idx, 'roleLabel', e.target.value)}
+                      className="text-sm font-bold text-black uppercase tracking-tight block w-full text-center border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent"
+                      title="Click to edit role label"
+                    />
+                  ) : (
+                    <span className="text-sm font-bold text-black uppercase tracking-tight block text-center">
+                      {sig.roleLabel}
+                    </span>
+                  )}
+                </div>
+
+                {/* 2. Open 48px blank space specifically reserved for manual pen signature */}
+                <div className="h-12 w-full select-none flex items-center justify-center" />
+
+                {/* 3. Underline Line & Heavy Bold Uppercase Name & Subtitle */}
+                <div className="space-y-0.5 w-full">
+                  {isEditing ? (
+                    <div className="space-y-0.5">
+                      <input
+                        type="text"
+                        value={sig.name}
+                        placeholder="___________________________"
+                        onChange={(e) => handleSignatoryChange(idx, 'name', e.target.value)}
+                        className="font-bold text-black uppercase block w-full text-center text-sm border-b-2 border-black pb-0.5 hover:border-amber-500 focus:bg-amber-50/40 rounded-none px-1 py-0.5 outline-hidden print:border-black print:p-0 print:bg-transparent placeholder:text-black placeholder:font-normal"
+                        title="Signatory Printed Name (or leave blank for manual pen signing)"
+                      />
+                      <input
+                        type="text"
+                        value={sig.title}
+                        placeholder="Signature over Printed Name / Designation"
+                        onChange={(e) => handleSignatoryChange(idx, 'title', e.target.value)}
+                        className="text-xs font-semibold text-slate-800 print:text-black uppercase block w-full text-center border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.5 outline-hidden print:border-none print:p-0 print:bg-transparent placeholder:text-slate-600 mt-0.5"
+                        title="Signatory subtitle / designation"
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      {sig.name ? (
+                        <p className="font-bold text-black uppercase text-sm tracking-wide border-b-2 border-black pb-0.5 min-h-[22px] text-center">
+                          {sig.name}
+                        </p>
+                      ) : (
+                        <div className="border-b-2 border-black pb-0.5 min-h-[22px] w-full" />
+                      )}
+                      <p className="text-xs font-semibold text-slate-800 print:text-black uppercase tracking-tight text-center mt-0.5">
+                        {sig.title || '\u00A0'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-
-        {/* Dynamic Grid of Signatories */}
-        <div
-          className={`grid gap-8 text-center items-end ${
-            currentSignatories.length === 1
-              ? 'grid-cols-1 max-w-xs mx-auto'
-              : currentSignatories.length === 2
-              ? 'grid-cols-2 max-w-2xl mx-auto'
-              : currentSignatories.length === 3
-              ? 'grid-cols-1 sm:grid-cols-3'
-              : currentSignatories.length === 4
-              ? 'grid-cols-2 sm:grid-cols-4'
-              : 'grid-cols-2 sm:grid-cols-3'
-          }`}
-        >
-          {currentSignatories.map((sig, idx) => (
-            <div
-              key={sig.id || `reg-sig-${idx}`}
-              className="flex flex-col justify-between h-full space-y-1 relative group/sig p-1 rounded-lg"
-            >
-              {/* Delete button (Screen only, in edit mode) */}
-              {isEditing && currentSignatories.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => handleDeleteSignatory(idx)}
-                  className="print:hidden absolute -top-2 -right-2 p-1 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded-full shadow-xs opacity-0 group-hover/sig:opacity-100 transition cursor-pointer z-10"
-                  title="Remove this signatory"
-                >
-                  <Trash2 size={11} />
-                </button>
-              )}
-
-              {/* 1. Consistent Role Label */}
-              <div>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={sig.roleLabel}
-                    onChange={(e) => handleSignatoryChange(idx, 'roleLabel', e.target.value)}
-                    className="text-sm font-bold text-black uppercase tracking-tight block w-full text-center border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent"
-                    title="Click to edit role label"
-                  />
-                ) : (
-                  <span className="text-sm font-bold text-black uppercase tracking-tight block text-center">
-                    {sig.roleLabel}
-                  </span>
-                )}
-              </div>
-
-              {/* 2. Open 48px blank space specifically reserved for manual pen signature */}
-              <div className="h-12 w-full select-none flex items-center justify-center" />
-
-              {/* 3. Underline Line & Heavy Bold Uppercase Name & Subtitle */}
-              <div className="space-y-0.5 w-full">
-                {isEditing ? (
-                  <div className="space-y-0.5">
-                    <input
-                      type="text"
-                      value={sig.name}
-                      placeholder="___________________________"
-                      onChange={(e) => handleSignatoryChange(idx, 'name', e.target.value)}
-                      className="font-bold text-black uppercase block w-full text-center text-sm border-b-2 border-black pb-0.5 hover:border-amber-500 focus:bg-amber-50/40 rounded-none px-1 py-0.5 outline-hidden print:border-black print:p-0 print:bg-transparent placeholder:text-black placeholder:font-normal"
-                      title="Signatory Printed Name (or leave blank for manual pen signing)"
-                    />
-                    <input
-                      type="text"
-                      value={sig.title}
-                      placeholder="Signature over Printed Name / Designation"
-                      onChange={(e) => handleSignatoryChange(idx, 'title', e.target.value)}
-                      className="text-xs font-semibold text-slate-800 print:text-black uppercase block w-full text-center border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.5 outline-hidden print:border-none print:p-0 print:bg-transparent placeholder:text-slate-600 mt-0.5"
-                      title="Signatory subtitle / designation"
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    {sig.name ? (
-                      <p className="font-bold text-black uppercase text-sm tracking-wide border-b-2 border-black pb-0.5 min-h-[22px] text-center">
-                        {sig.name}
-                      </p>
-                    ) : (
-                      <div className="border-b-2 border-black pb-0.5 min-h-[22px] w-full" />
-                    )}
-                    <p className="text-xs font-semibold text-slate-800 print:text-black uppercase tracking-tight text-center mt-0.5">
-                      {sig.title || '\u00A0'}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
 
       {/* Word-Style Official Print Document Footer */}
       <div className="hidden print:flex items-center justify-between text-[8pt] font-mono text-slate-700 border-t border-black pt-1.5 mt-4">
         <span>REF NO: {memoRef || 'SLG-MAO-RICE-REGISTRY'}</span>
         <span>DATE PRINTED: {reportDate || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-        <span className="print-page-number"></span>
+        <span>{pageNumber && totalPages ? `Page ${pageNumber} of ${totalPages}` : ''}</span>
       </div>
 
       {/* Unified Global Logo Editor Modal */}

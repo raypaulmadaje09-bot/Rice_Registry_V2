@@ -5,7 +5,7 @@ import {
   saveIrrigatorsLetterData
 } from '../data/irrigatorsData';
 import { OfficialSignatory } from '../types';
-import { SilagoSeal, BagongPilipinasLogo } from './Seals';
+import { DaLogo, SilagoSeal, SouthernLeyteSeal, BagongPilipinasLogo } from './Seals';
 import { useApp } from '../context/AppContext';
 import { ReportLogoEditorModal, ReportLogoType } from './ReportLogoEditorModal';
 import {
@@ -166,85 +166,115 @@ export const OfficialIrrigatorsDirectoryDocument: React.FC<OfficialIrrigatorsDir
         </div>
       )}
 
-      {/* TOP HEADER: Silago Seal (Left) • Headers (Center) • Bagong Pilipinas (Right) */}
-      <div className="flex items-center justify-between pb-3 pt-1 px-4 sm:px-8 relative border-b border-transparent">
-        {/* Left: Silago Municipal Seal */}
-        <div className="relative group/logo flex-shrink-0 h-16 w-auto max-w-[80px] flex items-center justify-center">
-          <div
-            onClick={() => isEditable && setEditingLogo('silago')}
-            className={`h-16 w-auto max-w-[80px] flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
-            title={isEditable ? 'Click to change or upload Municipality of Silago Seal' : undefined}
-          >
-            <SilagoSeal size={isLandscape ? 68 : 58} customUrl={silagoLogoUrl} className="h-16 w-auto max-w-[80px] object-contain" />
-          </div>
-          {isEditable && (
-            <button
-              type="button"
-              onClick={() => setEditingLogo('silago')}
-              className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
-              title="Change Municipality of Silago Seal"
+      {/* 1. Official Government Letterhead (Standardized 3 Logos Placed Above Republic of the Philippines) */}
+      <div className="flex flex-col items-center justify-center pb-3 border-b-2 border-black text-center">
+        {/* 3 Standardized Government Logos: DA • Silago Seal • Southern Leyte Seal */}
+        <div className="flex items-center justify-center gap-6 mb-2">
+          {/* Logo 1: Department of Agriculture */}
+          <div className="relative group/logo h-14 w-14 flex items-center justify-center shrink-0">
+            <div
+              onClick={() => isEditable && setEditingLogo('da')}
+              className={`h-14 w-14 flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
+              title={isEditable ? 'Click to change or upload Department of Agriculture Seal' : undefined}
             >
-              <Camera size={11} />
-            </button>
-          )}
+              <DaLogo size={56} className="h-14 w-14 object-contain" />
+            </div>
+            {isEditable && (
+              <button
+                type="button"
+                onClick={() => setEditingLogo('da')}
+                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
+                title="Change Department of Agriculture Seal"
+              >
+                <Camera size={11} />
+              </button>
+            )}
+          </div>
+
+          {/* Logo 2: Municipality of Silago Seal */}
+          <div className="relative group/logo h-14 w-14 flex items-center justify-center shrink-0">
+            <div
+              onClick={() => isEditable && setEditingLogo('silago')}
+              className={`h-14 w-14 flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
+              title={isEditable ? 'Click to change or upload Municipality of Silago Seal' : undefined}
+            >
+              <SilagoSeal size={56} customUrl={silagoLogoUrl} className="h-14 w-14 object-contain" />
+            </div>
+            {isEditable && (
+              <button
+                type="button"
+                onClick={() => setEditingLogo('silago')}
+                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
+                title="Change Municipality of Silago Seal"
+              >
+                <Camera size={11} />
+              </button>
+            )}
+          </div>
+
+          {/* Logo 3: Southern Leyte Seal */}
+          <div className="relative group/logo h-14 w-14 flex items-center justify-center shrink-0">
+            <div
+              onClick={() => isEditable && setEditingLogo('southernLeyte')}
+              className={`h-14 w-14 flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
+              title={isEditable ? 'Click to change or upload Province of Southern Leyte Seal' : undefined}
+            >
+              <SouthernLeyteSeal size={56} className="h-14 w-14 object-contain" />
+            </div>
+            {isEditable && (
+              <button
+                type="button"
+                onClick={() => setEditingLogo('southernLeyte')}
+                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
+                title="Change Province of Southern Leyte Seal"
+              >
+                <Camera size={11} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Center: Official Government Sub-headers */}
-        <div className="text-center flex-1 px-2 space-y-0.5">
+        <div className="text-center space-y-0.5">
           {onUpdateData && isEditable ? (
             <div className="space-y-0.5">
               <input
                 type="text"
                 value={data.republicHeader}
                 onChange={(e) => handleFieldChange('republicHeader', e.target.value)}
-                className="text-center font-serif text-black text-xs sm:text-sm font-normal w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent"
+                className="text-center font-serif text-black text-xs sm:text-[13px] font-normal w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent"
               />
               <input
                 type="text"
                 value={data.provinceHeader}
                 onChange={(e) => handleFieldChange('provinceHeader', e.target.value)}
-                className="text-center font-serif text-black text-xs sm:text-sm font-normal w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent"
+                className="text-center font-serif text-black text-xs sm:text-[13px] font-normal w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent"
               />
               <input
                 type="text"
                 value={data.municipalityHeader}
                 onChange={(e) => handleFieldChange('municipalityHeader', e.target.value)}
-                className="text-center font-serif text-black text-xs sm:text-sm font-medium w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent"
+                className="text-center font-serif text-black text-sm sm:text-base font-black uppercase tracking-wider w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent"
               />
+              <p className="text-xs sm:text-[13px] font-sans font-black tracking-wide text-black uppercase leading-tight mt-0.5">
+                MUNICIPAL AGRICULTURE OFFICE
+              </p>
             </div>
           ) : (
             <>
-              <p className="font-serif text-xs sm:text-sm text-black tracking-normal">
+              <p className="font-serif text-xs sm:text-[13px] text-black tracking-normal">
                 {data.republicHeader}
               </p>
-              <p className="font-serif text-xs sm:text-sm text-black tracking-normal">
+              <p className="font-serif text-xs sm:text-[13px] text-black tracking-normal">
                 {data.provinceHeader}
               </p>
-              <p className="font-serif text-xs sm:text-sm text-black tracking-normal">
+              <h1 className="font-serif text-sm sm:text-base font-black text-black uppercase tracking-wider">
                 {data.municipalityHeader}
-              </p>
+              </h1>
+              <h2 className="text-xs sm:text-[13px] font-sans font-black tracking-wide text-black uppercase leading-tight mt-0.5">
+                MUNICIPAL AGRICULTURE OFFICE
+              </h2>
             </>
-          )}
-        </div>
-
-        {/* Right: Bagong Pilipinas Official Logo */}
-        <div className="relative group/logo flex-shrink-0 h-16 w-auto max-w-[80px] flex flex-col items-center justify-center">
-          <div
-            onClick={() => isEditable && setEditingLogo('bagongPilipinas')}
-            className={`h-16 w-auto max-w-[80px] flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
-            title={isEditable ? 'Click to change or upload Bagong Pilipinas Logo' : undefined}
-          >
-            <BagongPilipinasLogo size={isLandscape ? 58 : 50} showText={true} customUrl={bagongPilipinasLogoUrl} className="h-16 w-auto max-w-[80px] object-contain" />
-          </div>
-          {isEditable && (
-            <button
-              type="button"
-              onClick={() => setEditingLogo('bagongPilipinas')}
-              className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
-              title="Change Bagong Pilipinas Logo"
-            >
-              <Camera size={11} />
-            </button>
           )}
         </div>
       </div>

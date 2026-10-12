@@ -6,7 +6,7 @@ import {
   saveMpcsrsReportData
 } from '../data/mpcsrsData';
 import { OfficialSignatory } from '../types';
-import { DaLogo, SilagoSeal, BagongPilipinasLogo } from './Seals';
+import { DaLogo, SilagoSeal, SouthernLeyteSeal, BagongPilipinasLogo } from './Seals';
 import { ReportLogoEditorModal, ReportLogoType } from './ReportLogoEditorModal';
 import { Edit3, CheckCircle2, Plus, Trash2, RotateCcw, Camera } from 'lucide-react';
 
@@ -195,65 +195,65 @@ export const MpcsrsPalayReportDocument: React.FC<MpcsrsPalayReportDocumentProps>
 
       {/* 1. Official Government Letterhead (The 3 Logos Placed Above Republic of the Philippines) */}
       <div className="flex flex-col items-center justify-center pb-2 border-b-2 border-black">
-        {/* 3 Government Logos: Bagong Pilipinas, Municipal Seal ng Silago, at Department of Agriculture */}
-        <div className="flex items-center justify-center gap-6 mb-1.5">
-          {/* Logo 1: Bagong Pilipinas */}
-          <div className="relative group/logo h-16 w-auto max-w-[80px] flex items-center justify-center">
-            <div
-              onClick={() => isEditable && setEditingLogo('bagongPilipinas')}
-              className={`h-16 w-auto max-w-[80px] flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
-              title={isEditable ? 'Click to change or upload Bagong Pilipinas Logo' : undefined}
-            >
-              <BagongPilipinasLogo size={54} showText={true} className="h-16 w-auto max-w-[80px] object-contain" />
-            </div>
-            {isEditable && (
-              <button
-                type="button"
-                onClick={() => setEditingLogo('bagongPilipinas')}
-                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
-                title="Change or upload Bagong Pilipinas Logo"
-              >
-                <Camera size={11} />
-              </button>
-            )}
-          </div>
-
-          {/* Logo 2: Silago Seal */}
-          <div className="relative group/logo h-16 w-auto max-w-[80px] flex items-center justify-center">
-            <div
-              onClick={() => isEditable && setEditingLogo('silago')}
-              className={`h-16 w-auto max-w-[80px] flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
-              title={isEditable ? 'Click to change or upload Municipality of Silago Seal' : undefined}
-            >
-              <SilagoSeal size={54} className="h-16 w-auto max-w-[80px] object-contain" />
-            </div>
-            {isEditable && (
-              <button
-                type="button"
-                onClick={() => setEditingLogo('silago')}
-                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
-                title="Change or upload Municipality of Silago Seal"
-              >
-                <Camera size={11} />
-              </button>
-            )}
-          </div>
-
-          {/* Logo 3: DA Logo */}
-          <div className="relative group/logo h-16 w-auto max-w-[80px] flex items-center justify-center">
+        {/* 3 Standardized Government Logos: DA • Silago Seal • Southern Leyte Seal */}
+        <div className="flex items-center justify-center gap-6 mb-2">
+          {/* Logo 1: Department of Agriculture */}
+          <div className="relative group/logo h-14 w-14 flex items-center justify-center shrink-0">
             <div
               onClick={() => isEditable && setEditingLogo('da')}
-              className={`h-16 w-auto max-w-[80px] flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
+              className={`h-14 w-14 flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
               title={isEditable ? 'Click to change or upload Department of Agriculture Seal' : undefined}
             >
-              <DaLogo size={54} className="h-16 w-auto max-w-[80px] object-contain" />
+              <DaLogo size={56} className="h-14 w-14 object-contain" />
             </div>
             {isEditable && (
               <button
                 type="button"
                 onClick={() => setEditingLogo('da')}
                 className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
-                title="Change or upload Department of Agriculture Seal"
+                title="Change Department of Agriculture Seal"
+              >
+                <Camera size={11} />
+              </button>
+            )}
+          </div>
+
+          {/* Logo 2: Municipality of Silago Seal */}
+          <div className="relative group/logo h-14 w-14 flex items-center justify-center shrink-0">
+            <div
+              onClick={() => isEditable && setEditingLogo('silago')}
+              className={`h-14 w-14 flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
+              title={isEditable ? 'Click to change or upload Municipality of Silago Seal' : undefined}
+            >
+              <SilagoSeal size={56} className="h-14 w-14 object-contain" />
+            </div>
+            {isEditable && (
+              <button
+                type="button"
+                onClick={() => setEditingLogo('silago')}
+                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
+                title="Change Municipality of Silago Seal"
+              >
+                <Camera size={11} />
+              </button>
+            )}
+          </div>
+
+          {/* Logo 3: Southern Leyte Seal */}
+          <div className="relative group/logo h-14 w-14 flex items-center justify-center shrink-0">
+            <div
+              onClick={() => isEditable && setEditingLogo('southernLeyte')}
+              className={`h-14 w-14 flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
+              title={isEditable ? 'Click to change or upload Province of Southern Leyte Seal' : undefined}
+            >
+              <SouthernLeyteSeal size={56} className="h-14 w-14 object-contain" />
+            </div>
+            {isEditable && (
+              <button
+                type="button"
+                onClick={() => setEditingLogo('southernLeyte')}
+                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
+                title="Change Province of Southern Leyte Seal"
               >
                 <Camera size={11} />
               </button>

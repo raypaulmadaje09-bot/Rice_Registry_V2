@@ -78,6 +78,7 @@ import { ReportLogoEditorModal, ReportLogoType } from '../components/ReportLogoE
 import { FloatingReportActionDock } from '../components/FloatingReportActionDock';
 import { DocumentParametersModal } from '../components/DocumentParametersModal';
 import { SmartColumnDrawer, OFFICIAL_REGISTRY_COLUMNS } from '../components/SmartColumnDrawer';
+import { StandardReportHeader } from '../components/StandardReportHeader';
 
 // Helper to parse names into family, given, middle
 const parseFarmerName = (parcel: FarmParcel) => {
@@ -453,39 +454,70 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
     return getAssignedLftForBarangay(selectedBarangay);
   }, [selectedBarangay]);
 
+  // Pagination & Chunking Engine for Masterlist Registry (15 rows for landscape, 22 for portrait)
+  const rowsPerPage = useMemo(() => {
+    if (tableDensity === 'ultra') return orientation === 'landscape' ? 20 : 28;
+    if (tableDensity === 'comfortable') return orientation === 'landscape' ? 12 : 18;
+    return orientation === 'landscape' ? 15 : 22; // default compact
+  }, [orientation, tableDensity]);
+
+  const registryPageChunks = useMemo(() => {
+    if (!reportParcels || reportParcels.length === 0) return [[]];
+    const chunks: FarmParcel[][] = [];
+    for (let i = 0; i < reportParcels.length; i += rowsPerPage) {
+      chunks.push(reportParcels.slice(i, i + rowsPerPage));
+    }
+    return chunks.length > 0 ? chunks : [[]];
+  }, [reportParcels, rowsPerPage]);
+
   // Calculate total pages for Word-Style print preview pagination
   const totalDocumentPages = useMemo(() => {
     if (reportType !== 'official_registry') return 1;
-    if (documentView === 'complete_package') return 4;
+    if (documentView === 'complete_package') {
+      return 3 + registryPageChunks.length;
+    }
+    if (documentView === 'registry_table') {
+      return registryPageChunks.length;
+    }
     return 1;
-  }, [reportType, documentView]);
+  }, [reportType, documentView, registryPageChunks.length]);
 
   useEffect(() => {
     if (currentPageIndex > totalDocumentPages) {
       setCurrentPageIndex(1);
     }
-  }, [totalDocumentPages]);
+  }, [totalDocumentPages, currentPageIndex]);
 
-  // Word-Style Sheet Dimensions (Letter, A4, Folio) with exact 1in or 0.75in margins
+  // Dynamic Sheet Dimensions base sa ORIENTATION ug PAPER SIZE
+  // Folio: 8.5" x 13" (Portrait) / 13" x 8.5" (Landscape)
+  // Letter: 8.5" x 11" (Portrait) / 11" x 8.5" (Landscape)
+  // A4: 210mm x 297mm (Portrait) / 297mm x 210mm (Landscape)
   const getWordSheetStyle = () => {
     const isPortrait = orientation === 'portrait';
-    if (isPortrait) {
-      if (paperSize === 'letter') {
-        return { width: '8.5in', minHeight: '11in', padding: '1in' };
-      }
-      if (paperSize === 'a4') {
-        return { width: '8.27in', minHeight: '11.69in', padding: '1in' };
-      }
-      return { width: '8.5in', minHeight: '13in', padding: '1in' }; // Folio (8.5" x 13")
+    const isLandscape = !isPortrait;
+
+    let width = '8.5in';
+    let minHeight = '13in';
+
+    if (paperSize === 'letter') {
+      width = isLandscape ? '11in' : '8.5in';
+      minHeight = isLandscape ? '8.5in' : '11in';
+    } else if (paperSize === 'a4') {
+      width = isLandscape ? '297mm' : '210mm';
+      minHeight = isLandscape ? '210mm' : '297mm';
     } else {
-      if (paperSize === 'letter') {
-        return { width: '11in', minHeight: '8.5in', padding: '0.75in' };
-      }
-      if (paperSize === 'a4') {
-        return { width: '11.69in', minHeight: '8.27in', padding: '0.75in' };
-      }
-      return { width: '13in', minHeight: '8.5in', padding: '0.75in' }; // Folio Landscape
+      // folio
+      width = isLandscape ? '13in' : '8.5in';
+      minHeight = isLandscape ? '8.5in' : '13in';
     }
+
+    const padding = margins === 'narrow' ? '0.25in' : margins === 'wide' ? '0.75in' : '0.5in';
+
+    return {
+      width,
+      minHeight,
+      padding
+    };
   };
 
   // Handlers for Letter Management
@@ -587,7 +619,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
   };
 
   const handlePrint = () => {
-    const printContent = document.getElementById('official-print-document') || document.getElementById('printable-area');
+    const printContent = document.getElementById('printable-report-canvas') || document.getElementById('official-print-document') || document.getElementById('printable-area');
     const isLandscape = orientation === 'landscape';
     const originalTitle = document.title;
     const brgyName = selectedBarangay === 'ALL' ? 'All_Barangays' : selectedBarangay.replace(/\s+/g, '_');
@@ -637,16 +669,16 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
 
     // Clone and sanitize content so direct editing outlines or buttons are removed
     const cloned = printContent.cloneNode(true) as HTMLElement;
-    cloned.querySelectorAll('.no-print, button, select, input[type="file"]').forEach((el) => el.remove());
+    cloned.querySelectorAll('.no-print, button, select, input[type="file"], #rice-ssistant-widget, .sidebar, nav, aside').forEach((el) => el.remove());
 
     const isPortrait = orientation === 'portrait';
-    let printPageSize = isPortrait ? 'letter portrait' : 'letter landscape';
+    let printPageSize = isPortrait ? '8.5in 11in portrait' : '11in 8.5in landscape';
     if (paperSize === 'folio') {
       printPageSize = isPortrait ? '8.5in 13in portrait' : '13in 8.5in landscape';
     } else if (paperSize === 'a4') {
-      printPageSize = isPortrait ? 'A4 portrait' : 'A4 landscape';
+      printPageSize = isPortrait ? '210mm 297mm portrait' : '297mm 210mm landscape';
     }
-    const printMargin = isPortrait ? '1in' : '0.75in';
+    const printMargin = '0.5in';
 
     const doc = (iframeDoc as any).document || iframeDoc;
     doc.open();
@@ -1128,15 +1160,23 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
         @media print {
           @page {
             size: ${
-              orientation === 'portrait'
-                ? (paperSize === 'letter' ? '8.5in 11in portrait' : paperSize === 'a4' ? 'A4 portrait' : '8.5in 13in portrait')
-                : (paperSize === 'letter' ? '11in 8.5in landscape' : paperSize === 'a4' ? 'A4 landscape' : '13in 8.5in landscape')
+              paperSize === 'folio'
+                ? (orientation === 'landscape' ? '13in 8.5in' : '8.5in 13in')
+                : paperSize === 'a4'
+                ? (orientation === 'landscape' ? '297mm 210mm' : '210mm 297mm')
+                : (orientation === 'landscape' ? '11in 8.5in' : '8.5in 11in')
             };
-            margin: ${orientation === 'portrait' ? '1in' : '0.75in'};
+            margin: 0.5in;
+          }
+          body {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           body * {
             visibility: hidden;
           }
+          #printable-report-canvas,
+          #printable-report-canvas *,
           #official-print-document,
           #official-print-document *,
           #printable-manuscript-report,
@@ -1145,9 +1185,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
           #printable-area * {
             visibility: visible;
           }
+          #printable-report-canvas,
           #official-print-document,
           #printable-manuscript-report {
-            position: absolute !important;
+            position: static !important;
             left: 0 !important;
             top: 0 !important;
             width: 100% !important;
@@ -1162,7 +1203,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
             box-shadow: none !important;
             border: none !important;
             margin: 0 !important;
-            padding: 0 !important;
+            padding: 0.5in !important;
             width: 100% !important;
             page-break-after: always !important;
             break-after: page !important;
@@ -1173,6 +1214,23 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
           }
           thead {
             display: table-header-group !important;
+          }
+          tbody {
+            display: table-row-group !important;
+          }
+          tfoot {
+            display: table-footer-group !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          table {
+            width: 100% !important;
+            max-width: 100% !important;
+            border-collapse: collapse !important;
+          }
+          tr, td, th {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
           .print-page-number::after {
             content: "Page " counter(page) " of " counter(pages);
@@ -1188,30 +1246,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          .no-print, header, nav, aside, .floating-fab-dock, .top-control-bar, #admin-mobile-menu-btn, button, select {
+          nav, aside, .sidebar, .no-print, header, .floating-fab-dock, .top-control-bar, #admin-mobile-menu-btn, button, select, #rice-ssistant-widget {
             display: none !important;
-          }
-        }
-          table {
-            width: 100% !important;
-            max-width: 100% !important;
-            border-collapse: collapse !important;
-            page-break-inside: auto;
-          }
-          thead {
-            display: table-header-group !important;
-          }
-          tbody {
-            display: table-row-group !important;
-          }
-          tfoot {
-            display: table-footer-group !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
-          tr, td, th {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
           }
         }
         /* Subtle dotted amber/blue focus outline when direct on-canvas editing is active */
@@ -1520,7 +1556,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
       {/* 2. Word-Style Sheet Canvas Stage on Screen Preview */}
       <div className="w-full bg-slate-200/80 p-6 sm:p-8 min-h-screen overflow-x-auto flex flex-col items-center gap-8 rounded-2xl border border-slate-300/80 shadow-inner print:bg-transparent print:p-0 print:m-0 print:border-none print:shadow-none print:min-h-0 print:overflow-visible">
         <div
-          id="official-print-document"
+          id="printable-report-canvas"
           data-printable-area="true"
           className="transition-transform duration-200 origin-top flex flex-col items-center gap-8 print:transform-none print:gap-0 print:w-full"
           style={{
@@ -1550,8 +1586,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
                       orientation={orientation}
                     />,
                     1,
-                    4,
-                    'Dossier 1/4: Official Transmittal Letter',
+                    totalDocumentPages,
+                    'Dossier 1: Official Transmittal Letter',
                     'sheet-complete-1'
                   )}
 
@@ -1565,8 +1601,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
                       orientation={orientation}
                     />,
                     2,
-                    4,
-                    'Dossier 2/4: Irrigators Association Directory',
+                    totalDocumentPages,
+                    'Dossier 2: Irrigators Association Directory',
                     'sheet-complete-2'
                   )}
 
@@ -1580,19 +1616,27 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
                       orientation={orientation}
                     />,
                     3,
-                    4,
-                    'Dossier 3/4: Monthly Palay Crop Status Report (MPCSRS)',
+                    totalDocumentPages,
+                    'Dossier 3: Monthly Palay Crop Status Report (MPCSRS)',
                     'sheet-complete-3'
                   )}
 
-                {/* [Sheet 4/4] Masterlist Registry */}
-                {(wordViewMode === 'all_pages' || currentPageIndex === 4) &&
-                  renderWordSheet(
+                {/* [Sheets 4..N] Masterlist Registry Chunks */}
+                {registryPageChunks.map((chunk, idx) => {
+                  const pageNum = 4 + idx;
+                  if (wordViewMode === 'single_page' && currentPageIndex !== pageNum) {
+                    return null;
+                  }
+                  const isLastChunk = idx === registryPageChunks.length - 1;
+                  return renderWordSheet(
                     <OfficialRegistryTable
-                      reportParcels={reportParcels}
+                      reportParcels={chunk}
                       visibleColumns={visibleColumns}
                       columnOrder={columnOrder}
-                      customTableData={customTableData}
+                      customTableData={customTableData ? {
+                        ...customTableData,
+                        rows: customTableData.rows?.slice(idx * rowsPerPage, (idx + 1) * rowsPerPage) || []
+                      } : null}
                       totalAreaHa={totalAreaHa}
                       memoRef={currentLetter.memoRef || memoRef}
                       reportDate={currentLetter.date || reportDate}
@@ -1605,12 +1649,16 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
                       approvedTitle={currentLetter.approvedTitle || approvedTitle}
                       isEditable={isDirectEditingLetter}
                       orientation={orientation}
+                      pageNumber={pageNum}
+                      totalPages={totalDocumentPages}
+                      hideSignatories={!isLastChunk}
                     />,
-                    4,
-                    4,
-                    'Dossier 4/4: Field-Validated Masterlist Registry (RSBSA & GIS)',
-                    'sheet-complete-4'
-                  )}
+                    pageNum,
+                    totalDocumentPages,
+                    `Dossier ${pageNum}/${totalDocumentPages}: Masterlist Registry`,
+                    `sheet-complete-${pageNum}`
+                  );
+                })}
               </>
             ) : documentView === 'letter' ? (
               renderWordSheet(
@@ -1655,120 +1703,73 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
                 'Monthly Palay Crop Status Report (MPCSRS)'
               )
             ) : (
-              /* documentView === 'registry_table' */
-              renderWordSheet(
-                  <OfficialRegistryTable
-                    reportParcels={reportParcels}
-                    visibleColumns={visibleColumns}
-                    columnOrder={columnOrder}
-                    customTableData={customTableData}
-                    totalAreaHa={totalAreaHa}
-                    memoRef={currentLetter.memoRef || memoRef}
-                    reportDate={currentLetter.date || reportDate}
-                    selectedBarangay={selectedBarangay}
-                    preparedBy={currentLetter.preparedBy || preparedBy}
-                    preparedTitle={currentLetter.preparedTitle || preparedTitle}
-                    reviewedBy={currentLetter.reviewedBy || reviewedBy}
-                    reviewedTitle={currentLetter.reviewedTitle || reviewedTitle}
-                    approvedBy={currentLetter.approvedBy || approvedBy}
-                    approvedTitle={currentLetter.approvedTitle || approvedTitle}
-                    isEditable={isDirectEditingLetter}
-                    orientation={orientation}
-                  />,
-                  1,
-                  1,
-                  'Field-Validated Masterlist Registry (RSBSA & GIS)'
-                )
-              )
+              /* documentView === 'registry_table' - Genuine Multi-Page Chunked Registry */
+              <>
+                {registryPageChunks.map((chunk, idx) => {
+                  const pageNum = idx + 1;
+                  if (wordViewMode === 'single_page' && currentPageIndex !== pageNum) {
+                    return null;
+                  }
+                  const isLastChunk = idx === registryPageChunks.length - 1;
+                  return renderWordSheet(
+                    <OfficialRegistryTable
+                      reportParcels={chunk}
+                      visibleColumns={visibleColumns}
+                      columnOrder={columnOrder}
+                      customTableData={customTableData ? {
+                        ...customTableData,
+                        rows: customTableData.rows?.slice(idx * rowsPerPage, (idx + 1) * rowsPerPage) || []
+                      } : null}
+                      totalAreaHa={totalAreaHa}
+                      memoRef={currentLetter.memoRef || memoRef}
+                      reportDate={currentLetter.date || reportDate}
+                      selectedBarangay={selectedBarangay}
+                      preparedBy={currentLetter.preparedBy || preparedBy}
+                      preparedTitle={currentLetter.preparedTitle || preparedTitle}
+                      reviewedBy={currentLetter.reviewedBy || reviewedBy}
+                      reviewedTitle={currentLetter.reviewedTitle || reviewedTitle}
+                      approvedBy={currentLetter.approvedBy || approvedBy}
+                      approvedTitle={currentLetter.approvedTitle || approvedTitle}
+                      isEditable={isDirectEditingLetter}
+                      orientation={orientation}
+                      pageNumber={pageNum}
+                      totalPages={registryPageChunks.length}
+                      hideSignatories={!isLastChunk}
+                    />,
+                    pageNum,
+                    registryPageChunks.length,
+                    `Field-Validated Masterlist Registry (Page ${pageNum} of ${registryPageChunks.length})`,
+                    `registry-sheet-${pageNum}`
+                  );
+                })}
+              </>
+            )
           ) : (
             /* ========================================================================= */
             /* SEASONAL / CONSOLIDATED PRODUCTION REPORTS FORMAT                          */
             /* ========================================================================= */
             renderWordSheet(
               <div className="flex flex-col flex-1 justify-between min-h-full">
-              {/* Government Official Header with 3 Seals Center-Aligned */}
-              <div className="text-center border-b-2 border-slate-900 pb-5 mb-5 space-y-2">
-                <div className="flex items-center justify-center gap-6 mb-2">
-                  {/* Logo 1: Bagong Pilipinas */}
-                  <div className="relative group/logo h-16 w-auto max-w-[80px] flex items-center justify-center">
-                    <div
-                      onClick={() => setEditingSeasonalLogo('bagongPilipinas')}
-                      className="h-16 w-auto max-w-[80px] flex items-center justify-center cursor-pointer hover:opacity-90"
-                      title="Click to change or upload Bagong Pilipinas Logo"
-                    >
-                      <BagongPilipinasLogo size={58} showText={true} className="h-16 w-auto max-w-[80px] object-contain drop-shadow-xs" />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setEditingSeasonalLogo('bagongPilipinas')}
-                      className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
-                      title="Change or upload Bagong Pilipinas Logo"
-                    >
-                      <Camera size={11} />
-                    </button>
+                {/* Government Official Header with 3 Seals Center-Aligned */}
+                <div className="text-center pb-3 mb-4 space-y-2">
+                  <StandardReportHeader
+                    isEditable={false}
+                    className="mb-3"
+                  />
+
+                  <div className="space-y-0.5 text-center">
+                    <p className="text-[11px] font-sans font-bold text-emerald-800 uppercase tracking-wide">
+                      LOCAL FARMER TECHNICIAN (LFT) RICE PRODUCTION &amp; REGISTRY SYSTEM
+                    </p>
                   </div>
 
-                  {/* Logo 2: Silago Seal */}
-                  <div className="relative group/logo h-16 w-auto max-w-[80px] flex items-center justify-center">
-                    <div
-                      onClick={() => setEditingSeasonalLogo('silago')}
-                      className="h-16 w-auto max-w-[80px] flex items-center justify-center cursor-pointer hover:opacity-90"
-                      title="Click to change or upload Municipality of Silago Seal"
-                    >
-                      <SilagoSeal size={58} className="h-16 w-auto max-w-[80px] object-contain drop-shadow-xs" />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setEditingSeasonalLogo('silago')}
-                      className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
-                      title="Change or upload Municipality of Silago Seal"
-                    >
-                      <Camera size={11} />
-                    </button>
-                  </div>
-
-                  {/* Logo 3: DA Logo */}
-                  <div className="relative group/logo h-16 w-auto max-w-[80px] flex items-center justify-center">
-                    <div
-                      onClick={() => setEditingSeasonalLogo('da')}
-                      className="h-16 w-auto max-w-[80px] flex items-center justify-center cursor-pointer hover:opacity-90"
-                      title="Click to change or upload Department of Agriculture Seal"
-                    >
-                      <DaLogo size={58} className="h-16 w-auto max-w-[80px] object-contain drop-shadow-xs" />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setEditingSeasonalLogo('da')}
-                      className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
-                      title="Change or upload Department of Agriculture Seal"
-                    >
-                      <Camera size={11} />
-                    </button>
+                  {/* Memorandum Subhead */}
+                  <div className="pt-2 flex items-center justify-between text-xs font-mono border-t border-slate-200 mt-2 px-1 text-slate-600">
+                    <span>MEMO REF: <strong>{memoRef}</strong></span>
+                    <span>ACTIVE SEASON: <strong>{getShortSeasonName(selectedSeason)}</strong></span>
+                    <span>DATE: <strong>{reportDate}</strong></span>
                   </div>
                 </div>
-
-                <div className="space-y-0.5">
-                  <p className="text-[11px] font-sans tracking-widest text-slate-600 uppercase font-semibold">
-                    Republic of the Philippines &bull; Region VIII (Eastern Visayas)
-                  </p>
-                  <p className="text-xs font-serif tracking-wider text-slate-800 font-bold uppercase">
-                    Province of Southern Leyte &bull; Municipality of Silago
-                  </p>
-                  <h1 className="text-lg sm:text-xl font-serif font-black tracking-tight text-slate-950 uppercase pt-0.5">
-                    OFFICE OF THE MUNICIPAL AGRICULTURIST
-                  </h1>
-                  <p className="text-[11px] font-sans font-bold text-emerald-800 uppercase tracking-wide">
-                    LOCAL FARMER TECHNICIAN (LFT) RICE PRODUCTION &amp; REGISTRY SYSTEM
-                  </p>
-                </div>
-
-                {/* Memorandum Subhead */}
-                <div className="pt-2 flex items-center justify-between text-xs font-mono border-t border-slate-200 mt-2 px-1 text-slate-600">
-                  <span>MEMO REF: <strong>{memoRef}</strong></span>
-                  <span>ACTIVE SEASON: <strong>{getShortSeasonName(selectedSeason)}</strong></span>
-                  <span>DATE: <strong>{reportDate}</strong></span>
-                </div>
-              </div>
 
               {/* Document Title Banner */}
               <div className="bg-slate-900 text-white px-4 py-2.5 rounded-sm flex flex-col sm:flex-row items-center justify-between gap-2 mb-4">
