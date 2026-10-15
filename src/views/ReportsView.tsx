@@ -470,17 +470,37 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
     return chunks.length > 0 ? chunks : [[]];
   }, [reportParcels, rowsPerPage]);
 
+  // Multi-page sheet calculations for landscape & portrait
+  const letterTotalPages = useMemo(() => {
+    return orientation === 'landscape' ? 2 : 1;
+  }, [orientation]);
+
+  const irrigatorsTotalPages = useMemo(() => {
+    return orientation === 'landscape' ? 2 : 1;
+  }, [orientation]);
+
+  const mpcsrsTotalPages = 2;
+
   // Calculate total pages for Word-Style print preview pagination
   const totalDocumentPages = useMemo(() => {
     if (reportType !== 'official_registry') return 1;
     if (documentView === 'complete_package') {
-      return 3 + registryPageChunks.length;
+      return letterTotalPages + irrigatorsTotalPages + mpcsrsTotalPages + registryPageChunks.length;
     }
     if (documentView === 'registry_table') {
       return registryPageChunks.length;
     }
+    if (documentView === 'letter') {
+      return letterTotalPages;
+    }
+    if (documentView === 'irrigators_letter') {
+      return irrigatorsTotalPages;
+    }
+    if (documentView === 'mpcsrs_report') {
+      return mpcsrsTotalPages;
+    }
     return 1;
-  }, [reportType, documentView, registryPageChunks.length]);
+  }, [reportType, documentView, letterTotalPages, irrigatorsTotalPages, mpcsrsTotalPages, registryPageChunks.length]);
 
   useEffect(() => {
     if (currentPageIndex > totalDocumentPages) {
@@ -497,25 +517,25 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
     const isLandscape = !isPortrait;
 
     let width = '8.5in';
-    let minHeight = '13in';
+    let height = '13in';
 
     if (paperSize === 'letter') {
       width = isLandscape ? '11in' : '8.5in';
-      minHeight = isLandscape ? '8.5in' : '11in';
+      height = isLandscape ? '8.5in' : '11in';
     } else if (paperSize === 'a4') {
       width = isLandscape ? '297mm' : '210mm';
-      minHeight = isLandscape ? '210mm' : '297mm';
+      height = isLandscape ? '210mm' : '297mm';
     } else {
       // folio
       width = isLandscape ? '13in' : '8.5in';
-      minHeight = isLandscape ? '8.5in' : '13in';
+      height = isLandscape ? '8.5in' : '13in';
     }
 
     const padding = margins === 'narrow' ? '0.25in' : margins === 'wide' ? '0.75in' : '0.5in';
 
     return {
       width,
-      minHeight,
+      height,
       padding
     };
   };
@@ -1108,13 +1128,16 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
     return (
       <div
         key={key}
-        className={`word-paper-sheet bg-white text-black shadow-2xl border border-slate-300 relative mx-auto font-serif leading-relaxed flex flex-col justify-between transition-all print:shadow-none print:border-none print:p-0 print:m-0 print:w-full print:break-after-page text-justify ${
+        className={`word-paper-sheet bg-white text-black shadow-2xl border border-slate-300 relative mx-auto font-serif leading-relaxed flex flex-col justify-between overflow-hidden transition-all print:shadow-none print:border-none print:p-0 print:m-0 print:w-full print:break-after-page text-justify ${
           isDirectEditingLetter ? 'direct-canvas-edit-active' : ''
         }`}
         style={{
           width: sheetDim.width,
-          minHeight: sheetDim.minHeight,
+          height: sheetDim.height,
+          maxHeight: sheetDim.height,
           padding: sheetDim.padding,
+          boxSizing: 'border-box',
+          overflow: 'hidden',
           pageBreakAfter: 'always',
           breakAfter: 'page'
         }}
@@ -1130,7 +1153,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
         </div>
 
         {/* Document Content */}
-        <div className="flex-1 flex flex-col justify-between">
+        <div className="flex-1 flex flex-col justify-between overflow-hidden">
           {content}
         </div>
 
@@ -1205,6 +1228,9 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
             margin: 0 !important;
             padding: 0.5in !important;
             width: 100% !important;
+            height: 100% !important;
+            max-height: 100% !important;
+            overflow: hidden !important;
             page-break-after: always !important;
             break-after: page !important;
           }
@@ -1570,9 +1596,14 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
             /* ========================================================================= */
             documentView === 'complete_package' ? (
               <>
-                {/* [Sheet 1/4] Official Transmittal Letter */}
-                {(wordViewMode === 'all_pages' || currentPageIndex === 1) &&
-                  renderWordSheet(
+                {/* [Dossier 1] Official Transmittal Letter */}
+                {Array.from({ length: letterTotalPages }, (_, pIdx) => {
+                  const globalPageNum = pIdx + 1;
+                  const docPageNum = pIdx + 1;
+                  if (wordViewMode === 'single_page' && currentPageIndex !== globalPageNum) {
+                    return null;
+                  }
+                  return renderWordSheet(
                     <OfficialLetterDocument
                       letter={currentLetter}
                       activeBarangay={selectedBarangay}
@@ -1584,47 +1615,66 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
                       onUpdateLetter={handleSaveLetter}
                       isEditable={isDirectEditingLetter}
                       orientation={orientation}
+                      pageNumber={docPageNum}
+                      totalPages={letterTotalPages}
                     />,
-                    1,
+                    globalPageNum,
                     totalDocumentPages,
-                    'Dossier 1: Official Transmittal Letter',
-                    'sheet-complete-1'
-                  )}
+                    `Dossier 1: Official Transmittal Letter${letterTotalPages > 1 ? ` (Sheet ${docPageNum}/${letterTotalPages})` : ''}`,
+                    `sheet-complete-letter-${globalPageNum}`
+                  );
+                })}
 
-                {/* [Sheet 2/4] Irrigators Directory */}
-                {(wordViewMode === 'all_pages' || currentPageIndex === 2) &&
-                  renderWordSheet(
+                {/* [Dossier 2] Irrigators Directory */}
+                {Array.from({ length: irrigatorsTotalPages }, (_, pIdx) => {
+                  const globalPageNum = letterTotalPages + pIdx + 1;
+                  const docPageNum = pIdx + 1;
+                  if (wordViewMode === 'single_page' && currentPageIndex !== globalPageNum) {
+                    return null;
+                  }
+                  return renderWordSheet(
                     <OfficialIrrigatorsDirectoryDocument
                       data={irrigatorsData}
                       onUpdateData={handleSaveIrrigatorsData}
                       isEditable={isDirectEditingLetter}
                       orientation={orientation}
+                      pageNumber={docPageNum}
+                      totalPages={irrigatorsTotalPages}
                     />,
-                    2,
+                    globalPageNum,
                     totalDocumentPages,
-                    'Dossier 2: Irrigators Association Directory',
-                    'sheet-complete-2'
-                  )}
+                    `Dossier 2: Irrigators Association Directory${irrigatorsTotalPages > 1 ? ` (Sheet ${docPageNum}/${irrigatorsTotalPages})` : ''}`,
+                    `sheet-complete-irrigators-${globalPageNum}`
+                  );
+                })}
 
-                {/* [Sheet 3/4] MPCSRS Palay Report */}
-                {(wordViewMode === 'all_pages' || currentPageIndex === 3) &&
-                  renderWordSheet(
+                {/* [Dossier 3] MPCSRS Palay Report */}
+                {Array.from({ length: mpcsrsTotalPages }, (_, pIdx) => {
+                  const globalPageNum = letterTotalPages + irrigatorsTotalPages + pIdx + 1;
+                  const docPageNum = pIdx + 1;
+                  if (wordViewMode === 'single_page' && currentPageIndex !== globalPageNum) {
+                    return null;
+                  }
+                  return renderWordSheet(
                     <MpcsrsPalayReportDocument
                       data={mpcsrsData}
                       onUpdateData={handleSaveMpcsrsData}
                       isEditable={isDirectEditingLetter}
                       orientation={orientation}
+                      pageNumber={docPageNum}
+                      totalPages={mpcsrsTotalPages}
                     />,
-                    3,
+                    globalPageNum,
                     totalDocumentPages,
-                    'Dossier 3: Monthly Palay Crop Status Report (MPCSRS)',
-                    'sheet-complete-3'
-                  )}
+                    `Dossier 3: Monthly Palay Crop Status Report (Sheet ${docPageNum}/${mpcsrsTotalPages})`,
+                    `sheet-complete-mpcsrs-${globalPageNum}`
+                  );
+                })}
 
-                {/* [Sheets 4..N] Masterlist Registry Chunks */}
+                {/* [Dossier 4] Masterlist Registry Chunks */}
                 {registryPageChunks.map((chunk, idx) => {
-                  const pageNum = 4 + idx;
-                  if (wordViewMode === 'single_page' && currentPageIndex !== pageNum) {
+                  const globalPageNum = letterTotalPages + irrigatorsTotalPages + mpcsrsTotalPages + idx + 1;
+                  if (wordViewMode === 'single_page' && currentPageIndex !== globalPageNum) {
                     return null;
                   }
                   const isLastChunk = idx === registryPageChunks.length - 1;
@@ -1649,59 +1699,92 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
                       approvedTitle={currentLetter.approvedTitle || approvedTitle}
                       isEditable={isDirectEditingLetter}
                       orientation={orientation}
-                      pageNumber={pageNum}
+                      pageNumber={globalPageNum}
                       totalPages={totalDocumentPages}
                       hideSignatories={!isLastChunk}
                     />,
-                    pageNum,
+                    globalPageNum,
                     totalDocumentPages,
-                    `Dossier ${pageNum}/${totalDocumentPages}: Masterlist Registry`,
-                    `sheet-complete-${pageNum}`
+                    `Dossier 4: Masterlist Registry (Sheet ${idx + 1}/${registryPageChunks.length})`,
+                    `sheet-complete-registry-${globalPageNum}`
                   );
                 })}
               </>
             ) : documentView === 'letter' ? (
-              renderWordSheet(
-                <OfficialLetterDocument
-                  letter={currentLetter}
-                  activeBarangay={selectedBarangay}
-                  activeSeason={selectedSeason}
-                  farmerCount={reportParcels.length}
-                  totalAreaHa={totalAreaHa}
-                  predominantVarieties={predominantVarieties}
-                  assignedLftName={assignedLft.name}
-                  onUpdateLetter={handleSaveLetter}
-                  isEditable={isDirectEditingLetter}
-                  orientation={orientation}
-                />,
-                1,
-                1,
-                'Official Transmittal Letter'
-              )
+              <>
+                {Array.from({ length: letterTotalPages }, (_, pIdx) => {
+                  const pageNum = pIdx + 1;
+                  if (wordViewMode === 'single_page' && currentPageIndex !== pageNum) {
+                    return null;
+                  }
+                  return renderWordSheet(
+                    <OfficialLetterDocument
+                      letter={currentLetter}
+                      activeBarangay={selectedBarangay}
+                      activeSeason={selectedSeason}
+                      farmerCount={reportParcels.length}
+                      totalAreaHa={totalAreaHa}
+                      predominantVarieties={predominantVarieties}
+                      assignedLftName={assignedLft.name}
+                      onUpdateLetter={handleSaveLetter}
+                      isEditable={isDirectEditingLetter}
+                      orientation={orientation}
+                      pageNumber={pageNum}
+                      totalPages={letterTotalPages}
+                    />,
+                    pageNum,
+                    letterTotalPages,
+                    `Official Transmittal Letter${letterTotalPages > 1 ? ` (Page ${pageNum} of ${letterTotalPages})` : ''}`,
+                    `letter-sheet-${pageNum}`
+                  );
+                })}
+              </>
             ) : documentView === 'irrigators_letter' ? (
-              renderWordSheet(
-                <OfficialIrrigatorsDirectoryDocument
-                  data={irrigatorsData}
-                  onUpdateData={handleSaveIrrigatorsData}
-                  isEditable={isDirectEditingLetter}
-                  orientation={orientation}
-                />,
-                1,
-                1,
-                'Irrigators Association Directory'
-              )
+              <>
+                {Array.from({ length: irrigatorsTotalPages }, (_, pIdx) => {
+                  const pageNum = pIdx + 1;
+                  if (wordViewMode === 'single_page' && currentPageIndex !== pageNum) {
+                    return null;
+                  }
+                  return renderWordSheet(
+                    <OfficialIrrigatorsDirectoryDocument
+                      data={irrigatorsData}
+                      onUpdateData={handleSaveIrrigatorsData}
+                      isEditable={isDirectEditingLetter}
+                      orientation={orientation}
+                      pageNumber={pageNum}
+                      totalPages={irrigatorsTotalPages}
+                    />,
+                    pageNum,
+                    irrigatorsTotalPages,
+                    `Irrigators Association Directory${irrigatorsTotalPages > 1 ? ` (Page ${pageNum} of ${irrigatorsTotalPages})` : ''}`,
+                    `irrigators-sheet-${pageNum}`
+                  );
+                })}
+              </>
             ) : documentView === 'mpcsrs_report' ? (
-              renderWordSheet(
-                <MpcsrsPalayReportDocument
-                  data={mpcsrsData}
-                  onUpdateData={handleSaveMpcsrsData}
-                  isEditable={isDirectEditingLetter}
-                  orientation={orientation}
-                />,
-                1,
-                1,
-                'Monthly Palay Crop Status Report (MPCSRS)'
-              )
+              <>
+                {Array.from({ length: mpcsrsTotalPages }, (_, pIdx) => {
+                  const pageNum = pIdx + 1;
+                  if (wordViewMode === 'single_page' && currentPageIndex !== pageNum) {
+                    return null;
+                  }
+                  return renderWordSheet(
+                    <MpcsrsPalayReportDocument
+                      data={mpcsrsData}
+                      onUpdateData={handleSaveMpcsrsData}
+                      isEditable={isDirectEditingLetter}
+                      orientation={orientation}
+                      pageNumber={pageNum}
+                      totalPages={mpcsrsTotalPages}
+                    />,
+                    pageNum,
+                    mpcsrsTotalPages,
+                    `Monthly Palay Crop Status Report (MPCSRS) (Page ${pageNum} of ${mpcsrsTotalPages})`,
+                    `mpcsrs-sheet-${pageNum}`
+                  );
+                })}
+              </>
             ) : (
               /* documentView === 'registry_table' - Genuine Multi-Page Chunked Registry */
               <>

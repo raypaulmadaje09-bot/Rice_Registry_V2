@@ -8,6 +8,7 @@ import { OfficialSignatory } from '../types';
 import { DaLogo, SilagoSeal, SouthernLeyteSeal, BagongPilipinasLogo } from './Seals';
 import { useApp } from '../context/AppContext';
 import { ReportLogoEditorModal, ReportLogoType } from './ReportLogoEditorModal';
+import { StandardReportHeader } from './StandardReportHeader';
 import {
   Edit3,
   CheckCircle2,
@@ -26,13 +27,17 @@ interface OfficialIrrigatorsDirectoryDocumentProps {
   onUpdateData?: (updated: IrrigatorsDirectoryLetterData) => void;
   isEditable?: boolean;
   orientation?: 'portrait' | 'landscape';
+  pageNumber?: number;
+  totalPages?: number;
 }
 
 export const OfficialIrrigatorsDirectoryDocument: React.FC<OfficialIrrigatorsDirectoryDocumentProps> = ({
   data,
   onUpdateData,
   isEditable = true,
-  orientation = 'portrait'
+  orientation = 'portrait',
+  pageNumber,
+  totalPages
 }) => {
   const { silagoLogoUrl, bagongPilipinasLogoUrl } = useApp();
   const [justSaved, setJustSaved] = useState(false);
@@ -137,6 +142,13 @@ export const OfficialIrrigatorsDirectoryDocument: React.FC<OfficialIrrigatorsDir
   };
 
   const isLandscape = orientation === 'landscape';
+  const isMultiPage = totalPages === 2;
+  const displayedAssociations = isMultiPage
+    ? pageNumber === 1
+      ? data.associations.slice(0, 8)
+      : data.associations.slice(8)
+    : data.associations;
+  const assocOffset = isMultiPage && pageNumber === 2 ? 8 : 0;
 
   return (
     <div className="flex flex-col flex-1 justify-between min-h-full text-black font-sans relative space-y-4 max-w-4xl mx-auto leading-tight transition-all">
@@ -166,118 +178,25 @@ export const OfficialIrrigatorsDirectoryDocument: React.FC<OfficialIrrigatorsDir
         </div>
       )}
 
-      {/* 1. Official Government Letterhead (Standardized 3 Logos Placed Above Republic of the Philippines) */}
-      <div className="flex flex-col items-center justify-center pb-3 border-b-2 border-black text-center">
-        {/* 3 Standardized Government Logos: DA • Silago Seal • Southern Leyte Seal */}
-        <div className="flex items-center justify-center gap-6 mb-2">
-          {/* Logo 1: Department of Agriculture */}
-          <div className="relative group/logo h-14 w-14 flex items-center justify-center shrink-0">
-            <div
-              onClick={() => isEditable && setEditingLogo('da')}
-              className={`h-14 w-14 flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
-              title={isEditable ? 'Click to change or upload Department of Agriculture Seal' : undefined}
-            >
-              <DaLogo size={56} className="h-14 w-14 object-contain" />
-            </div>
-            {isEditable && (
-              <button
-                type="button"
-                onClick={() => setEditingLogo('da')}
-                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
-                title="Change Department of Agriculture Seal"
-              >
-                <Camera size={11} />
-              </button>
-            )}
-          </div>
-
-          {/* Logo 2: Municipality of Silago Seal */}
-          <div className="relative group/logo h-14 w-14 flex items-center justify-center shrink-0">
-            <div
-              onClick={() => isEditable && setEditingLogo('silago')}
-              className={`h-14 w-14 flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
-              title={isEditable ? 'Click to change or upload Municipality of Silago Seal' : undefined}
-            >
-              <SilagoSeal size={56} customUrl={silagoLogoUrl} className="h-14 w-14 object-contain" />
-            </div>
-            {isEditable && (
-              <button
-                type="button"
-                onClick={() => setEditingLogo('silago')}
-                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
-                title="Change Municipality of Silago Seal"
-              >
-                <Camera size={11} />
-              </button>
-            )}
-          </div>
-
-          {/* Logo 3: Southern Leyte Seal */}
-          <div className="relative group/logo h-14 w-14 flex items-center justify-center shrink-0">
-            <div
-              onClick={() => isEditable && setEditingLogo('southernLeyte')}
-              className={`h-14 w-14 flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
-              title={isEditable ? 'Click to change or upload Province of Southern Leyte Seal' : undefined}
-            >
-              <SouthernLeyteSeal size={56} className="h-14 w-14 object-contain" />
-            </div>
-            {isEditable && (
-              <button
-                type="button"
-                onClick={() => setEditingLogo('southernLeyte')}
-                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
-                title="Change Province of Southern Leyte Seal"
-              >
-                <Camera size={11} />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Center: Official Government Sub-headers */}
-        <div className="text-center space-y-0.5">
-          {onUpdateData && isEditable ? (
-            <div className="space-y-0.5">
-              <input
-                type="text"
-                value={data.republicHeader}
-                onChange={(e) => handleFieldChange('republicHeader', e.target.value)}
-                className="text-center font-serif text-black text-xs sm:text-[13px] font-normal w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent"
-              />
-              <input
-                type="text"
-                value={data.provinceHeader}
-                onChange={(e) => handleFieldChange('provinceHeader', e.target.value)}
-                className="text-center font-serif text-black text-xs sm:text-[13px] font-normal w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent"
-              />
-              <input
-                type="text"
-                value={data.municipalityHeader}
-                onChange={(e) => handleFieldChange('municipalityHeader', e.target.value)}
-                className="text-center font-serif text-black text-sm sm:text-base font-black uppercase tracking-wider w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent"
-              />
-              <p className="text-xs sm:text-[13px] font-sans font-black tracking-wide text-black uppercase leading-tight mt-0.5">
-                MUNICIPAL AGRICULTURE OFFICE
-              </p>
-            </div>
-          ) : (
-            <>
-              <p className="font-serif text-xs sm:text-[13px] text-black tracking-normal">
-                {data.republicHeader}
-              </p>
-              <p className="font-serif text-xs sm:text-[13px] text-black tracking-normal">
-                {data.provinceHeader}
-              </p>
-              <h1 className="font-serif text-sm sm:text-base font-black text-black uppercase tracking-wider">
-                {data.municipalityHeader}
-              </h1>
-              <h2 className="text-xs sm:text-[13px] font-sans font-black tracking-wide text-black uppercase leading-tight mt-0.5">
-                MUNICIPAL AGRICULTURE OFFICE
-              </h2>
-            </>
-          )}
-        </div>
-      </div>
+      {/* 1. Official Standardized Government Letterhead */}
+      <StandardReportHeader
+        isEditable={isEditable}
+        republicHeader={data.republicHeader || 'Republic of the Philippines'}
+        provinceHeader={data.provinceHeader || 'Province of Southern Leyte'}
+        municipalityHeader={data.municipalityHeader || 'MUNICIPALITY OF SILAGO'}
+        officeHeader="MUNICIPAL AGRICULTURE OFFICE"
+        subtitle={
+          totalPages && totalPages > 1
+            ? `OFFICIAL IRRIGATORS ASSOCIATION DIRECTORY - PAGE ${pageNumber} OF ${totalPages}`
+            : undefined
+        }
+        onEditLogo={(logo) => setEditingLogo(logo)}
+        onHeaderChange={(field, val) => {
+          if (field === 'republicHeader') handleFieldChange('republicHeader', val);
+          else if (field === 'provinceHeader') handleFieldChange('provinceHeader', val);
+          else if (field === 'municipalityHeader') handleFieldChange('municipalityHeader', val);
+        }}
+      />
 
       {/* OFFICE OF THE MUNICIPAL AGRICULTURAL SERVICES (Main Title) */}
       <div className="text-center pt-2 pb-3">
@@ -297,84 +216,93 @@ export const OfficialIrrigatorsDirectoryDocument: React.FC<OfficialIrrigatorsDir
 
       {/* BODY CONTENT & METRIC ARROWS */}
       <div className="space-y-3 sm:space-y-4 px-2 sm:px-6 text-xs sm:text-[13px] font-sans">
-        {/* Item 1: Total Area of Irrigated Rice Lands */}
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-1.5 font-bold text-black">
-            <span className="text-black font-serif font-black text-sm">➤</span>
-            <span>Total Area of Irrigated Rice Lands</span>
-          </div>
-          <div className="pl-6 font-bold text-black">
-            {onUpdateData && isEditable ? (
-              <div className="inline-flex items-center gap-1">
-                <span>(</span>
-                <input
-                  type="number"
-                  value={data.totalIrrigatedAreaHa}
-                  onChange={(e) => handleFieldChange('totalIrrigatedAreaHa', Number(e.target.value))}
-                  className="w-16 font-bold text-black border-b border-black text-center focus:bg-amber-50 outline-hidden"
-                />
-                <span>hectare)</span>
+        {/* Metric Items 1, 2, 3 (Only shown on Page 1 or single-page) */}
+        {(!isMultiPage || pageNumber === 1) && (
+          <>
+            {/* Item 1: Total Area of Irrigated Rice Lands */}
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-1.5 font-bold text-black">
+                <span className="text-black font-serif font-black text-sm">➤</span>
+                <span>Total Area of Irrigated Rice Lands</span>
               </div>
-            ) : (
-              <span>({data.totalIrrigatedAreaHa} hectare)</span>
-            )}
-          </div>
-        </div>
+              <div className="pl-6 font-bold text-black">
+                {onUpdateData && isEditable ? (
+                  <div className="inline-flex items-center gap-1">
+                    <span>(</span>
+                    <input
+                      type="number"
+                      value={data.totalIrrigatedAreaHa}
+                      onChange={(e) => handleFieldChange('totalIrrigatedAreaHa', Number(e.target.value))}
+                      className="w-16 font-bold text-black border-b border-black text-center focus:bg-amber-50 outline-hidden"
+                    />
+                    <span>hectare)</span>
+                  </div>
+                ) : (
+                  <span>({data.totalIrrigatedAreaHa} hectare)</span>
+                )}
+              </div>
+            </div>
 
-        {/* Item 2: Total Area of Rainfed Rice Land */}
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-1.5 font-bold text-black">
-            <span className="text-black font-serif font-black text-sm">➤</span>
-            <span>Total Area of Rainfed Rice Land</span>
-          </div>
-          <div className="pl-6 font-bold text-black">
-            {onUpdateData && isEditable ? (
-              <div className="inline-flex items-center gap-1">
-                <span>(</span>
-                <input
-                  type="number"
-                  value={data.totalRainfedAreaHa}
-                  onChange={(e) => handleFieldChange('totalRainfedAreaHa', Number(e.target.value))}
-                  className="w-16 font-bold text-black border-b border-black text-center focus:bg-amber-50 outline-hidden"
-                />
-                <span>hectare)</span>
+            {/* Item 2: Total Area of Rainfed Rice Land */}
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-1.5 font-bold text-black">
+                <span className="text-black font-serif font-black text-sm">➤</span>
+                <span>Total Area of Rainfed Rice Land</span>
               </div>
-            ) : (
-              <span>({data.totalRainfedAreaHa} hectare)</span>
-            )}
-          </div>
-        </div>
+              <div className="pl-6 font-bold text-black">
+                {onUpdateData && isEditable ? (
+                  <div className="inline-flex items-center gap-1">
+                    <span>(</span>
+                    <input
+                      type="number"
+                      value={data.totalRainfedAreaHa}
+                      onChange={(e) => handleFieldChange('totalRainfedAreaHa', Number(e.target.value))}
+                      className="w-16 font-bold text-black border-b border-black text-center focus:bg-amber-50 outline-hidden"
+                    />
+                    <span>hectare)</span>
+                  </div>
+                ) : (
+                  <span>({data.totalRainfedAreaHa} hectare)</span>
+                )}
+              </div>
+            </div>
 
-        {/* Item 3: Total Number of Rice Farmers */}
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-1.5 font-bold text-black">
-            <span className="text-black font-serif font-black text-sm">➤</span>
-            <span>Total Number of Rice Farmers</span>
-          </div>
-          <div className="pl-6 font-bold text-black uppercase">
-            {onUpdateData && isEditable ? (
-              <div className="inline-flex items-center gap-1">
-                <span>(</span>
-                <input
-                  type="number"
-                  value={data.totalRiceFarmersCount}
-                  onChange={(e) => handleFieldChange('totalRiceFarmersCount', Number(e.target.value))}
-                  className="w-16 font-bold text-black border-b border-black text-center focus:bg-amber-50 outline-hidden"
-                />
-                <span>RICE FARMER)</span>
+            {/* Item 3: Total Number of Rice Farmers */}
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-1.5 font-bold text-black">
+                <span className="text-black font-serif font-black text-sm">➤</span>
+                <span>Total Number of Rice Farmers</span>
               </div>
-            ) : (
-              <span>({data.totalRiceFarmersCount} RICE FARMER)</span>
-            )}
-          </div>
-        </div>
+              <div className="pl-6 font-bold text-black uppercase">
+                {onUpdateData && isEditable ? (
+                  <div className="inline-flex items-center gap-1">
+                    <span>(</span>
+                    <input
+                      type="number"
+                      value={data.totalRiceFarmersCount}
+                      onChange={(e) => handleFieldChange('totalRiceFarmersCount', Number(e.target.value))}
+                      className="w-16 font-bold text-black border-b border-black text-center focus:bg-amber-50 outline-hidden"
+                    />
+                    <span>RICE FARMER)</span>
+                  </div>
+                ) : (
+                  <span>({data.totalRiceFarmersCount} RICE FARMER)</span>
+                )}
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Item 4: Name of Irrigators Association/ Contact Person */}
         <div className="space-y-2 pt-1">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-1.5 font-bold text-black">
               <span className="text-black font-serif font-black text-sm">➤</span>
-              <span>Name of Irrigators Association/ Contact Person</span>
+              <span>
+                {isMultiPage && pageNumber === 2
+                  ? 'Name of Irrigators Association/ Contact Person (Continuation)'
+                  : 'Name of Irrigators Association/ Contact Person'}
+              </span>
             </div>
 
             <div className="flex items-center gap-1.5 print:hidden">
@@ -391,16 +319,18 @@ export const OfficialIrrigatorsDirectoryDocument: React.FC<OfficialIrrigatorsDir
             </div>
           </div>
 
-          {/* List of 16 Irrigators Associations */}
-          <div className="pl-6 sm:pl-8 space-y-1.5 text-xs">
-            {data.associations.map((item, idx) => (
-              <div key={item.id || idx} className="relative group/assoc py-0.5">
+          {/* List of Irrigators Associations */}
+          <div className="pl-6 sm:pl-8 space-y-1 text-xs">
+            {displayedAssociations.map((item, localIdx) => {
+              const actualIdx = localIdx + assocOffset;
+              return (
+              <div key={item.id || actualIdx} className="relative group/assoc py-0.5">
                 {/* Action buttons (Screen only) */}
-                <div className="print:hidden absolute -left-12 top-0.5 flex items-center gap-1 opacity-0 group-hover/assoc:opacity-100 transition">
+                <div className="print:hidden absolute -left-12 top-0.5 flex items-center gap-1 opacity-0 group/assoc:opacity-100 transition">
                   {onUpdateData && isEditable && data.associations.length > 1 && (
                     <button
                       type="button"
-                      onClick={() => handleDeleteAssociation(idx)}
+                      onClick={() => handleDeleteAssociation(actualIdx)}
                       className="text-rose-500 hover:text-rose-700 p-0.5 cursor-pointer"
                       title="Remove this association"
                     >
@@ -416,7 +346,7 @@ export const OfficialIrrigatorsDirectoryDocument: React.FC<OfficialIrrigatorsDir
                     <input
                       type="text"
                       value={item.associationName}
-                      onChange={(e) => handleAssociationChange(idx, 'associationName', e.target.value)}
+                      onChange={(e) => handleAssociationChange(actualIdx, 'associationName', e.target.value)}
                       className="font-bold text-black uppercase w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.2 outline-hidden text-xs print:border-none print:p-0 print:bg-transparent"
                     />
                   ) : (
@@ -433,7 +363,7 @@ export const OfficialIrrigatorsDirectoryDocument: React.FC<OfficialIrrigatorsDir
                         type="text"
                         value={item.contactPerson}
                         placeholder="Contact Person Name"
-                        onChange={(e) => handleAssociationChange(idx, 'contactPerson', e.target.value)}
+                        onChange={(e) => handleAssociationChange(actualIdx, 'contactPerson', e.target.value)}
                         className="font-normal text-black uppercase border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 outline-hidden text-[11px] print:border-none print:p-0 print:bg-transparent"
                       />
                       <span>-</span>
@@ -441,7 +371,7 @@ export const OfficialIrrigatorsDirectoryDocument: React.FC<OfficialIrrigatorsDir
                         type="text"
                         value={item.barangay}
                         placeholder="Barangay"
-                        onChange={(e) => handleAssociationChange(idx, 'barangay', e.target.value)}
+                        onChange={(e) => handleAssociationChange(actualIdx, 'barangay', e.target.value)}
                         className="font-normal text-black uppercase border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 outline-hidden text-[11px] print:border-none print:p-0 print:bg-transparent"
                       />
                       <span>)</span>
@@ -451,121 +381,129 @@ export const OfficialIrrigatorsDirectoryDocument: React.FC<OfficialIrrigatorsDir
                   )}
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
       </div>
 
-      {/* SIGNATORIES BLOCK AT BOTTOM (Fully Customizable, Clean & Aligned) */}
-      <div className="mt-auto pt-8 px-2 sm:px-6 pb-4 border-t-2 border-black space-y-3 break-inside-avoid print:break-inside-avoid print:mt-auto">
-        {/* Header & Add Signatory Button */}
-        <div className="flex items-center justify-between">
-          <span className="text-xs uppercase tracking-wider font-bold text-slate-600 print:text-black">
-            Official Certification &amp; Signatures
-          </span>
-          {onUpdateData && isEditable && (
-            <button
-              type="button"
-              onClick={handleAddSignatory}
-              className="print:hidden px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition shadow-2xs"
-            >
-              <Plus size={13} />
-              <span>Add Signatory (Prepared / Reviewed / Noted / Approved)</span>
-            </button>
-          )}
+      {/* Multi-Page Split: If Page 1 of multi-page, show continuation notice. If Page 2 or single page, show Signatories Block */}
+      {isMultiPage && pageNumber === 1 ? (
+        <div className="mt-auto pt-4 border-t border-slate-300 text-center font-mono text-[9pt] text-slate-600 italic">
+          *** Document continues on Page 2 for Remaining Irrigators Associations and Official Signatures ***
         </div>
+      ) : (
+        /* SIGNATORIES BLOCK AT BOTTOM (Fully Customizable, Clean & Aligned) */
+        <div className="mt-auto pt-8 px-2 sm:px-6 pb-4 border-t-2 border-black space-y-3 break-inside-avoid print:break-inside-avoid print:mt-auto">
+          {/* Header & Add Signatory Button */}
+          <div className="flex items-center justify-between">
+            <span className="text-xs uppercase tracking-wider font-bold text-slate-600 print:text-black">
+              Official Certification &amp; Signatures
+            </span>
+            {onUpdateData && isEditable && (
+              <button
+                type="button"
+                onClick={handleAddSignatory}
+                className="print:hidden px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition shadow-2xs"
+              >
+                <Plus size={13} />
+                <span>Add Signatory (Prepared / Reviewed / Noted / Approved)</span>
+              </button>
+            )}
+          </div>
 
-        {/* Dynamic Grid of Signatories */}
-        <div
-          className={`grid gap-8 text-center items-end ${
-            currentSignatories.length === 1
-              ? 'grid-cols-1 max-w-xs mx-auto'
-              : currentSignatories.length === 2
-              ? 'grid-cols-2 max-w-2xl mx-auto'
-              : currentSignatories.length === 3
-              ? 'grid-cols-1 sm:grid-cols-3'
-              : currentSignatories.length === 4
-              ? 'grid-cols-2 sm:grid-cols-4'
-              : 'grid-cols-2 sm:grid-cols-3'
-          }`}
-        >
-          {currentSignatories.map((sig, idx) => (
-            <div
-              key={sig.id || `sig-${idx}`}
-              className="flex flex-col justify-between h-full space-y-1 relative group/sig p-1 rounded-lg"
-            >
-              {/* Delete button (Screen only, in edit mode) */}
-              {onUpdateData && isEditable && currentSignatories.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => handleDeleteSignatory(idx)}
-                  className="print:hidden absolute -top-2 -right-2 p-1 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded-full shadow-xs opacity-0 group-hover/sig:opacity-100 transition cursor-pointer z-10"
-                  title="Remove this signatory"
-                >
-                  <Trash2 size={11} />
-                </button>
-              )}
-
-              {/* 1. Consistent Role Label (Prepared by:, Noted by:, Approved by:, etc.) */}
-              <div>
-                {onUpdateData && isEditable ? (
-                  <input
-                    type="text"
-                    value={sig.roleLabel}
-                    onChange={(e) => handleSignatoryChange(idx, 'roleLabel', e.target.value)}
-                    className="text-sm font-bold text-black uppercase tracking-tight block w-full text-center border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent"
-                    title="Click to edit role label"
-                  />
-                ) : (
-                  <span className="text-sm font-bold text-black uppercase tracking-tight block text-center">
-                    {sig.roleLabel}
-                  </span>
+          {/* Dynamic Grid of Signatories */}
+          <div
+            className={`grid gap-8 text-center items-end ${
+              currentSignatories.length === 1
+                ? 'grid-cols-1 max-w-xs mx-auto'
+                : currentSignatories.length === 2
+                ? 'grid-cols-2 max-w-2xl mx-auto'
+                : currentSignatories.length === 3
+                ? 'grid-cols-1 sm:grid-cols-3'
+                : currentSignatories.length === 4
+                ? 'grid-cols-2 sm:grid-cols-4'
+                : 'grid-cols-2 sm:grid-cols-3'
+            }`}
+          >
+            {currentSignatories.map((sig, idx) => (
+              <div
+                key={sig.id || `sig-${idx}`}
+                className="flex flex-col justify-between h-full space-y-1 relative group/sig p-1 rounded-lg"
+              >
+                {/* Delete button (Screen only, in edit mode) */}
+                {onUpdateData && isEditable && currentSignatories.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteSignatory(idx)}
+                    className="print:hidden absolute -top-2 -right-2 p-1 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded-full shadow-xs opacity-0 group-hover/sig:opacity-100 transition cursor-pointer z-10"
+                    title="Remove this signatory"
+                  >
+                    <Trash2 size={11} />
+                  </button>
                 )}
-              </div>
 
-              {/* 2. Open 48px blank space specifically reserved for manual pen signature */}
-              <div className="h-12 w-full select-none flex items-center justify-center" />
-
-              {/* 3. Underline Line & Heavy Bold Uppercase Name */}
-              <div className="space-y-0.5 w-full">
-                {onUpdateData && isEditable ? (
-                  <div className="space-y-0.5">
+                {/* 1. Consistent Role Label */}
+                <div>
+                  {onUpdateData && isEditable ? (
                     <input
                       type="text"
-                      value={sig.name}
-                      placeholder="___________________________"
-                      onChange={(e) => handleSignatoryChange(idx, 'name', e.target.value)}
-                      className="font-bold text-black uppercase block w-full text-center text-sm border-b-2 border-black pb-0.5 hover:border-amber-500 focus:bg-amber-50/40 rounded-none px-1 py-0.5 outline-hidden print:border-black print:p-0 print:bg-transparent placeholder:text-black placeholder:font-normal"
-                      title="Signatory Printed Name (or leave blank for manual signing)"
+                      value={sig.roleLabel}
+                      onChange={(e) => handleSignatoryChange(idx, 'roleLabel', e.target.value)}
+                      className="text-sm font-bold text-black uppercase tracking-tight block w-full text-center border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent"
+                      title="Click to edit role label"
                     />
-                    <input
-                      type="text"
-                      value={sig.title}
-                      placeholder="Signature over Printed Name / Designation"
-                      onChange={(e) => handleSignatoryChange(idx, 'title', e.target.value)}
-                      className="text-xs font-semibold text-slate-800 print:text-black uppercase block w-full text-center border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.5 outline-hidden print:border-none print:p-0 print:bg-transparent placeholder:text-slate-600 mt-0.5"
-                      title="Signatory subtitle / designation"
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    {sig.name ? (
-                      <p className="font-bold text-black uppercase text-sm tracking-wide border-b-2 border-black pb-0.5 min-h-[22px] text-center">
-                        {sig.name}
+                  ) : (
+                    <span className="text-sm font-bold text-black uppercase tracking-tight block text-center">
+                      {sig.roleLabel}
+                    </span>
+                  )}
+                </div>
+
+                {/* 2. Open 48px blank space specifically reserved for manual pen signature */}
+                <div className="h-12 w-full select-none flex items-center justify-center" />
+
+                {/* 3. Underline Line & Heavy Bold Uppercase Name */}
+                <div className="space-y-0.5 w-full">
+                  {onUpdateData && isEditable ? (
+                    <div className="space-y-0.5">
+                      <input
+                        type="text"
+                        value={sig.name}
+                        placeholder="___________________________"
+                        onChange={(e) => handleSignatoryChange(idx, 'name', e.target.value)}
+                        className="font-bold text-black uppercase block w-full text-center text-sm border-b-2 border-black pb-0.5 hover:border-amber-500 focus:bg-amber-50/40 rounded-none px-1 py-0.5 outline-hidden print:border-black print:p-0 print:bg-transparent placeholder:text-black placeholder:font-normal"
+                        title="Signatory Printed Name (or leave blank for manual signing)"
+                      />
+                      <input
+                        type="text"
+                        value={sig.title}
+                        placeholder="Signature over Printed Name / Designation"
+                        onChange={(e) => handleSignatoryChange(idx, 'title', e.target.value)}
+                        className="text-xs font-semibold text-slate-800 print:text-black uppercase block w-full text-center border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.5 outline-hidden print:border-none print:p-0 print:bg-transparent placeholder:text-slate-600 mt-0.5"
+                        title="Signatory subtitle / designation"
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      {sig.name ? (
+                        <p className="font-bold text-black uppercase text-sm tracking-wide border-b-2 border-black pb-0.5 min-h-[22px] text-center">
+                          {sig.name}
+                        </p>
+                      ) : (
+                        <div className="border-b-2 border-black pb-0.5 min-h-[22px] w-full" />
+                      )}
+                      <p className="text-xs font-semibold text-slate-800 print:text-black uppercase tracking-tight text-center mt-0.5">
+                        {sig.title || '\u00A0'}
                       </p>
-                    ) : (
-                      <div className="border-b-2 border-black pb-0.5 min-h-[22px] w-full" />
-                    )}
-                    <p className="text-xs font-semibold text-slate-800 print:text-black uppercase tracking-tight text-center mt-0.5">
-                      {sig.title || '\u00A0'}
-                    </p>
-                  </div>
-                )}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Word-Style Official Print Document Footer */}
       <div className="hidden print:flex items-center justify-between text-[8pt] font-mono text-slate-700 border-t border-black pt-1.5 mt-4">

@@ -127,6 +127,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
     residentialAddress: string;
     birthday: string;
     farmLocation: string;
+    purpose?: string;
     lat: number;
     lng: number;
     weightKg: number;
@@ -188,6 +189,38 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
       return `${parcel.purok.toUpperCase()}, BRGY. ${brgy}`;
     }
     return `BRGY. ${brgy}`;
+  };
+
+  const getEcosystemBadge = (purpose?: string, eco?: string) => {
+    const text = (purpose || eco || '').toLowerCase();
+    if (text.includes('irrigated')) {
+      return {
+        label: 'Irrigated Lowland',
+        badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-300'
+      };
+    }
+    if (text.includes('rainfed')) {
+      return {
+        label: 'Rainfed Lowland',
+        badgeClass: 'bg-amber-50 text-amber-800 border-amber-300'
+      };
+    }
+    if (text.includes('hybrid')) {
+      return {
+        label: 'Hybrid Lowland',
+        badgeClass: 'bg-purple-50 text-purple-800 border-purple-300'
+      };
+    }
+    if (text.includes('upland')) {
+      return {
+        label: 'Upland Rice',
+        badgeClass: 'bg-blue-50 text-blue-800 border-blue-300'
+      };
+    }
+    return {
+      label: purpose || 'Lowland Rice',
+      badgeClass: 'bg-slate-50 text-slate-700 border-slate-200'
+    };
   };
 
   const getFarmerNameParts = (parcel: FarmParcel) => {
@@ -359,9 +392,10 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
       fieldPhotoUrl: parcel.fieldPhotoUrl || parcel.landPhotoUrl || landPhoto,
       barangay: parcel.barangay || 'Balagawan',
       purok: parcel.purok || 'Purok 1',
-      residentialAddress: 'Silago, Southern Leyte',
+      residentialAddress: parcel.residential_address || parcel.address || (parcel.purok ? `Purok ${parcel.purok}, Brgy. ${parcel.barangay}, Silago` : `Brgy. ${parcel.barangay}, Silago`),
       birthday: parcel.birthday ? formatBirthday(parcel.birthday) : '',
       farmLocation: parcel.farmLocation || getFarmLocation(parcel),
+      purpose: parcel.purpose || 'Irrigated Lowland (NIA)',
       lat: parcel.lat || 10.5312,
       lng: parcel.lng || 125.1643,
       weightKg: parcel.weightKg || 0,
@@ -413,8 +447,11 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
       raiserName: fullRaiserName,
       barangay: inlineEditData.barangay,
       purok: inlineEditData.purok,
+      residential_address: inlineEditData.residentialAddress,
+      address: inlineEditData.residentialAddress,
       birthday: inlineEditData.birthday,
       farmLocation: inlineEditData.farmLocation,
+      purpose: inlineEditData.purpose || 'Irrigated Lowland (NIA)',
       lat: Number(inlineEditData.lat) || 0,
       lng: Number(inlineEditData.lng) || 0,
       weightKg: Number(inlineEditData.weightKg) || 0,
@@ -967,13 +1004,13 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
       )}
 
       {/* 4. Official DA / LGU RSBSA Rice Farm Records Registry Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+      <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white">
         {/* Scrollable Container with Sticky Header, Sticky Left Columns, and Visible Scrollbar */}
         <div className="custom-table-scrollbar w-full overflow-x-auto overflow-y-auto max-h-[calc(100vh-240px)] min-h-[400px] divide-y divide-slate-100 relative">
-          <table className="w-full min-w-[1350px] text-left border-collapse text-xs">
+          <table className="w-full min-w-[1550px] text-left border-collapse text-xs">
             <thead className="sticky top-0 z-20 bg-[#0c2340] text-white shadow-xs">
               <tr className="border-b border-[#08182b] text-[10px] font-bold uppercase tracking-wider">
-                {/* 0. MULTI-SELECT CHECKBOX (Frozen Left 0) */}
+                {/* 1. [Checkbox Selection] (Frozen Left 0) */}
                 <th className="sticky top-0 left-0 z-30 bg-[#0c2340] w-[44px] min-w-[44px] max-w-[44px] py-3 px-2 text-center whitespace-nowrap text-white border-b border-[#08182b] border-r border-slate-700/80 shadow-[2px_0_4px_-1px_rgba(0,0,0,0.3)]">
                   <input
                     type="checkbox"
@@ -985,53 +1022,48 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                   />
                 </th>
 
-                {/* 1. RSBSA NO. (Frozen Left 44px) */}
+                {/* 2. RSBSA NO. (Frozen Left 44px) */}
                 <th className="sticky top-0 left-[44px] z-30 bg-[#0c2340] w-[155px] min-w-[155px] max-w-[155px] py-3 px-3 text-center whitespace-nowrap text-white border-b border-[#08182b] border-r-2 border-slate-700/80 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.4)]">
                   RSBSA NO.
                 </th>
 
-                {/* 2. PROFILE */}
-                <th className="sticky top-0 z-20 bg-[#0c2340] w-[64px] min-w-[64px] max-w-[64px] py-3 px-2 text-center whitespace-nowrap text-white border-b border-[#08182b]">
-                  PROFILE
-                </th>
-
-                {/* 3. FARMER NAME */}
-                <th className="sticky top-0 z-20 bg-[#0c2340] w-[200px] min-w-[200px] py-3 px-3.5 text-left whitespace-nowrap text-white border-b border-[#08182b]">
-                  FARMER NAME
+                {/* 3. PROFILE & FARMER NAME */}
+                <th className="sticky top-0 z-20 bg-[#0c2340] w-[230px] min-w-[230px] py-3 px-3.5 text-left whitespace-nowrap text-white border-b border-[#08182b]">
+                  PROFILE &amp; FARMER NAME
                 </th>
 
                 {/* 4. RESIDENTIAL ADDRESS */}
-                <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3.5 text-left whitespace-nowrap text-white border-b border-[#08182b] w-[180px] min-w-[180px]">
+                <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3.5 text-left whitespace-nowrap text-white border-b border-[#08182b] w-[190px] min-w-[190px]">
                   RESIDENTIAL ADDRESS
                 </th>
 
-                {/* 5. BIRTHDAY */}
-                <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3 text-center whitespace-nowrap text-white border-b border-[#08182b] w-[100px] min-w-[100px]">
-                  BIRTHDAY
+                {/* 5. FARM LOCATION / BASAKAN */}
+                <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3.5 text-left whitespace-nowrap text-white border-b border-[#08182b] w-[180px] min-w-[180px]">
+                  FARM LOCATION / BASAKAN
                 </th>
 
-                {/* 6. FARM AREA (HA) */}
+                {/* 6. ECOSYSTEM */}
+                <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3 text-center whitespace-nowrap text-white border-b border-[#08182b] w-[140px] min-w-[140px]">
+                  ECOSYSTEM
+                </th>
+
+                {/* 7. FARM AREA (HA) */}
                 <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3 text-right whitespace-nowrap text-white border-b border-[#08182b] w-[110px] min-w-[110px]">
                   FARM AREA (HA)
                 </th>
 
-                {/* 7. COMMODITY / VARIETY */}
-                <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3.5 text-left whitespace-nowrap text-white border-b border-[#08182b] w-[180px] min-w-[180px]">
-                  COMMODITY / VARIETY
+                {/* 8. COMMODITY & VARIETY */}
+                <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3.5 text-left whitespace-nowrap text-white border-b border-[#08182b] w-[200px] min-w-[200px]">
+                  COMMODITY &amp; VARIETY
                 </th>
 
-                {/* 8. GPS COORDINATES */}
-                <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3.5 text-center whitespace-nowrap text-white border-b border-[#08182b] w-[160px] min-w-[160px]">
-                  GPS COORDINATES
-                </th>
-
-                {/* 9. FARM LOCATION (Basakan) */}
-                <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3.5 text-left whitespace-nowrap text-white border-b border-[#08182b] w-[180px] min-w-[180px]">
-                  FARM LOCATION (Basakan)
+                {/* 9. GPS / GEOREFERENCE STATUS */}
+                <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3.5 text-center whitespace-nowrap text-white border-b border-[#08182b] w-[180px] min-w-[180px]">
+                  GPS / GEOREFERENCE STATUS
                 </th>
 
                 {/* 10. ACTIONS (Sticky Right) */}
-                <th className="sticky top-0 right-0 z-30 bg-[#0c2340] py-3 px-3.5 text-center whitespace-nowrap shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.3)] border-b border-[#08182b] text-white w-[115px] min-w-[115px]">
+                <th className="sticky top-0 right-0 z-30 bg-[#0c2340] py-3 px-3.5 text-center whitespace-nowrap shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.3)] border-b border-[#08182b] text-white w-[140px] min-w-[140px]">
                   ACTIONS
                 </th>
               </tr>
@@ -1039,7 +1071,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
             <tbody className="divide-y divide-slate-200/80 text-slate-700 bg-white">
               {filteredParcels.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="py-14 text-center text-slate-400 font-medium">
+                  <td colSpan={10} className="py-14 text-center text-slate-400 font-medium">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <Search className="w-8 h-8 text-slate-300 stroke-1" />
                       <p className="text-sm font-semibold text-slate-700">
@@ -1067,9 +1099,6 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                   const isEditing = editingTag === parcel.tagNumber && inlineEditData !== null;
                   const isSelected = selectedTags.includes(parcel.tagNumber);
                   const farmerPhoto = getFarmerPhoto(parcel);
-                  const landPhoto = getLandPhoto(parcel);
-                  const nameParts = getFarmerNameParts(parcel);
-                  const birthdayFormatted = formatBirthday(parcel.birthday);
                   const farmLocation = getFarmLocation(parcel);
                   const rowBg = idx % 2 === 1 ? 'bg-[#f8fafc]' : 'bg-white';
                   const hasGpsCoordinates = Boolean(
@@ -1080,6 +1109,11 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                     !isNaN(parcel.lat) &&
                     !isNaN(parcel.lng)
                   );
+                  const hasPolygonMapped = Boolean(
+                    (parcel.boundaryCoords && parcel.boundaryCoords.length >= 3) ||
+                    (parcel.polygonCoords && Array.isArray(parcel.polygonCoords) && parcel.polygonCoords.length >= 3)
+                  );
+                  const ecoBadge = getEcosystemBadge(parcel.purpose, parcel.ecosystem);
 
                   // Extract active seasonal record for this cropping season
                   const seasonalRecord = selectedSeason === 'ALL_SEASONS'
@@ -1105,12 +1139,12 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                         key={parcel.tagNumber}
                         className="bg-amber-50 ring-2 ring-blue-500/80 transition shadow-inner font-normal text-xs"
                       >
-                        {/* 0. MULTI-SELECT CHECKBOX (Frozen Left 0) */}
+                        {/* 1. [Checkbox Selection] (Frozen Left 0) */}
                         <td className="sticky left-0 z-10 bg-amber-50 w-[44px] min-w-[44px] max-w-[44px] py-2.5 px-2 text-center whitespace-nowrap border-r border-amber-300">
                           <span className="w-4 h-4 inline-block bg-slate-200/50 rounded border border-slate-300"></span>
                         </td>
 
-                        {/* 1. RSBSA NO. (Frozen Left 44px) */}
+                        {/* 2. RSBSA NO. (Frozen Left 44px) */}
                         <td className="sticky left-[44px] z-10 bg-amber-50 w-[155px] min-w-[155px] max-w-[155px] py-2.5 px-2 text-center whitespace-nowrap border-r-2 border-amber-300 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.12)]">
                           <input
                             type="text"
@@ -1123,67 +1157,65 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                           />
                         </td>
 
-                        {/* 2. PROFILE PHOTO */}
-                        <td className="w-[64px] min-w-[64px] max-w-[64px] py-2 px-1 text-center whitespace-nowrap bg-amber-50">
-                          <div className="flex flex-col items-center gap-0.5">
-                            <SafeImage
-                              src={inlineEditData.photoUrl || farmerPhoto}
-                              alt="Farmer"
-                              fallbackType="farmer"
-                              className="w-8 h-8 rounded-full object-cover border border-blue-400 shadow-2xs"
-                            />
-                            <label className="text-[9px] font-bold text-blue-700 hover:text-blue-900 underline cursor-pointer">
-                              Change
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(e) => handlePhotoFileChange(e, 'profile')}
+                        {/* 3. PROFILE & FARMER NAME */}
+                        <td className="w-[230px] min-w-[230px] py-2 px-2 whitespace-nowrap bg-amber-50">
+                          <div className="flex items-center gap-2">
+                            <div className="flex flex-col items-center gap-0.5 shrink-0">
+                              <SafeImage
+                                src={inlineEditData.photoUrl || farmerPhoto}
+                                alt="Farmer"
+                                fallbackType="farmer"
+                                className="w-8 h-8 rounded-full object-cover border border-blue-400 shadow-2xs"
                               />
-                            </label>
-                          </div>
-                        </td>
-
-                        {/* 3. FARMER NAME */}
-                        <td className="w-[200px] min-w-[200px] py-2 px-2 text-left whitespace-nowrap bg-amber-50">
-                          <div className="flex flex-col gap-1">
-                            <input
-                              type="text"
-                              value={inlineEditData.farmerFamilyName}
-                              onChange={(e) =>
-                                setInlineEditData({ ...inlineEditData, farmerFamilyName: e.target.value })
-                              }
-                              className="w-full px-1.5 py-1 bg-white border border-slate-300 rounded text-xs font-bold uppercase text-slate-900 focus:ring-2 focus:ring-blue-600 shadow-2xs"
-                              placeholder="Family Name"
-                              title="Family Name"
-                            />
-                            <div className="flex gap-1">
+                              <label className="text-[9px] font-bold text-blue-700 hover:text-blue-900 underline cursor-pointer">
+                                Change
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => handlePhotoFileChange(e, 'profile')}
+                                />
+                              </label>
+                            </div>
+                            <div className="flex flex-col gap-1 min-w-0 flex-1">
                               <input
                                 type="text"
-                                value={inlineEditData.farmerGivenName}
+                                value={inlineEditData.farmerFamilyName}
                                 onChange={(e) =>
-                                  setInlineEditData({ ...inlineEditData, farmerGivenName: e.target.value })
+                                  setInlineEditData({ ...inlineEditData, farmerFamilyName: e.target.value })
                                 }
-                                className="w-1/2 px-1.5 py-0.5 bg-white border border-slate-300 rounded text-[11px] font-medium text-slate-900 focus:ring-2 focus:ring-blue-600 shadow-2xs"
-                                placeholder="Given Name"
-                                title="Given Name"
+                                className="w-full px-1.5 py-0.5 bg-white border border-slate-300 rounded text-xs font-bold uppercase text-slate-900 focus:ring-2 focus:ring-blue-600 shadow-2xs"
+                                placeholder="Family Name"
+                                title="Family Name"
                               />
-                              <input
-                                type="text"
-                                value={inlineEditData.farmerMiddleName}
-                                onChange={(e) =>
-                                  setInlineEditData({ ...inlineEditData, farmerMiddleName: e.target.value })
-                                }
-                                className="w-1/2 px-1.5 py-0.5 bg-white border border-slate-300 rounded text-[11px] text-slate-700 focus:ring-2 focus:ring-blue-600 shadow-2xs"
-                                placeholder="Middle Name"
-                                title="Middle Name"
-                              />
+                              <div className="flex gap-1">
+                                <input
+                                  type="text"
+                                  value={inlineEditData.farmerGivenName}
+                                  onChange={(e) =>
+                                    setInlineEditData({ ...inlineEditData, farmerGivenName: e.target.value })
+                                  }
+                                  className="w-1/2 px-1.5 py-0.5 bg-white border border-slate-300 rounded text-[11px] font-medium text-slate-900 focus:ring-2 focus:ring-blue-600 shadow-2xs"
+                                  placeholder="Given"
+                                  title="Given Name"
+                                />
+                                <input
+                                  type="text"
+                                  value={inlineEditData.farmerMiddleName}
+                                  onChange={(e) =>
+                                    setInlineEditData({ ...inlineEditData, farmerMiddleName: e.target.value })
+                                  }
+                                  className="w-1/2 px-1.5 py-0.5 bg-white border border-slate-300 rounded text-[11px] text-slate-700 focus:ring-2 focus:ring-blue-600 shadow-2xs"
+                                  placeholder="Middle"
+                                  title="Middle Name"
+                                />
+                              </div>
                             </div>
                           </div>
                         </td>
 
                         {/* 4. RESIDENTIAL ADDRESS */}
-                        <td className="py-2.5 px-2.5 text-left whitespace-nowrap w-[180px] min-w-[180px] bg-amber-50">
+                        <td className="py-2.5 px-2.5 text-left whitespace-nowrap w-[190px] min-w-[190px] bg-amber-50">
                           <input
                             type="text"
                             value={inlineEditData.residentialAddress}
@@ -1191,105 +1223,11 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                               setInlineEditData({ ...inlineEditData, residentialAddress: e.target.value })
                             }
                             className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs text-slate-700 focus:ring-2 focus:ring-blue-600 shadow-2xs"
-                            placeholder="Silago, Southern Leyte"
+                            placeholder="Purok, Barangay, Silago"
                           />
                         </td>
 
-                        {/* 5. BIRTHDAY */}
-                        <td className="py-2.5 px-2 text-center whitespace-nowrap w-[100px] min-w-[100px] bg-amber-50">
-                          <input
-                            type="text"
-                            value={inlineEditData.birthday}
-                            onChange={(e) =>
-                              setInlineEditData({ ...inlineEditData, birthday: e.target.value })
-                            }
-                            className="w-24 px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono text-center text-slate-800 focus:ring-2 focus:ring-blue-600 shadow-2xs"
-                            placeholder="MM/DD/YYYY"
-                          />
-                        </td>
-
-                        {/* 6. FARM AREA (HA) */}
-                        <td className="py-2.5 px-2.5 text-right whitespace-nowrap w-[110px] min-w-[110px] bg-amber-50">
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={inlineEditData.weightKg}
-                            onChange={(e) =>
-                              setInlineEditData({
-                                ...inlineEditData,
-                                weightKg: parseFloat(e.target.value) || 0
-                              })
-                            }
-                            className="w-20 px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono font-bold text-right text-slate-900 focus:ring-2 focus:ring-blue-600 shadow-2xs"
-                            placeholder="0.25"
-                          />
-                        </td>
-
-                        {/* 7. COMMODITY / VARIETY */}
-                        <td className="py-2.5 px-2.5 text-left whitespace-nowrap w-[180px] min-w-[180px] bg-amber-50">
-                          <div className="flex items-center gap-1.5">
-                            <input
-                              type="text"
-                              value={inlineEditData.commodity}
-                              onChange={(e) =>
-                                setInlineEditData({ ...inlineEditData, commodity: e.target.value })
-                              }
-                              className="w-14 px-1.5 py-1 bg-white border border-slate-300 rounded text-xs font-semibold focus:ring-2 focus:ring-blue-600 shadow-2xs"
-                              placeholder="Rice"
-                            />
-                            <select
-                              value={inlineEditData.breed}
-                              onChange={(e) =>
-                                setInlineEditData({ ...inlineEditData, breed: e.target.value })
-                              }
-                              className="w-28 px-1.5 py-1 bg-white border border-slate-300 rounded text-xs font-medium focus:ring-2 focus:ring-blue-600 shadow-2xs cursor-pointer"
-                            >
-                              {RICE_VARIETIES.map((rv) => (
-                                <option key={rv.name} value={rv.name}>
-                                  {rv.name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </td>
-
-                        {/* 8. GPS COORDINATES */}
-                        <td className="py-2.5 px-2 text-center whitespace-nowrap w-[160px] min-w-[160px] bg-amber-50">
-                          <div className="flex items-center justify-center gap-1">
-                            <input
-                              type="number"
-                              step="0.000001"
-                              value={inlineEditData.lat}
-                              onChange={(e) =>
-                                setInlineEditData({
-                                  ...inlineEditData,
-                                  lat: parseFloat(e.target.value) || 0
-                                })
-                              }
-                              className="w-18 px-1.5 py-1 bg-white border border-slate-300 rounded text-[11px] font-mono focus:ring-2 focus:ring-blue-600 shadow-2xs"
-                              placeholder="Lat"
-                              title="Latitude"
-                            />
-                            <span className="text-slate-400">,</span>
-                            <input
-                              type="number"
-                              step="0.000001"
-                              value={inlineEditData.lng}
-                              onChange={(e) =>
-                                setInlineEditData({
-                                  ...inlineEditData,
-                                  lng: parseFloat(e.target.value) || 0
-                                })
-                              }
-                              className="w-18 px-1.5 py-1 bg-white border border-slate-300 rounded text-[11px] font-mono focus:ring-2 focus:ring-blue-600 shadow-2xs"
-                              placeholder="Lng"
-                              title="Longitude"
-                            />
-                          </div>
-                        </td>
-
-                        {/* 9. FARM LOCATION (Basakan) */}
+                        {/* 5. FARM LOCATION / BASAKAN */}
                         <td className="py-2.5 px-2.5 text-left whitespace-nowrap w-[180px] min-w-[180px] bg-amber-50">
                           <div className="flex flex-col gap-1">
                             <select
@@ -1317,8 +1255,105 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                           </div>
                         </td>
 
+                        {/* 6. ECOSYSTEM */}
+                        <td className="py-2.5 px-2 text-center whitespace-nowrap w-[140px] min-w-[140px] bg-amber-50">
+                          <select
+                            value={inlineEditData.purpose || 'Irrigated Lowland (NIA)'}
+                            onChange={(e) =>
+                              setInlineEditData({ ...inlineEditData, purpose: e.target.value })
+                            }
+                            className="w-full px-1.5 py-1 bg-white border border-slate-300 rounded text-xs font-medium text-slate-800 focus:ring-2 focus:ring-blue-600 shadow-2xs cursor-pointer"
+                          >
+                            <option value="Irrigated Lowland (NIA)">Irrigated Lowland</option>
+                            <option value="Rainfed Lowland">Rainfed Lowland</option>
+                            <option value="Hybrid Seed Production">Hybrid Lowland</option>
+                            <option value="Upland Rice">Upland Rice</option>
+                          </select>
+                        </td>
+
+                        {/* 7. FARM AREA (HA) */}
+                        <td className="py-2.5 px-2.5 text-right whitespace-nowrap w-[110px] min-w-[110px] bg-amber-50">
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={inlineEditData.weightKg}
+                            onChange={(e) =>
+                              setInlineEditData({
+                                ...inlineEditData,
+                                weightKg: parseFloat(e.target.value) || 0
+                              })
+                            }
+                            className="w-20 px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono font-bold text-right text-slate-900 focus:ring-2 focus:ring-blue-600 shadow-2xs"
+                            placeholder="0.25"
+                          />
+                        </td>
+
+                        {/* 8. COMMODITY & VARIETY */}
+                        <td className="py-2.5 px-2.5 text-left whitespace-nowrap w-[200px] min-w-[200px] bg-amber-50">
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="text"
+                              value={inlineEditData.commodity}
+                              onChange={(e) =>
+                                setInlineEditData({ ...inlineEditData, commodity: e.target.value })
+                              }
+                              className="w-14 px-1.5 py-1 bg-white border border-slate-300 rounded text-xs font-semibold focus:ring-2 focus:ring-blue-600 shadow-2xs"
+                              placeholder="Rice"
+                            />
+                            <select
+                              value={inlineEditData.breed}
+                              onChange={(e) =>
+                                setInlineEditData({ ...inlineEditData, breed: e.target.value })
+                              }
+                              className="w-28 px-1.5 py-1 bg-white border border-slate-300 rounded text-xs font-medium focus:ring-2 focus:ring-blue-600 shadow-2xs cursor-pointer"
+                            >
+                              {RICE_VARIETIES.map((rv) => (
+                                <option key={rv.name} value={rv.name}>
+                                  {rv.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </td>
+
+                        {/* 9. GPS / GEOREFERENCE STATUS */}
+                        <td className="py-2.5 px-2 text-center whitespace-nowrap w-[180px] min-w-[180px] bg-amber-50">
+                          <div className="flex items-center justify-center gap-1">
+                            <input
+                              type="number"
+                              step="0.0001"
+                              value={inlineEditData.lat}
+                              onChange={(e) =>
+                                setInlineEditData({
+                                  ...inlineEditData,
+                                  lat: parseFloat(e.target.value) || 0
+                                })
+                              }
+                              className="w-18 px-1 py-1 bg-white border border-slate-300 rounded text-[11px] font-mono focus:ring-2 focus:ring-blue-600 shadow-2xs text-center"
+                              placeholder="Lat"
+                              title="Latitude"
+                            />
+                            <span className="text-slate-400">,</span>
+                            <input
+                              type="number"
+                              step="0.0001"
+                              value={inlineEditData.lng}
+                              onChange={(e) =>
+                                setInlineEditData({
+                                  ...inlineEditData,
+                                  lng: parseFloat(e.target.value) || 0
+                                })
+                              }
+                              className="w-18 px-1 py-1 bg-white border border-slate-300 rounded text-[11px] font-mono focus:ring-2 focus:ring-blue-600 shadow-2xs text-center"
+                              placeholder="Lng"
+                              title="Longitude"
+                            />
+                          </div>
+                        </td>
+
                         {/* 10. ACTIONS (Save & Cancel - Sticky Right) */}
-                        <td className="py-2 px-3 text-center whitespace-nowrap sticky right-0 z-10 bg-amber-50 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] w-[115px] min-w-[115px]">
+                        <td className="py-2 px-3 text-center whitespace-nowrap sticky right-0 z-10 bg-amber-50 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] w-[140px] min-w-[140px] border-l border-amber-300">
                           <div className="flex items-center justify-center gap-1.5">
                             <button
                               type="button"
@@ -1356,7 +1391,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                           : 'bg-white'
                       }`}
                     >
-                      {/* 0. MULTI-SELECT CHECKBOX (Frozen Left 0) */}
+                      {/* 1. [Checkbox Selection] (Frozen Left 0) */}
                       <td className={`sticky left-0 z-10 ${isSelected ? 'bg-blue-100/90' : rowBg} group-hover:bg-blue-50/90 w-[44px] min-w-[44px] max-w-[44px] py-2.5 px-2 text-center whitespace-nowrap border-r border-slate-200 shadow-[2px_0_4px_-1px_rgba(0,0,0,0.06)]`}>
                         <input
                           type="checkbox"
@@ -1370,12 +1405,20 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                         />
                       </td>
 
-                      {/* 1. RSBSA NO. (Frozen Left 44px) */}
+                      {/* 2. RSBSA NO. (clickable badge nga mo-abli sa dossier - Frozen Left 44px) */}
                       <td className={`sticky left-[44px] z-10 ${isSelected ? 'bg-blue-100/90' : rowBg} group-hover:bg-slate-100/90 w-[155px] min-w-[155px] max-w-[155px] py-2.5 px-2.5 text-center whitespace-nowrap border-r-2 border-slate-200 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.1)]`}>
                         <div className="flex flex-col items-center gap-1">
-                          <span className="inline-block px-2 py-1 rounded bg-blue-50/90 border border-blue-200 text-blue-900 font-mono text-[11px] font-black tracking-tight">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSelectParcel(parcel);
+                            }}
+                            className="inline-block px-2.5 py-1 rounded bg-blue-50/90 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 text-blue-900 font-mono text-[11px] font-black tracking-tight cursor-pointer transition shadow-2xs hover:shadow-xs"
+                            title="Click to open Farmer Profile Dossier"
+                          >
                             {parcel.swineNameOrId || 'NO RSBSA'}
-                          </span>
+                          </button>
                           {(parcel.is_pending_sync || parcel.isPendingSync) && (
                             <span
                               className="inline-flex items-center gap-1 text-[9px] font-extrabold text-amber-800 bg-amber-100/90 border border-amber-300 px-1.5 py-0.5 rounded-full shadow-2xs animate-pulse"
@@ -1388,70 +1431,98 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                         </div>
                       </td>
 
-                      {/* 2. PROFILE PHOTO */}
-                      <td className="w-[64px] min-w-[64px] max-w-[64px] py-2 px-1 text-center whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPhotoPreview({
-                              isOpen: true,
-                              photoUrl: farmerPhoto,
-                              photoType: 'profile',
-                              parcel
-                            });
-                          }}
-                          className="relative inline-block group/photo p-0.5 rounded-full border-2 border-slate-200 hover:border-emerald-500 hover:scale-115 active:scale-95 transition-all duration-150 cursor-pointer shadow-2xs hover:shadow-md"
-                          title="Click to view full farmer profile photo"
-                        >
-                          <SafeImage
-                            src={farmerPhoto}
-                            alt={parcel.raiserName}
-                            fallbackType="farmer"
-                            className="w-8 h-8 rounded-full object-cover transition-transform group-hover/photo:brightness-105"
-                          />
-                        </button>
+                      {/* 3. PROFILE & FARMER NAME */}
+                      <td className="w-[230px] min-w-[230px] py-2 px-3 whitespace-nowrap">
+                        <div className="flex items-center gap-2.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPhotoPreview({
+                                isOpen: true,
+                                photoUrl: farmerPhoto,
+                                photoType: 'profile',
+                                parcel
+                              });
+                            }}
+                            className="relative shrink-0 p-0.5 rounded-full border-2 border-slate-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition-all duration-150 cursor-pointer shadow-2xs hover:shadow-md"
+                            title="Click to view full farmer profile photo"
+                          >
+                            <SafeImage
+                              src={farmerPhoto}
+                              alt={parcel.raiserName}
+                              fallbackType="farmer"
+                              className="w-8 h-8 rounded-full object-cover transition-transform group-hover:brightness-105"
+                            />
+                          </button>
+                          <div className="flex flex-col min-w-0">
+                            <span
+                              className="font-bold text-slate-900 text-xs uppercase truncate block max-w-[170px]"
+                              title={getFarmerDisplayName(parcel)}
+                            >
+                              {getFarmerDisplayName(parcel)}
+                            </span>
+                            {parcel.focalPerson && (
+                              <span className="text-[10px] text-slate-400 truncate block max-w-[170px]">
+                                LFT: {parcel.focalPerson}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </td>
 
-                      {/* 3. FARMER NAME */}
+                      {/* 4. RESIDENTIAL ADDRESS (Purok, Barangay, Lungsod) */}
                       <td
-                        className="w-[200px] min-w-[200px] py-2.5 px-3.5 whitespace-nowrap font-bold text-slate-900 text-xs uppercase truncate"
-                        title={getFarmerDisplayName(parcel)}
-                      >
-                        {getFarmerDisplayName(parcel)}
-                      </td>
-
-                      {/* 4. RESIDENTIAL ADDRESS */}
-                      <td
-                        className="py-2.5 px-3.5 whitespace-nowrap text-slate-600 text-xs w-[180px] min-w-[180px] truncate"
+                        className="py-2.5 px-3.5 whitespace-nowrap text-slate-700 text-xs w-[190px] min-w-[190px] truncate"
                         title={parcel.residential_address || parcel.address || (parcel.barangay ? `${getDisplayBarangay(parcel.barangay)}, Silago, Southern Leyte` : 'Silago, Southern Leyte')}
                       >
-                        {parcel.residential_address || parcel.address || (parcel.barangay ? `${getDisplayBarangay(parcel.barangay)}, Silago, Southern Leyte` : 'Silago, Southern Leyte')}
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-slate-800 truncate">
+                            {parcel.residential_address || parcel.address || `Purok ${parcel.purok || '1'}, Brgy. ${getDisplayBarangay(parcel.barangay)}`}
+                          </span>
+                          <span className="text-[10px] text-slate-400">Silago, Southern Leyte</span>
+                        </div>
                       </td>
 
-                      {/* 5. BIRTHDAY (MM/DD/YYYY format) */}
-                      <td className="py-2.5 px-3 text-center whitespace-nowrap font-mono text-slate-700 text-xs w-[100px] min-w-[100px]">
-                        {birthdayFormatted}
+                      {/* 5. FARM LOCATION / BASAKAN (Barangay kung asa ang basakan, lahi sa pinuy-anan) */}
+                      <td className="py-2.5 px-3.5 whitespace-nowrap text-xs w-[180px] min-w-[180px]">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-emerald-900 flex items-center gap-1 truncate">
+                            🌾 Brgy. {getDisplayBarangay(parcel.barangay)}
+                          </span>
+                          <span className="text-[10px] text-slate-500 truncate">
+                            {parcel.farmLocation && parcel.farmLocation !== parcel.barangay
+                              ? parcel.farmLocation
+                              : `${parcel.purok || 'Purok 1'}, Silago Basin`}
+                          </span>
+                        </div>
                       </td>
 
-                      {/* 6. FARM AREA (HA) */}
+                      {/* 6. ECOSYSTEM (Irrigated Lowland / Rainfed Lowland / Upland tag badge) */}
+                      <td className="py-2.5 px-3 whitespace-nowrap text-center w-[140px] min-w-[140px]">
+                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10.5px] font-bold border ${ecoBadge.badgeClass}`}>
+                          {ecoBadge.label}
+                        </span>
+                      </td>
+
+                      {/* 7. FARM AREA (HA) */}
                       <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono font-bold text-slate-900 text-xs w-[110px] min-w-[110px]">
                         {(parcel.weightKg || 0).toFixed(2)} ha
                       </td>
 
-                      {/* 7. COMMODITY / VARIETY */}
-                      <td className="py-2.5 px-3.5 whitespace-nowrap text-slate-800 text-xs w-[190px] min-w-[190px]">
+                      {/* 8. COMMODITY & VARIETY (pananglitan: Rice - NSIC Rc 222 uban ang estimated volume) */}
+                      <td className="py-2.5 px-3.5 whitespace-nowrap text-slate-800 text-xs w-[200px] min-w-[200px]">
                         <div className="flex flex-col gap-0.5">
                           <div className="flex items-center gap-1.5">
-                            <span className="font-semibold text-slate-900">{parcel.commodity || 'Rice'}</span>
-                            <span className="text-slate-400">/</span>
-                            <span className="text-blue-900 font-medium text-[11px] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/70">
+                            <span className="font-bold text-slate-900">{parcel.commodity || 'Rice'}</span>
+                            <span className="text-slate-400">-</span>
+                            <span className="text-blue-900 font-semibold text-[11px] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/80">
                               {activeVariety || 'NSIC Rc 222'}
                             </span>
                           </div>
                           {selectedSeason === 'ALL_SEASONS' ? (
                             <div className="flex items-center gap-1 text-[10px] text-emerald-800 font-mono">
-                              <span className="font-bold bg-emerald-50 text-emerald-800 px-1.5 py-0.2 rounded border border-emerald-200">
+                              <span className="font-bold bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200">
                                 🌾 {parcelTotalBags} Bags ({parcelTotalMt.toFixed(1)} MT)
                               </span>
                               {latestHarvestDate && (
@@ -1462,7 +1533,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                             </div>
                           ) : (
                             seasonalRecord && (
-                              <div className="text-[10px] text-slate-500 font-mono">
+                              <div className="text-[10px] text-slate-600 font-mono">
                                 🌾 {(seasonalRecord.yieldBags ?? seasonalRecord.actualProductionBags ?? Math.round((seasonalRecord.actualProductionVolumeMt || 0) * 20))} Bags ({(seasonalRecord.actualProductionVolumeMt || seasonalRecord.yieldMtPerHa || 0).toFixed(1)} MT)
                               </div>
                             )
@@ -1470,20 +1541,40 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                         </div>
                       </td>
 
-                      {/* 8. GPS COORDINATES */}
-                      <td className="py-2.5 px-3.5 text-center whitespace-nowrap font-mono text-[11px] text-slate-700 w-[160px] min-w-[160px]">
-                        {parcel.lat ? `${parcel.lat.toFixed(6)}, ${parcel.lng.toFixed(6)}` : '-'}
+                      {/* 9. GPS / GEOREFERENCE STATUS (Badge: '🟢 Polygon Mapped' nga may Lat/Lng, o '🟡 Unmapped') */}
+                      <td className="py-2.5 px-3.5 text-center whitespace-nowrap text-xs w-[180px] min-w-[180px]">
+                        {hasPolygonMapped ? (
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                              🟢 Polygon Mapped
+                            </span>
+                            <span className="text-[9.5px] font-mono text-slate-500">
+                              {parcel.lat.toFixed(4)}, {parcel.lng.toFixed(4)}
+                            </span>
+                          </div>
+                        ) : hasGpsCoordinates ? (
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              🟢 GPS Mapped
+                            </span>
+                            <span className="text-[9.5px] font-mono text-slate-500">
+                              {parcel.lat.toFixed(4)}, {parcel.lng.toFixed(4)}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                            🟡 Unmapped
+                          </span>
+                        )}
                       </td>
 
-                      {/* 9. FARM LOCATION (Basakan) */}
-                      <td className="py-2.5 px-3.5 whitespace-nowrap font-semibold text-emerald-900 text-xs w-[180px] min-w-[180px]">
-                        {`🌾 Brgy. ${getDisplayBarangay(parcel.barangay) || parcel.barangay}${parcel.purok ? `, ${parcel.purok}` : ''}`}
-                      </td>
-
-                      {/* 15. ACTIONS: Governed strictly by RBAC & GIS locate */}
-                      <td className={`py-2.5 px-2.5 text-center whitespace-nowrap sticky right-0 z-10 ${rowBg} group-hover:bg-blue-50/70 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.06)] w-[115px] min-w-[115px]`}>
+                      {/* 10. ACTIONS (History log icon, Map pinpoint icon nga mo-pan sa GIS map, Edit icon, Delete icon) */}
+                      <td className={`py-2.5 px-2.5 text-center whitespace-nowrap sticky right-0 z-10 ${rowBg} group-hover:bg-blue-50/70 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] w-[140px] min-w-[140px] border-l border-slate-200/60`}>
                         <div className="flex items-center justify-center gap-1.5">
-                          {/* 0. View Details & Harvest History Button */}
+                          {/* 1. History log icon -> dossier & harvest history */}
                           <button
                             type="button"
                             onClick={(e) => {
@@ -1496,7 +1587,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                             <History className="w-3.5 h-3.5 text-purple-600" />
                           </button>
 
-                          {/* 1. Locate on GIS Map (MapPin Icon) */}
+                          {/* 2. Map pinpoint icon -> pans to GIS map */}
                           {hasGpsCoordinates ? (
                             <button
                               type="button"
@@ -1505,7 +1596,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                                 onLocateOnMap?.(parcel);
                               }}
                               className="p-1.5 rounded-lg border border-emerald-300 bg-white hover:bg-emerald-50 text-emerald-700 hover:text-emerald-800 transition cursor-pointer inline-flex items-center justify-center shadow-2xs hover:border-emerald-400"
-                              title="I-locate sa GIS Mapa / Locate on GIS Map"
+                              title="I-locate sa GIS Mapa / Pan to GIS Map"
                             >
                               <MapPin className="w-3.5 h-3.5 text-emerald-600" />
                             </button>
@@ -1514,19 +1605,19 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                               type="button"
                               disabled
                               className="p-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-400 opacity-30 cursor-not-allowed inline-flex items-center justify-center"
-                              title="Walay GPS coordinates"
+                              title="Walay GPS coordinates / Unmapped"
                             >
                               <MapPin className="w-3.5 h-3.5 text-slate-400" />
                             </button>
                           )}
 
                           {permissions.isPublicVisitor ? (
-                            <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-2 py-1 rounded-md border border-slate-200" title="Read-Only Mode for Public Visitors">
-                              Read-Only
+                            <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-1 rounded border border-slate-200" title="Read-Only Mode for Public Visitors">
+                              Locked
                             </span>
                           ) : (
                             <>
-                              {/* 2. Edit (Pencil Icon) -> triggers inline row editing if authorized for sector */}
+                              {/* 3. Edit icon -> triggers inline editing */}
                               <button
                                 type="button"
                                 onClick={(e) => handleStartInlineEdit(e, parcel)}
@@ -1544,7 +1635,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
 
-                              {/* 3. Delete (Trash Icon) -> ONLY Central Admin can delete */}
+                              {/* 4. Delete icon -> Central Admin only */}
                               {permissions.canDeleteParcels && (
                                 <button
                                   type="button"
@@ -1552,7 +1643,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                                     e.stopPropagation();
                                     handleDeleteAttempt(parcel);
                                   }}
-                                  className="p-1.5 rounded-lg border border-rose-300 bg-white hover:bg-rose-50 text-rose-700 transition cursor-pointer inline-flex items-center justify-center shadow-2xs"
+                                  className="p-1.5 rounded-lg border border-rose-300 bg-white hover:bg-rose-50 text-rose-700 transition cursor-pointer inline-flex items-center justify-center shadow-2xs hover:border-rose-400"
                                   title="Delete Registration (Central Admin Only)"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />

@@ -415,7 +415,7 @@ export const OfficialRegistryTable: React.FC<OfficialRegistryTableProps> = ({
       </div>
 
       {/* 3. Customizable Multi-Column Registry Table with Standard Horizontal / Simple Stacked Headers */}
-      <div className="w-full overflow-x-auto">
+      <div className="w-full">
         {customTableData && Array.isArray(customTableData.columns) && customTableData.columns.length > 0 ? (
           <table className="w-full border-collapse border border-black text-black font-sans text-xs print:text-[9.5px]">
             <thead>

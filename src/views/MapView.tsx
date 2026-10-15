@@ -403,9 +403,8 @@ export const MapView: React.FC<MapViewProps> = ({
   const [showBarangayWeatherMarkers, setShowBarangayWeatherMarkers] = useState<boolean>(true);
   const [isWeatherLoading, setIsWeatherLoading] = useState<boolean>(false);
 
-  // REQUIREMENT 1: Collapsible Split Screen State
-  const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState<boolean>(false);
-  const [mobileTab, setMobileTab] = useState<'split' | 'list' | 'map'>('split');
+  // Farmer Landholdings Directory Collapsible Carousel Drawer State
+  const [isFarmerListOpen, setIsFarmerListOpen] = useState<boolean>(false);
   const [activeCardTag, setActiveCardTag] = useState<string | null>(null);
   const [hoveredParcelTag, setHoveredParcelTag] = useState<string | null>(null);
 
@@ -598,15 +597,15 @@ export const MapView: React.FC<MapViewProps> = ({
   // Backward compatibility alias
   const fitSilagoBorders = handleResetView;
 
-  // Invalidate map size when collapsing/expanding split panel or fullscreen
+  // Invalidate map size when toggling farmer list drawer or fullscreen
   useEffect(() => {
     const timer = setTimeout(() => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.invalidateSize();
       }
-    }, 320);
+    }, 250);
     return () => clearTimeout(timer);
-  }, [isLeftPanelCollapsed, isFullscreen, mobileTab]);
+  }, [isFarmerListOpen, isFullscreen]);
 
   // Initialize Map
   useEffect(() => {
@@ -856,16 +855,16 @@ export const MapView: React.FC<MapViewProps> = ({
         setHoveredParcelTag(null);
       }, 4000);
 
-      if (!isLeftPanelCollapsed) {
+      if (isFarmerListOpen) {
         setTimeout(() => {
           const cardElement = document.getElementById(`farmer-card-${focusParcel.tagNumber}`);
           if (cardElement) {
-            cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            cardElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
           }
         }, 300);
       }
     }
-  }, [focusParcel, isLeftPanelCollapsed]);
+  }, [focusParcel, isFarmerListOpen]);
 
   // Boundary Styling Helper: Soft pastel tones, clean dark border (#1e3a1e), and hover effects
   const getBarangayStyle = useCallback(
@@ -1203,14 +1202,14 @@ export const MapView: React.FC<MapViewProps> = ({
     setActiveCardTag(parcel.tagNumber);
     setSelectedParcelForDrawer(parcel);
 
-    // Auto-scroll left list container to target card if panel is open
-    if (!isLeftPanelCollapsed) {
+    // Auto-scroll carousel container to target card if open
+    if (isFarmerListOpen) {
       const cardElement = document.getElementById(`farmer-card-${parcel.tagNumber}`);
       if (cardElement) {
-        cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        cardElement.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
       }
     }
-  }, [isLeftPanelCollapsed]);
+  }, [isFarmerListOpen]);
 
   // REQUIREMENT 1 & 2: CLEAN GPS LOCATION PINPOINT (MOCK RECTANGLES AND FLOATING PILLS REMOVED)
   useEffect(() => {
@@ -1665,187 +1664,217 @@ export const MapView: React.FC<MapViewProps> = ({
           : 'relative'
       }`}
     >
-      {/* MOBILE RESPONSIVE SEGMENTED VIEW SWITCHER */}
-      <div className="flex lg:hidden items-center justify-between bg-white border border-slate-200 rounded-2xl p-2 text-slate-800 shadow-xs">
-        <span className="text-xs font-bold pl-2 flex items-center gap-1.5 text-slate-800">
-          <Wheat className="w-4 h-4 text-blue-600" />
-          <span>Rice Farm GIS</span>
-        </span>
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-          <button
-            type="button"
-            onClick={() => setMobileTab('split')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-              mobileTab === 'split' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Split View
-          </button>
-          <button
-            type="button"
-            onClick={() => setMobileTab('list')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-              mobileTab === 'list' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            List ({filteredParcels.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setMobileTab('map')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-              mobileTab === 'map' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Interactive Map
-          </button>
-        </div>
-      </div>
-
-      {/* MAIN COLLAPSIBLE SPLIT SCREEN CONTAINER */}
-      <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-start">
-        {/* REQUIREMENT 4: CRISP BLUE & WHITE THEMED LEFT PANEL (COLLAPSIBLE) */}
-        <div
-          className={`transition-all duration-300 ease-in-out flex flex-col space-y-3 bg-slate-50 border border-slate-200/90 rounded-3xl p-3 sm:p-4 shadow-sm ${
-            isLeftPanelCollapsed
-              ? 'hidden'
-              : 'lg:col-span-5 xl:col-span-5 2xl:col-span-5 flex'
-          } ${mobileTab === 'map' ? 'hidden lg:flex' : 'flex'}`}
-        >
-          {/* 1. TOP HEADER & SEARCH BAR WITH 12PX SPACING & SMOOTH PADDING */}
-          <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border border-slate-200/80 rounded-2xl p-4 shadow-sm space-y-3 text-slate-800">
-            <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center">
-                  <Wheat className="w-4 h-4" />
+      {/* MAIN STACKED GIS LAYOUT CONTAINER */}
+      <div className="flex flex-col gap-4 w-full">
+        {/* 1. TOP SECTION: COMPACT HORIZONTAL HEADER BANNER WITH SEARCH, FILTERS & METRICS */}
+        {!isFullscreen && (
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-4 sm:p-5 shadow-sm space-y-3.5 text-slate-800">
+            {/* Row 1: Header Title & Farmer List Toggle Button */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center shadow-2xs shrink-0">
+                  <Wheat className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-xs sm:text-sm text-slate-900">
-                    Farmer Landholdings Directory
-                  </h3>
-                  <span className="text-[10px] text-slate-500">
-                    {filteredParcels.length} georeferenced lots matching
-                  </span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="font-bold text-sm sm:text-base text-slate-900 tracking-tight">
+                      Farmer Landholdings Directory &amp; GIS Analytics
+                    </h2>
+                    <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full text-[11px] font-bold font-mono">
+                      {filteredParcels.length} {filteredParcels.length === 1 ? 'lot' : 'lots'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Georeferenced cadastral boundaries, rice varieties, and spatial distribution in Silago
+                  </p>
                 </div>
               </div>
 
-              {/* Quick collapse button inside left panel header */}
+              {/* Toggle Farmers List Button */}
               <button
                 type="button"
-                onClick={() => setIsLeftPanelCollapsed(true)}
-                className="hidden lg:flex p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition cursor-pointer"
-                title="Hide farmer list panel to expand map full width"
+                onClick={() => setIsFarmerListOpen(!isFarmerListOpen)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-2xs self-start sm:self-auto ${
+                  isFarmerListOpen
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20 ring-2 ring-blue-400/40'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200'
+                }`}
+                title={isFarmerListOpen ? 'Hide farmers list carousel' : 'Browse farmers list carousel'}
               >
-                <PanelLeftClose className="w-4 h-4" />
+                <Users className={`w-4 h-4 ${isFarmerListOpen ? 'text-white' : 'text-blue-600'}`} />
+                <span>{isFarmerListOpen ? 'Hide Farmers List' : 'Browse Farmers List'}</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${isFarmerListOpen ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'}`}>
+                  {filteredParcels.length}
+                </span>
+                {isFarmerListOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </button>
             </div>
 
-            {/* Search Input with quick clear */}
-            <div className="relative">
-              <Search className="w-4 h-4 text-blue-600 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search RSBSA, farmer name, variety, barangay..."
-                className="w-full pl-10 pr-9 py-2.5 bg-slate-50/60 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 shadow-2xs transition"
-              />
-              {searchQuery && (
+            {/* Row 2: Search Bar + 3 Dropdown Filters (Left) & 3 Metrics Cards (Right) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
+              {/* Search & Filters (7 Columns) */}
+              <div className="lg:col-span-7 flex flex-col gap-2">
+                {/* Search Bar */}
+                <div className="relative">
+                  <Search className="w-4 h-4 text-blue-600 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search RSBSA, farmer name, variety, barangay..."
+                    className="w-full pl-10 pr-9 py-2 bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 shadow-2xs transition"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* 3 Dropdown Filters */}
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <select
+                    value={selectedBarangay}
+                    onChange={(e) => {
+                      setSelectedBarangay(e.target.value);
+                      if (e.target.value !== 'ALL') {
+                        const b = BARANGAYS.find((x) => x.name.toLowerCase() === e.target.value.toLowerCase());
+                        if (b && mapInstanceRef.current) {
+                          mapInstanceRef.current.flyTo([b.lat, b.lng], 15, { duration: 1.2 });
+                        }
+                      }
+                    }}
+                    className="w-full px-2.5 py-1.5 bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer text-xs shadow-2xs transition truncate"
+                  >
+                    <option value="ALL">📍 All 15 Barangays</option>
+                    {BARANGAYS.map((b) => (
+                      <option key={b.name} value={b.name}>
+                        Brgy. {b.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={selectedEcosystem}
+                    onChange={(e) => setSelectedEcosystem(e.target.value)}
+                    className="w-full px-2.5 py-1.5 bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer text-xs shadow-2xs transition truncate"
+                  >
+                    <option value="ALL">💧 All Ecosystems</option>
+                    <option value="IRRIGATED">🟢 Irrigated (NIA)</option>
+                    <option value="RAINFED">🟡 Rainfed Lowland</option>
+                    <option value="HYBRID">🟣 Hybrid Seed Field</option>
+                    <option value="UPLAND">🔵 Upland</option>
+                  </select>
+
+                  <select
+                    value={selectedVariety}
+                    onChange={(e) => setSelectedVariety(e.target.value)}
+                    className="w-full px-2.5 py-1.5 bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer text-xs shadow-2xs transition truncate"
+                  >
+                    <option value="ALL">🌾 All Varieties</option>
+                    {uniqueVarieties.map((v) => (
+                      <option key={v} value={v}>
+                        {v.split('(')[0]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Metrics Cards (5 Columns) */}
+              <div className="lg:col-span-5 bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 text-white rounded-2xl p-2.5 sm:p-3 shadow-md border border-blue-800/30">
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="bg-white/10 backdrop-blur-xs p-1.5 sm:p-2 rounded-xl border border-white/10">
+                    <span className="text-[10px] text-blue-100 block font-medium">Registered Farmers</span>
+                    <span className="font-bold text-sm sm:text-base text-white font-mono leading-tight">
+                      {analyticsSummary.uniqueFarmers}
+                    </span>
+                    <span className="text-[9px] text-blue-200 block font-sans">
+                      ({analyticsSummary.totalParcels} farm lots)
+                    </span>
+                  </div>
+
+                  <div className="bg-white/10 backdrop-blur-xs p-1.5 sm:p-2 rounded-xl border border-white/10">
+                    <span className="text-[10px] text-blue-100 block font-medium">Total Land Area</span>
+                    <span className="font-bold text-sm sm:text-base text-emerald-300 font-mono leading-tight">
+                      {analyticsSummary.totalAreaHa}
+                    </span>
+                    <span className="text-[9px] text-blue-200 block font-sans">Hectares (ha)</span>
+                  </div>
+
+                  <div className="bg-white/10 backdrop-blur-xs p-1.5 sm:p-2 rounded-xl border border-white/10">
+                    <span className="text-[10px] text-blue-100 block font-medium">Top Variety</span>
+                    <span className="font-bold text-xs text-amber-300 truncate block mt-0.5" title={analyticsSummary.topVariety}>
+                      {analyticsSummary.topVariety}
+                    </span>
+                    <span className="text-[9px] text-blue-200 block font-mono">
+                      {analyticsSummary.irrigatedPct}% Irrigated
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 2. COLLAPSIBLE FARMER LANDHOLDINGS CAROUSEL / DRAWER */}
+        {isFarmerListOpen && (
+          <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-4 shadow-sm space-y-3 animate-in slide-in-from-top-3 duration-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-xs uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                  <Wheat className="w-4 h-4 text-blue-600" />
+                  <span>Farmers Landholdings Directory ({filteredParcels.length} lots)</span>
+                </span>
+                <span className="text-[11px] text-slate-500 hidden md:inline">
+                  &bull; Click any card or "Locate" to zoom to coordinates and display parcel boundary on the map
+                </span>
+              </div>
+
+              {/* Carousel navigation controls & close button */}
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5"
+                  onClick={() => {
+                    const container = document.getElementById('farmers-carousel-container');
+                    if (container) container.scrollBy({ left: -340, behavior: 'smooth' });
+                  }}
+                  className="p-1.5 bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg shadow-2xs transition cursor-pointer"
+                  title="Scroll Left"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
-              )}
-            </div>
-
-            {/* Filter Dropdowns Grid with 12px gap (gap-3) */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-              <select
-                value={selectedBarangay}
-                onChange={(e) => {
-                  setSelectedBarangay(e.target.value);
-                  if (e.target.value !== 'ALL') {
-                    const b = BARANGAYS.find((x) => x.name.toLowerCase() === e.target.value.toLowerCase());
-                    if (b && mapInstanceRef.current) {
-                      mapInstanceRef.current.flyTo([b.lat, b.lng], 15, { duration: 1.2 });
-                    }
-                  }
-                }}
-                className="px-2.5 py-2 bg-slate-50/60 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer text-xs shadow-2xs transition"
-              >
-                <option value="ALL">📍 All Barangays</option>
-                {BARANGAYS.map((b) => (
-                  <option key={b.name} value={b.name}>
-                    Brgy. {b.name}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={selectedEcosystem}
-                onChange={(e) => setSelectedEcosystem(e.target.value)}
-                className="px-2.5 py-2 bg-slate-50/60 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer text-xs shadow-2xs transition"
-              >
-                <option value="ALL">💧 All Ecosystems</option>
-                <option value="IRRIGATED">🟢 Irrigated (NIA)</option>
-                <option value="RAINFED">🟡 Rainfed Lowland</option>
-                <option value="HYBRID">🟣 Hybrid Seed Field</option>
-                <option value="UPLAND">🔵 Upland</option>
-              </select>
-
-              <select
-                value={selectedVariety}
-                onChange={(e) => setSelectedVariety(e.target.value)}
-                className="col-span-2 sm:col-span-1 px-2.5 py-2 bg-slate-50/60 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer text-xs shadow-2xs transition"
-              >
-                <option value="ALL">🌾 All Varieties</option>
-                {uniqueVarieties.map((v) => (
-                  <option key={v} value={v}>
-                    {v.split('(')[0]}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* 2. SLEEK ROYAL BLUE GRADIENT SUMMARY BANNER */}
-          <div className="bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 text-white rounded-2xl p-3.5 shadow-md border border-blue-800/30">
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="bg-white/10 backdrop-blur-xs p-2 rounded-xl border border-white/10">
-                <span className="text-[10px] text-blue-100 block font-medium">Registered Farmers</span>
-                <span className="font-bold text-base text-white font-mono leading-tight">
-                  {analyticsSummary.uniqueFarmers}
-                </span>
-                <span className="text-[9px] text-blue-200 block font-sans">
-                  ({analyticsSummary.totalParcels} farm lots)
-                </span>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-xs p-2 rounded-xl border border-white/10">
-                <span className="text-[10px] text-blue-100 block font-medium">Total Land Area</span>
-                <span className="font-bold text-base text-emerald-300 font-mono leading-tight">
-                  {analyticsSummary.totalAreaHa}
-                </span>
-                <span className="text-[9px] text-blue-200 block font-sans">Hectares (ha)</span>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-xs p-2 rounded-xl border border-white/10">
-                <span className="text-[10px] text-blue-100 block font-medium">Top Variety</span>
-                <span className="font-bold text-xs text-amber-300 truncate block mt-0.5" title={analyticsSummary.topVariety}>
-                  {analyticsSummary.topVariety}
-                </span>
-                <span className="text-[9px] text-blue-200 block font-mono">
-                  {analyticsSummary.irrigatedPct}% Irrigated
-                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const container = document.getElementById('farmers-carousel-container');
+                    if (container) container.scrollBy({ left: 340, behavior: 'smooth' });
+                  }}
+                  className="p-1.5 bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg shadow-2xs transition cursor-pointer"
+                  title="Scroll Right"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsFarmerListOpen(false)}
+                  className="ml-1 p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-lg transition cursor-pointer"
+                  title="Close drawer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             </div>
-          </div>
 
-          {/* 3. VERTICALLY SCROLLABLE FARMER SUMMARY CARDS WITH SOFT SHADOW & BREATHING ROOM */}
-          <div className="h-[calc(100vh-280px)] min-h-[460px] overflow-y-auto p-1.5 space-y-3 custom-scrollbar rounded-2xl bg-slate-100/40 shadow-inner">
+            {/* Horizontal Scrollable Carousel Container */}
+            <div
+              id="farmers-carousel-container"
+              className="flex gap-3 overflow-x-auto pb-2 pt-0.5 custom-scrollbar scroll-smooth"
+            >
             {filteredParcels.length === 0 ? (
               <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-500 space-y-3 shadow-xs">
                 <Wheat className="w-8 h-8 text-slate-400 mx-auto" />
@@ -1973,49 +2002,34 @@ export const MapView: React.FC<MapViewProps> = ({
                 );
               })
             )}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* RIGHT COLUMN: STICKY INTERACTIVE MAP CONTAINER */}
+        {/* 3. MAIN SECTION: EXPANDED FULL-WIDTH LEAFLET GIS MAP CONTAINER */}
         <div
-          className={`transition-all duration-300 ease-in-out relative ${
-            isLeftPanelCollapsed
-              ? 'lg:col-span-12'
-              : 'lg:col-span-7 xl:col-span-7 2xl:col-span-7'
-          } ${mobileTab === 'list' ? 'hidden lg:block' : 'block'}`}
+          className={`w-full ${
+            isFullscreen ? 'flex-1 h-full' : 'h-[75vh] min-h-[600px]'
+          } bg-slate-900 border border-slate-200/90 rounded-2xl overflow-hidden shadow-lg relative`}
         >
-          {/* STICKY MAP CARD */}
-          <div className="sticky top-3.5 bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative">
-            {/* FLOATING COLLAPSIBLE TOGGLE BUTTON & FLOATING WEATHER RADAR DOCK */}
-            <div className="absolute top-4 left-4 z-400 flex flex-col gap-2 max-w-sm sm:max-w-md pointer-events-auto">
-              <div className="hidden lg:flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setIsLeftPanelCollapsed(!isLeftPanelCollapsed)}
-                  className={`px-3 py-2 text-xs font-bold rounded-xl backdrop-blur-md border shadow-xl transition flex items-center gap-2 cursor-pointer ${
-                    isLeftPanelCollapsed
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-400 ring-2 ring-blue-400/40 animate-pulse'
-                      : 'bg-white/95 hover:bg-blue-50 text-blue-700 border-slate-200 hover:border-blue-300'
-                  }`}
-                  title={isLeftPanelCollapsed ? 'Expand Farmer List Directory (Split Screen)' : 'Collapse Left Panel for 100% Full-Width Map'}
-                >
-                  {isLeftPanelCollapsed ? (
-                    <>
-                      <ChevronRight className="w-4 h-4 text-white" />
-                      <span>Expand Directory</span>
-                      <span className="bg-white/20 text-white px-1.5 py-0.2 rounded-full text-[10px] font-mono">
-                        {filteredParcels.length}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <ChevronLeft className="w-4 h-4 text-blue-600" />
-                      <span>Hide List</span>
-                      <PanelLeftClose className="w-3.5 h-3.5 text-slate-400" />
-                    </>
-                  )}
-                </button>
-              </div>
+          {/* FLOATING COLLAPSIBLE TOGGLE BUTTON & FLOATING WEATHER RADAR DOCK (TOP LEFT) */}
+          <div className="absolute top-4 left-4 z-400 flex flex-col gap-2 max-w-sm sm:max-w-md pointer-events-auto">
+            <button
+              type="button"
+              onClick={() => setIsFarmerListOpen(!isFarmerListOpen)}
+              className={`px-3 py-2 text-xs font-bold rounded-xl backdrop-blur-md border shadow-xl transition flex items-center gap-2 cursor-pointer ${
+                isFarmerListOpen
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-400 ring-2 ring-blue-400/40 shadow-blue-500/20'
+                  : 'bg-white/95 hover:bg-blue-50 text-slate-800 border-slate-200 hover:border-blue-300'
+              }`}
+              title={isFarmerListOpen ? 'Hide Farmers List' : 'Browse Farmers List'}
+            >
+              <Users className={`w-4 h-4 ${isFarmerListOpen ? 'text-white' : 'text-blue-600'}`} />
+              <span>{isFarmerListOpen ? 'Hide List' : 'Farmers Directory'}</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${isFarmerListOpen ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'}`}>
+                {filteredParcels.length}
+              </span>
+            </button>
 
               {/* Real-time Precipitation Weather Radar Control Widget Dock */}
               {showWeatherLayer && (
@@ -2310,7 +2324,7 @@ export const MapView: React.FC<MapViewProps> = ({
             {/* LEAFLET MAP ELEMENT */}
             <div
               ref={mapContainerRef}
-              className="w-full h-[calc(100vh-160px)] min-h-[580px] bg-slate-950 relative z-0"
+              className="w-full h-full min-h-[600px] bg-slate-950 relative z-0"
             />
 
             {/* QUICK ON-MAP FLOATING CONTROL: RESET VIEW (Positioned above bottom-right Leaflet zoom controls) */}
@@ -2815,6 +2829,5 @@ export const MapView: React.FC<MapViewProps> = ({
           </div>
         </div>
       </div>
-    </div>
   );
 };

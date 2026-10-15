@@ -18,6 +18,8 @@ import {
   Maximize2
 } from 'lucide-react';
 
+import { StandardReportHeader } from './StandardReportHeader';
+
 interface OfficialLetterDocumentProps {
   letter: OfficialReportLetter;
   activeBarangay: string;
@@ -29,6 +31,8 @@ interface OfficialLetterDocumentProps {
   onUpdateLetter?: (updated: OfficialReportLetter) => void;
   isEditable?: boolean;
   orientation?: 'portrait' | 'landscape';
+  pageNumber?: number;
+  totalPages?: number;
 }
 
 export const OfficialLetterDocument: React.FC<OfficialLetterDocumentProps> = ({
@@ -41,7 +45,9 @@ export const OfficialLetterDocument: React.FC<OfficialLetterDocumentProps> = ({
   assignedLftName,
   onUpdateLetter,
   isEditable = true,
-  orientation = 'portrait'
+  orientation = 'portrait',
+  pageNumber,
+  totalPages
 }) => {
   const {
     bagongPilipinasLogoUrl,
@@ -202,458 +208,493 @@ export const OfficialLetterDocument: React.FC<OfficialLetterDocumentProps> = ({
         </div>
       )}
 
-      {/* 1. Official Government Letterhead (The 3 Logos Placed Above Republic of the Philippines) */}
-      <div className="flex flex-col items-center justify-center pb-3 border-b-2 border-black relative">
-        {/* 3 Standardized Government Logos: DA • Silago Seal • Southern Leyte Seal */}
-        <div className="flex items-center justify-center gap-6 mb-2">
-          {/* Logo 1: Department of Agriculture */}
-          <div className="relative group/logo h-14 w-14 flex items-center justify-center shrink-0">
-            <div
-              onClick={() => isEditable && handleOpenLogoEditor('da')}
-              className={`h-14 w-14 flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
-              title={isEditable ? 'Click to change or upload Department of Agriculture Seal' : undefined}
-            >
-              <DaLogo size={56} className="h-14 w-14 object-contain" />
-            </div>
-            {isEditable && (
-              <button
-                type="button"
-                onClick={() => handleOpenLogoEditor('da')}
-                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
-                title="Change Department of Agriculture Seal"
-              >
-                <Camera size={11} />
-              </button>
-            )}
+      {/* 1. Official Standardized Government Letterhead */}
+      <StandardReportHeader
+        isEditable={isEditable}
+        republicHeader={letter.countryHeader || 'Republic of the Philippines'}
+        provinceHeader={letter.provinceHeader || 'Province of Southern Leyte'}
+        municipalityHeader={letter.municipalityHeader || 'MUNICIPALITY OF SILAGO'}
+        officeHeader={letter.officeHeader || 'Municipal Agriculture Office'}
+        subtitle={
+          totalPages && totalPages > 1
+            ? pageNumber === 2
+              ? 'TRANSMITTAL MEMORANDUM (PAGE 2: OFFICIAL CERTIFICATION & SIGNATURES)'
+              : 'TRANSMITTAL MEMORANDUM (PAGE 1: NARRATIVE & AGRICULTURAL METRICS)'
+            : undefined
+        }
+        onEditLogo={(logo) => handleOpenLogoEditor(logo)}
+        onHeaderChange={(field, val) => {
+          if (field === 'republicHeader') handleFieldChange('countryHeader', val);
+          else if (field === 'provinceHeader') handleFieldChange('provinceHeader', val);
+          else if (field === 'municipalityHeader') handleFieldChange('municipalityHeader', val);
+          else if (field === 'officeHeader') handleFieldChange('officeHeader', val);
+        }}
+      />
+
+      {/* If Page 2 of 2: Render Subject reference, Closing statement, and Signatories */}
+      {totalPages === 2 && pageNumber === 2 ? (
+        <div className="flex flex-col flex-1 justify-between min-h-0 space-y-5 pt-2">
+          {/* Memo Subject Reference Bar */}
+          <div className="border-b border-black pb-2 text-xs font-mono text-slate-800 flex items-center justify-between">
+            <span>MEMO REF: <strong>{letter.memoRef}</strong></span>
+            <span>DATE: <strong>{letter.date}</strong></span>
+            <span className="truncate max-w-sm">SUBJECT: <strong>{letter.subject}</strong></span>
           </div>
 
-          {/* Logo 2: Municipality of Silago Seal */}
-          <div className="relative group/logo h-14 w-14 flex items-center justify-center shrink-0">
-            <div
-              onClick={() => isEditable && handleOpenLogoEditor('silago')}
-              className={`h-14 w-14 flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
-              title={isEditable ? 'Click to change or upload Municipality of Silago Seal' : undefined}
-            >
-              <SilagoSeal size={56} className="h-14 w-14 object-contain" />
+          {/* 7. Closing Statement */}
+          {letter.closingStatement && (
+            <div className={`pt-2 ${bodyTextClass}`}>
+              {onUpdateLetter && isEditable ? (
+                <textarea
+                  value={letter.closingStatement}
+                  rows={3}
+                  onChange={(e) => handleFieldChange('closingStatement', e.target.value)}
+                  className="w-full text-justify border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1.5 py-1 outline-hidden resize-none print:border-none print:p-0 print:bg-transparent"
+                />
+              ) : (
+                <p className="text-justify indent-8">{formatText(letter.closingStatement)}</p>
+              )}
             </div>
-            {isEditable && (
-              <button
-                type="button"
-                onClick={() => handleOpenLogoEditor('silago')}
-                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
-                title="Change Municipality of Silago Seal"
-              >
-                <Camera size={11} />
-              </button>
-            )}
-          </div>
-
-          {/* Logo 3: Southern Leyte Seal */}
-          <div className="relative group/logo h-14 w-14 flex items-center justify-center shrink-0">
-            <div
-              onClick={() => isEditable && handleOpenLogoEditor('southernLeyte')}
-              className={`h-14 w-14 flex items-center justify-center ${isEditable ? 'cursor-pointer hover:opacity-90' : ''}`}
-              title={isEditable ? 'Click to change or upload Province of Southern Leyte Seal' : undefined}
-            >
-              <SouthernLeyteSeal size={56} className="h-14 w-14 object-contain" />
-            </div>
-            {isEditable && (
-              <button
-                type="button"
-                onClick={() => handleOpenLogoEditor('southernLeyte')}
-                className="print:hidden absolute -bottom-1 -right-1 bg-white hover:bg-amber-100 text-amber-900 p-1 rounded-full shadow-xs border border-amber-300 cursor-pointer transition opacity-70 group-hover/logo:opacity-100"
-                title="Change Province of Southern Leyte Seal"
-              >
-                <Camera size={11} />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Official Header Hierarchy (Directly Editable on Letter) */}
-        <div className="text-center w-full max-w-xl space-y-0.5">
-          {onUpdateLetter && isEditable ? (
-            <div className="space-y-0.5">
-              <input
-                type="text"
-                value={letter.countryHeader || 'Republic of the Philippines'}
-                onChange={(e) => handleFieldChange('countryHeader', e.target.value)}
-                className={`text-center font-sans tracking-wide text-black font-normal w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent ${headingSubClass}`}
-                title="Click to edit country header"
-              />
-              <input
-                type="text"
-                value={letter.provinceHeader || 'Province of Southern Leyte'}
-                onChange={(e) => handleFieldChange('provinceHeader', e.target.value)}
-                className={`text-center font-sans tracking-wide text-black font-normal w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent ${headingSubClass}`}
-                title="Click to edit province header"
-              />
-              <input
-                type="text"
-                value={letter.municipalityHeader || 'MUNICIPALITY OF SILAGO'}
-                onChange={(e) => handleFieldChange('municipalityHeader', e.target.value)}
-                className={`text-center text-black leading-tight w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent ${headingH1Class}`}
-                title="Click to edit municipality header"
-              />
-              <input
-                type="text"
-                value={letter.officeHeader || 'Municipal Agriculture Office'}
-                onChange={(e) => handleFieldChange('officeHeader', e.target.value)}
-                className={`text-center font-sans font-black tracking-wide text-black uppercase leading-tight w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent ${headingSubClass}`}
-                title="Click to edit department office title"
-              />
-            </div>
-          ) : (
-            <>
-              <p className={`text-black font-normal leading-tight ${headingSubClass}`}>
-                {letter.countryHeader || 'Republic of the Philippines'}
-              </p>
-              <p className={`text-black font-normal leading-tight ${headingSubClass}`}>
-                {letter.provinceHeader || 'Province of Southern Leyte'}
-              </p>
-              <h1 className={`text-black leading-tight mt-0.5 ${headingH1Class}`}>
-                {letter.municipalityHeader || 'MUNICIPALITY OF SILAGO'}
-              </h1>
-              <h2 className={`font-sans font-black tracking-wide text-black uppercase leading-tight mt-0.5 ${headingSubClass}`}>
-                {letter.officeHeader || 'Municipal Agriculture Office'}
-              </h2>
-            </>
           )}
-        </div>
-      </div>
 
-      {/* 2. Official Memorandum Header Details */}
-      <div className={`space-y-2 border-b-2 border-black pb-3.5 ${memoTextClass}`}>
-        <div className="flex justify-between items-center font-mono text-slate-800 print:text-black font-semibold pb-1">
-          <div className="flex items-center gap-1.5">
-            <span className="font-bold">MEMO REF:</span>
-            {onUpdateLetter && isEditable ? (
-              <input
-                type="text"
-                value={letter.memoRef}
-                onChange={(e) => handleFieldChange('memoRef', e.target.value)}
-                className="font-bold border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1.5 py-0.5 text-black outline-hidden print:border-none print:p-0 print:bg-transparent"
-                title="Click to edit Memo Reference Number"
-              />
-            ) : (
-              <strong>{letter.memoRef}</strong>
-            )}
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="font-bold">DATE:</span>
-            {onUpdateLetter && isEditable ? (
-              <input
-                type="text"
-                value={letter.date}
-                onChange={(e) => handleFieldChange('date', e.target.value)}
-                className="font-bold border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1.5 py-0.5 text-black outline-hidden text-right print:border-none print:p-0 print:bg-transparent"
-                title="Click to edit Date"
-              />
-            ) : (
-              <strong>{letter.date}</strong>
-            )}
+          {/* 8. Fully Manageable Official Signatories Block */}
+          <div className="mt-auto pt-8 border-t-2 border-black space-y-3 break-inside-avoid print:break-inside-avoid print:mt-auto">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-800 print:text-black">
+                Certified correct and verified by:
+              </span>
+              {onUpdateLetter && isEditable && (
+                <button
+                  type="button"
+                  onClick={handleAddSignatory}
+                  className="print:hidden px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition shadow-2xs"
+                >
+                  <Plus size={13} />
+                  <span>Add Signatory (Prepared / Reviewed / Noted)</span>
+                </button>
+              )}
+            </div>
+
+            <div
+              className={`grid gap-6 text-center ${
+                currentSignatories.length === 1
+                  ? 'grid-cols-1 max-w-xs mx-auto'
+                  : currentSignatories.length === 2
+                  ? 'grid-cols-2 max-w-2xl mx-auto'
+                  : currentSignatories.length === 3
+                  ? 'grid-cols-1 sm:grid-cols-3'
+                  : currentSignatories.length === 4
+                  ? 'grid-cols-2 sm:grid-cols-4'
+                  : 'grid-cols-2 sm:grid-cols-3'
+              }`}
+            >
+              {currentSignatories.map((sig, idx) => (
+                <div key={sig.id || `sig-${idx}`} className="space-y-1 relative group/sig p-1 rounded-lg">
+                  {onUpdateLetter && isEditable && currentSignatories.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSignatory(idx)}
+                      className="print:hidden absolute -top-2 -right-2 p-1 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded-full shadow-xs opacity-0 group-hover/sig:opacity-100 transition cursor-pointer"
+                      title="Remove this signatory"
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  )}
+
+                  {onUpdateLetter && isEditable ? (
+                    <input
+                      type="text"
+                      value={sig.roleLabel}
+                      onChange={(e) => handleSignatoryChange(idx, 'roleLabel', e.target.value)}
+                      className="text-xs font-bold text-black uppercase tracking-tight block w-full text-center border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent"
+                    />
+                  ) : (
+                    <span className="text-xs font-bold text-black uppercase tracking-tight block text-center">
+                      {sig.roleLabel}
+                    </span>
+                  )}
+
+                  <div className="h-12 w-full select-none" />
+
+                  <div className="space-y-0.5 w-full">
+                    {onUpdateLetter && isEditable ? (
+                      <div className="space-y-0.5">
+                        <input
+                          type="text"
+                          value={sig.name}
+                          placeholder="___________________________"
+                          onChange={(e) => handleSignatoryChange(idx, 'name', e.target.value)}
+                          className="font-bold text-black uppercase block w-full text-center text-xs border-b-2 border-black pb-0.5 hover:border-amber-500 focus:bg-amber-50/40 rounded-none px-1 py-0.5 outline-hidden print:border-black print:p-0 print:bg-transparent placeholder:text-black placeholder:font-normal"
+                        />
+                        <input
+                          type="text"
+                          value={sig.title}
+                          placeholder="Signature over Printed Name / Designation"
+                          onChange={(e) => handleSignatoryChange(idx, 'title', e.target.value)}
+                          className="text-[10.5px] font-semibold text-slate-800 print:text-black uppercase block w-full text-center border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.5 outline-hidden print:border-none print:p-0 print:bg-transparent placeholder:text-slate-600 mt-0.5"
+                        />
+                      </div>
+                    ) : (
+                      <div>
+                        {sig.name ? (
+                          <p className="font-bold text-black uppercase text-xs tracking-wide border-b-2 border-black pb-0.5 min-h-[20px] text-center">
+                            {sig.name}
+                          </p>
+                        ) : (
+                          <div className="border-b-2 border-black pb-0.5 min-h-[20px] w-full" />
+                        )}
+                        <p className="text-[10.5px] font-semibold text-slate-800 print:text-black uppercase tracking-tight text-center mt-0.5">
+                          {sig.title || '\u00A0'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-
-        <div className="grid grid-cols-[140px_1fr] sm:grid-cols-[170px_1fr] gap-y-1.5 pt-1">
-          <div className="font-serif font-bold text-black uppercase tracking-wider">
-            MEMORANDUM FOR:
-          </div>
-          <div>
-            {onUpdateLetter && isEditable ? (
-              <div className="space-y-0.5">
-                <input
-                  type="text"
-                  value={letter.memorandumFor}
-                  onChange={(e) => handleFieldChange('memorandumFor', e.target.value)}
-                  className="font-bold text-black uppercase block w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.5 outline-hidden print:border-none print:p-0 print:bg-transparent"
-                />
-                <input
-                  type="text"
-                  value={letter.memorandumForTitle}
-                  onChange={(e) => handleFieldChange('memorandumForTitle', e.target.value)}
-                  className="text-slate-700 print:text-black text-xs block w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.5 outline-hidden print:border-none print:p-0 print:bg-transparent"
-                />
+      ) : (
+        /* PAGE 1 (OR SINGLE PAGE IN PORTRAIT) */
+        <>
+          {/* 2. Official Memorandum Header Details */}
+          <div className={`space-y-2 border-b-2 border-black pb-3.5 ${memoTextClass}`}>
+            <div className="flex justify-between items-center font-mono text-slate-800 print:text-black font-semibold pb-1">
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold">MEMO REF:</span>
+                {onUpdateLetter && isEditable ? (
+                  <input
+                    type="text"
+                    value={letter.memoRef}
+                    onChange={(e) => handleFieldChange('memoRef', e.target.value)}
+                    className="font-bold border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1.5 py-0.5 text-black outline-hidden print:border-none print:p-0 print:bg-transparent"
+                    title="Click to edit Memo Reference Number"
+                  />
+                ) : (
+                  <strong>{letter.memoRef}</strong>
+                )}
               </div>
-            ) : (
-              <>
-                <span className="font-bold text-black uppercase block">{letter.memorandumFor}</span>
-                <span className="text-slate-700 print:text-black text-xs block">{letter.memorandumForTitle}</span>
-              </>
-            )}
-          </div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold">DATE:</span>
+                {onUpdateLetter && isEditable ? (
+                  <input
+                    type="text"
+                    value={letter.date}
+                    onChange={(e) => handleFieldChange('date', e.target.value)}
+                    className="font-bold border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1.5 py-0.5 text-black outline-hidden text-right print:border-none print:p-0 print:bg-transparent"
+                    title="Click to edit Date"
+                  />
+                ) : (
+                  <strong>{letter.date}</strong>
+                )}
+              </div>
+            </div>
 
-          {(letter.thru || (onUpdateLetter && isEditable)) && (
-            <>
+            <div className="grid grid-cols-[140px_1fr] sm:grid-cols-[170px_1fr] gap-y-1.5 pt-1">
               <div className="font-serif font-bold text-black uppercase tracking-wider">
-                THRU:
+                MEMORANDUM FOR:
               </div>
               <div>
                 {onUpdateLetter && isEditable ? (
                   <div className="space-y-0.5">
                     <input
                       type="text"
-                      value={letter.thru || ''}
-                      placeholder="(Optional) THRU recipient name"
-                      onChange={(e) => handleFieldChange('thru', e.target.value)}
+                      value={letter.memorandumFor}
+                      onChange={(e) => handleFieldChange('memorandumFor', e.target.value)}
                       className="font-bold text-black uppercase block w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.5 outline-hidden print:border-none print:p-0 print:bg-transparent"
                     />
                     <input
                       type="text"
-                      value={letter.thruTitle || ''}
-                      placeholder="(Optional) THRU designation"
-                      onChange={(e) => handleFieldChange('thruTitle', e.target.value)}
+                      value={letter.memorandumForTitle}
+                      onChange={(e) => handleFieldChange('memorandumForTitle', e.target.value)}
                       className="text-slate-700 print:text-black text-xs block w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.5 outline-hidden print:border-none print:p-0 print:bg-transparent"
                     />
                   </div>
                 ) : (
                   <>
-                    <span className="font-bold text-black uppercase block">{letter.thru}</span>
-                    <span className="text-slate-700 print:text-black text-xs block">{letter.thruTitle}</span>
+                    <span className="font-bold text-black uppercase block">{letter.memorandumFor}</span>
+                    <span className="text-slate-700 print:text-black text-xs block">{letter.memorandumForTitle}</span>
                   </>
                 )}
               </div>
-            </>
-          )}
 
-          <div className="font-serif font-bold text-black uppercase tracking-wider">
-            FROM:
-          </div>
-          <div>
-            {onUpdateLetter && isEditable ? (
-              <div className="space-y-0.5">
-                <input
-                  type="text"
-                  value={letter.fromOfficer || letter.from || ''}
-                  onChange={(e) => {
-                    handleFieldChange('from', e.target.value);
-                    handleFieldChange('fromOfficer', e.target.value);
-                  }}
-                  className="font-bold text-black uppercase block w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.5 outline-hidden print:border-none print:p-0 print:bg-transparent"
-                />
-                <input
-                  type="text"
-                  value={letter.fromTitle}
-                  onChange={(e) => handleFieldChange('fromTitle', e.target.value)}
-                  className="text-slate-700 print:text-black text-xs block w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.5 outline-hidden print:border-none print:p-0 print:bg-transparent"
-                />
+              {(letter.thru || (onUpdateLetter && isEditable)) && (
+                <>
+                  <div className="font-serif font-bold text-black uppercase tracking-wider">
+                    THRU:
+                  </div>
+                  <div>
+                    {onUpdateLetter && isEditable ? (
+                      <div className="space-y-0.5">
+                        <input
+                          type="text"
+                          value={letter.thru || ''}
+                          placeholder="(Optional) THRU recipient name"
+                          onChange={(e) => handleFieldChange('thru', e.target.value)}
+                          className="font-bold text-black uppercase block w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.5 outline-hidden print:border-none print:p-0 print:bg-transparent"
+                        />
+                        <input
+                          type="text"
+                          value={letter.thruTitle || ''}
+                          placeholder="(Optional) THRU designation"
+                          onChange={(e) => handleFieldChange('thruTitle', e.target.value)}
+                          className="text-slate-700 print:text-black text-xs block w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.5 outline-hidden print:border-none print:p-0 print:bg-transparent"
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <span className="font-bold text-black uppercase block">{letter.thru}</span>
+                        <span className="text-slate-700 print:text-black text-xs block">{letter.thruTitle}</span>
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
+
+              <div className="font-serif font-bold text-black uppercase tracking-wider">
+                FROM:
               </div>
-            ) : (
-              <>
-                <span className="font-bold text-black uppercase block">{letter.fromOfficer || letter.from}</span>
-                <span className="text-slate-700 print:text-black text-xs block">{letter.fromTitle}</span>
-              </>
-            )}
-          </div>
-
-          <div className="font-serif font-bold text-black uppercase tracking-wider">
-            SUBJECT:
-          </div>
-          <div>
-            {onUpdateLetter && isEditable ? (
-              <textarea
-                value={letter.subject}
-                rows={isLandscape ? 2 : 2}
-                onChange={(e) => handleFieldChange('subject', e.target.value)}
-                className="font-black text-black uppercase block w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.5 outline-hidden resize-none print:border-none print:p-0 print:bg-transparent"
-              />
-            ) : (
-              <span className="font-black text-black uppercase block">{formatText(letter.subject)}</span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Opening Salutation */}
-      <div className={bodyTextClass}>
-        {onUpdateLetter && isEditable ? (
-          <input
-            type="text"
-            value={letter.openingGreeting}
-            onChange={(e) => handleFieldChange('openingGreeting', e.target.value)}
-            className="w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.5 outline-hidden print:border-none print:p-0 print:bg-transparent font-medium"
-          />
-        ) : (
-          <p className="font-medium">{letter.openingGreeting}</p>
-        )}
-      </div>
-
-      {/* 4. Body Paragraph 1 */}
-      <div className={bodyTextClass}>
-        {onUpdateLetter && isEditable ? (
-          <textarea
-            value={letter.bodyParagraph1}
-            rows={isLandscape ? 3 : 4}
-            onChange={(e) => handleFieldChange('bodyParagraph1', e.target.value)}
-            className="w-full text-justify border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1.5 py-1 outline-hidden resize-none print:border-none print:p-0 print:bg-transparent"
-          />
-        ) : (
-          <p className="text-justify indent-8">{formatText(letter.bodyParagraph1)}</p>
-        )}
-      </div>
-
-      {/* 5. Highlight Summary Statistics Table */}
-      <div className="border border-black bg-slate-50/70 print:bg-transparent p-3 sm:p-4 rounded-xs text-xs font-sans space-y-2">
-        <div className="flex items-center justify-between border-b border-black pb-1 font-bold uppercase text-[10.5px] sm:text-xs">
-          <span>Key Verified Agricultural Metrics</span>
-          <span>Coverage Scope: {activeBarangay === 'ALL' ? 'Municipal-Wide' : `Brgy. ${activeBarangay}`}</span>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center pt-1">
-          <div className="border-r border-slate-300 last:border-none pr-2">
-            <span className="text-[10px] text-slate-600 print:text-black uppercase block">Total Rice Farmers</span>
-            <strong className="text-sm sm:text-base font-serif block text-black">{farmerCount} Registered</strong>
-          </div>
-          <div className="border-r border-slate-300 last:border-none pr-2">
-            <span className="text-[10px] text-slate-600 print:text-black uppercase block">Physical Farm Area</span>
-            <strong className="text-sm sm:text-base font-serif block text-black">{totalAreaHa.toFixed(2)} Hectares</strong>
-          </div>
-          <div className="border-r border-slate-300 last:border-none pr-2">
-            <span className="text-[10px] text-slate-600 print:text-black uppercase block">Cropping Season</span>
-            <strong className="text-xs sm:text-sm font-serif block text-black truncate">{activeSeason}</strong>
-          </div>
-          <div>
-            <span className="text-[10px] text-slate-600 print:text-black uppercase block">Lead Seed Varieties</span>
-            <strong className="text-xs sm:text-[13px] font-serif block text-black truncate" title={predominantVarieties}>
-              {predominantVarieties || 'NSIC Rc 222, Rc 160'}
-            </strong>
-          </div>
-        </div>
-      </div>
-
-      {/* 6. Body Paragraph 2 */}
-      <div className={bodyTextClass}>
-        {onUpdateLetter && isEditable ? (
-          <textarea
-            value={letter.bodyParagraph2}
-            rows={isLandscape ? 3 : 4}
-            onChange={(e) => handleFieldChange('bodyParagraph2', e.target.value)}
-            className="w-full text-justify border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1.5 py-1 outline-hidden resize-none print:border-none print:p-0 print:bg-transparent"
-          />
-        ) : (
-          <p className="text-justify indent-8">{formatText(letter.bodyParagraph2)}</p>
-        )}
-      </div>
-
-      {/* 7. Closing Statement */}
-      {letter.closingStatement && (
-        <div className={bodyTextClass}>
-          {onUpdateLetter && isEditable ? (
-            <textarea
-              value={letter.closingStatement}
-              rows={2}
-              onChange={(e) => handleFieldChange('closingStatement', e.target.value)}
-              className="w-full text-justify border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1.5 py-1 outline-hidden resize-none print:border-none print:p-0 print:bg-transparent"
-            />
-          ) : (
-            <p className="text-justify indent-8">{formatText(letter.closingStatement)}</p>
-          )}
-        </div>
-      )}
-
-      {/* 8. Fully Manageable Official Signatories Block (Add, Edit, Delete) */}
-      <div className="mt-auto pt-6 border-t-2 border-black space-y-3 break-inside-avoid print:break-inside-avoid print:mt-auto">
-        <div className="flex items-center justify-between">
-          <span className="text-[9.5px] uppercase tracking-wider font-extrabold text-slate-600 print:text-black">
-            Official Certification &amp; Signatures
-          </span>
-          {onUpdateLetter && isEditable && (
-            <button
-              type="button"
-              onClick={handleAddSignatory}
-              className="print:hidden px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition shadow-2xs"
-            >
-              <Plus size={13} />
-              <span>Add Signatory (Prepared / Reviewed / Noted)</span>
-            </button>
-          )}
-        </div>
-
-        <div
-          className={`grid gap-6 text-center ${
-            currentSignatories.length === 1
-              ? 'grid-cols-1 max-w-xs mx-auto'
-              : currentSignatories.length === 2
-              ? 'grid-cols-2 max-w-2xl mx-auto'
-              : currentSignatories.length === 3
-              ? 'grid-cols-1 sm:grid-cols-3'
-              : currentSignatories.length === 4
-              ? 'grid-cols-2 sm:grid-cols-4'
-              : 'grid-cols-2 sm:grid-cols-3'
-          }`}
-        >
-          {currentSignatories.map((sig, idx) => (
-            <div key={sig.id || `sig-${idx}`} className="space-y-1 relative group/sig p-1 rounded-lg">
-              {/* Delete button (Screen only, in edit mode) */}
-              {onUpdateLetter && isEditable && currentSignatories.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => handleDeleteSignatory(idx)}
-                  className="print:hidden absolute -top-2 -right-2 p-1 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded-full shadow-xs opacity-0 group-hover/sig:opacity-100 transition cursor-pointer"
-                  title="Remove this signatory"
-                >
-                  <Trash2 size={11} />
-                </button>
-              )}
-
-              {/* Editable Signatory Role Label */}
-              {onUpdateLetter && isEditable ? (
-                <input
-                  type="text"
-                  value={sig.roleLabel}
-                  onChange={(e) => handleSignatoryChange(idx, 'roleLabel', e.target.value)}
-                  className="text-sm font-bold text-black uppercase tracking-tight block w-full text-center border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent"
-                  title="Click to edit role label"
-                />
-              ) : (
-                <span className="text-sm font-bold text-black uppercase tracking-tight block text-center">
-                  {sig.roleLabel}
-                </span>
-              )}
-
-              {/* Open 48px blank space specifically reserved for manual pen signature */}
-              <div className="h-12 w-full select-none" />
-
-              {/* Signature Line, Name, and Designation */}
-              <div className="space-y-0.5 w-full">
+              <div>
                 {onUpdateLetter && isEditable ? (
                   <div className="space-y-0.5">
                     <input
                       type="text"
-                      value={sig.name}
-                      placeholder="___________________________"
-                      onChange={(e) => handleSignatoryChange(idx, 'name', e.target.value)}
-                      className="font-bold text-black uppercase block w-full text-center text-sm border-b-2 border-black pb-0.5 hover:border-amber-500 focus:bg-amber-50/40 rounded-none px-1 py-0.5 outline-hidden print:border-black print:p-0 print:bg-transparent placeholder:text-black placeholder:font-normal"
-                      title="Signatory Printed Name (or leave blank for manual signing)"
+                      value={letter.fromOfficer || letter.from || ''}
+                      onChange={(e) => {
+                        handleFieldChange('from', e.target.value);
+                        handleFieldChange('fromOfficer', e.target.value);
+                      }}
+                      className="font-bold text-black uppercase block w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.5 outline-hidden print:border-none print:p-0 print:bg-transparent"
                     />
                     <input
                       type="text"
-                      value={sig.title}
-                      placeholder="Signature over Printed Name / Designation"
-                      onChange={(e) => handleSignatoryChange(idx, 'title', e.target.value)}
-                      className="text-xs font-semibold text-slate-800 print:text-black uppercase block w-full text-center border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.5 outline-hidden print:border-none print:p-0 print:bg-transparent placeholder:text-slate-600 mt-0.5"
-                      title="Signatory subtitle / designation"
+                      value={letter.fromTitle}
+                      onChange={(e) => handleFieldChange('fromTitle', e.target.value)}
+                      className="text-slate-700 print:text-black text-xs block w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.5 outline-hidden print:border-none print:p-0 print:bg-transparent"
                     />
                   </div>
                 ) : (
-                  <div>
-                    {sig.name ? (
-                      <p className="font-bold text-black uppercase text-sm tracking-wide border-b-2 border-black pb-0.5 min-h-[22px] text-center">
-                        {sig.name}
-                      </p>
-                    ) : (
-                      <div className="border-b-2 border-black pb-0.5 min-h-[22px] w-full" />
-                    )}
-                    <p className="text-xs font-semibold text-slate-800 print:text-black uppercase tracking-tight text-center mt-0.5">
-                      {sig.title || '\u00A0'}
-                    </p>
-                  </div>
+                  <>
+                    <span className="font-bold text-black uppercase block">{letter.fromOfficer || letter.from}</span>
+                    <span className="text-slate-700 print:text-black text-xs block">{letter.fromTitle}</span>
+                  </>
+                )}
+              </div>
+
+              <div className="font-serif font-bold text-black uppercase tracking-wider">
+                SUBJECT:
+              </div>
+              <div>
+                {onUpdateLetter && isEditable ? (
+                  <textarea
+                    value={letter.subject}
+                    rows={isLandscape ? 2 : 2}
+                    onChange={(e) => handleFieldChange('subject', e.target.value)}
+                    className="font-black text-black uppercase block w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.5 outline-hidden resize-none print:border-none print:p-0 print:bg-transparent"
+                  />
+                ) : (
+                  <span className="font-black text-black uppercase block">{formatText(letter.subject)}</span>
                 )}
               </div>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+
+          {/* 3. Opening Salutation */}
+          <div className={bodyTextClass}>
+            {onUpdateLetter && isEditable ? (
+              <input
+                type="text"
+                value={letter.openingGreeting}
+                onChange={(e) => handleFieldChange('openingGreeting', e.target.value)}
+                className="w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.5 outline-hidden print:border-none print:p-0 print:bg-transparent font-medium"
+              />
+            ) : (
+              <p className="font-medium">{letter.openingGreeting}</p>
+            )}
+          </div>
+
+          {/* 4. Body Paragraph 1 */}
+          <div className={bodyTextClass}>
+            {onUpdateLetter && isEditable ? (
+              <textarea
+                value={letter.bodyParagraph1}
+                rows={isLandscape ? 2 : 3}
+                onChange={(e) => handleFieldChange('bodyParagraph1', e.target.value)}
+                className="w-full text-justify border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1.5 py-1 outline-hidden resize-none print:border-none print:p-0 print:bg-transparent"
+              />
+            ) : (
+              <p className="text-justify indent-8">{formatText(letter.bodyParagraph1)}</p>
+            )}
+          </div>
+
+          {/* 5. Highlight Summary Statistics Table */}
+          <div className="border border-black bg-slate-50/70 print:bg-transparent p-2.5 sm:p-3 rounded-xs text-xs font-sans space-y-1.5">
+            <div className="flex items-center justify-between border-b border-black pb-1 font-bold uppercase text-[10.5px]">
+              <span>Key Verified Agricultural Metrics</span>
+              <span>Coverage Scope: {activeBarangay === 'ALL' ? 'Municipal-Wide' : `Brgy. ${activeBarangay}`}</span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center pt-1">
+              <div className="border-r border-slate-300 last:border-none pr-2">
+                <span className="text-[9.5px] text-slate-600 print:text-black uppercase block">Total Rice Farmers</span>
+                <strong className="text-xs sm:text-sm font-serif block text-black">{farmerCount} Registered</strong>
+              </div>
+              <div className="border-r border-slate-300 last:border-none pr-2">
+                <span className="text-[9.5px] text-slate-600 print:text-black uppercase block">Physical Farm Area</span>
+                <strong className="text-xs sm:text-sm font-serif block text-black">{totalAreaHa.toFixed(2)} Hectares</strong>
+              </div>
+              <div className="border-r border-slate-300 last:border-none pr-2">
+                <span className="text-[9.5px] text-slate-600 print:text-black uppercase block">Cropping Season</span>
+                <strong className="text-[11px] sm:text-xs font-serif block text-black truncate">{activeSeason}</strong>
+              </div>
+              <div>
+                <span className="text-[9.5px] text-slate-600 print:text-black uppercase block">Lead Seed Varieties</span>
+                <strong className="text-[11px] sm:text-xs font-serif block text-black truncate" title={predominantVarieties}>
+                  {predominantVarieties || 'NSIC Rc 222, Rc 160'}
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          {/* 6. Body Paragraph 2 */}
+          <div className={bodyTextClass}>
+            {onUpdateLetter && isEditable ? (
+              <textarea
+                value={letter.bodyParagraph2}
+                rows={isLandscape ? 2 : 3}
+                onChange={(e) => handleFieldChange('bodyParagraph2', e.target.value)}
+                className="w-full text-justify border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1.5 py-1 outline-hidden resize-none print:border-none print:p-0 print:bg-transparent"
+              />
+            ) : (
+              <p className="text-justify indent-8">{formatText(letter.bodyParagraph2)}</p>
+            )}
+          </div>
+
+          {/* When single page (portrait), also render closing statement and signatories below */}
+          {(!totalPages || totalPages === 1) && (
+            <>
+              {letter.closingStatement && (
+                <div className={bodyTextClass}>
+                  {onUpdateLetter && isEditable ? (
+                    <textarea
+                      value={letter.closingStatement}
+                      rows={2}
+                      onChange={(e) => handleFieldChange('closingStatement', e.target.value)}
+                      className="w-full text-justify border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1.5 py-1 outline-hidden resize-none print:border-none print:p-0 print:bg-transparent"
+                    />
+                  ) : (
+                    <p className="text-justify indent-8">{formatText(letter.closingStatement)}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Signatories on single page */}
+              <div className="mt-auto pt-6 border-t-2 border-black space-y-3 break-inside-avoid print:break-inside-avoid print:mt-auto">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9.5px] uppercase tracking-wider font-extrabold text-slate-600 print:text-black">
+                    Official Certification &amp; Signatures
+                  </span>
+                  {onUpdateLetter && isEditable && (
+                    <button
+                      type="button"
+                      onClick={handleAddSignatory}
+                      className="print:hidden px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition shadow-2xs"
+                    >
+                      <Plus size={13} />
+                      <span>Add Signatory (Prepared / Reviewed / Noted)</span>
+                    </button>
+                  )}
+                </div>
+
+                <div
+                  className={`grid gap-6 text-center ${
+                    currentSignatories.length === 1
+                      ? 'grid-cols-1 max-w-xs mx-auto'
+                      : currentSignatories.length === 2
+                      ? 'grid-cols-2 max-w-2xl mx-auto'
+                      : currentSignatories.length === 3
+                      ? 'grid-cols-1 sm:grid-cols-3'
+                      : currentSignatories.length === 4
+                      ? 'grid-cols-2 sm:grid-cols-4'
+                      : 'grid-cols-2 sm:grid-cols-3'
+                  }`}
+                >
+                  {currentSignatories.map((sig, idx) => (
+                    <div key={sig.id || `sig-${idx}`} className="space-y-1 relative group/sig p-1 rounded-lg">
+                      {onUpdateLetter && isEditable && currentSignatories.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSignatory(idx)}
+                          className="print:hidden absolute -top-2 -right-2 p-1 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded-full shadow-xs opacity-0 group-hover/sig:opacity-100 transition cursor-pointer"
+                          title="Remove this signatory"
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                      )}
+
+                      {onUpdateLetter && isEditable ? (
+                        <input
+                          type="text"
+                          value={sig.roleLabel}
+                          onChange={(e) => handleSignatoryChange(idx, 'roleLabel', e.target.value)}
+                          className="text-xs font-bold text-black uppercase tracking-tight block w-full text-center border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent"
+                        />
+                      ) : (
+                        <span className="text-xs font-bold text-black uppercase tracking-tight block text-center">
+                          {sig.roleLabel}
+                        </span>
+                      )}
+
+                      <div className="h-10 w-full select-none" />
+
+                      <div className="space-y-0.5 w-full">
+                        {onUpdateLetter && isEditable ? (
+                          <div className="space-y-0.5">
+                            <input
+                              type="text"
+                              value={sig.name}
+                              placeholder="___________________________"
+                              onChange={(e) => handleSignatoryChange(idx, 'name', e.target.value)}
+                              className="font-bold text-black uppercase block w-full text-center text-xs border-b-2 border-black pb-0.5 hover:border-amber-500 focus:bg-amber-50/40 rounded-none px-1 py-0.5 outline-hidden print:border-black print:p-0 print:bg-transparent placeholder:text-black placeholder:font-normal"
+                            />
+                            <input
+                              type="text"
+                              value={sig.title}
+                              placeholder="Signature over Printed Name / Designation"
+                              onChange={(e) => handleSignatoryChange(idx, 'title', e.target.value)}
+                              className="text-[10px] font-semibold text-slate-800 print:text-black uppercase block w-full text-center border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs px-1 py-0.5 outline-hidden print:border-none print:p-0 print:bg-transparent placeholder:text-slate-600 mt-0.5"
+                            />
+                          </div>
+                        ) : (
+                          <div>
+                            {sig.name ? (
+                              <p className="font-bold text-black uppercase text-xs tracking-wide border-b-2 border-black pb-0.5 min-h-[20px] text-center">
+                                {sig.name}
+                              </p>
+                            ) : (
+                              <div className="border-b-2 border-black pb-0.5 min-h-[20px] w-full" />
+                            )}
+                            <p className="text-[10px] font-semibold text-slate-800 print:text-black uppercase tracking-tight text-center mt-0.5">
+                              {sig.title || '\u00A0'}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Continuation prompt on Page 1 if multi-page */}
+          {totalPages === 2 && pageNumber === 1 && (
+            <div className="mt-auto pt-4 border-t border-slate-300 text-center font-mono text-[9pt] text-slate-600 italic">
+              *** Document continues on Page 2 for Official Verification and Signatures ***
+            </div>
+          )}
+        </>
+      )}
 
       {/* Word-Style Official Print Document Footer */}
       <div className="hidden print:flex items-center justify-between text-[8pt] font-mono text-slate-700 border-t border-black pt-1.5 mt-4">

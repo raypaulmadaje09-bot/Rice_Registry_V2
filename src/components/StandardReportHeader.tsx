@@ -9,8 +9,10 @@ interface StandardReportHeaderProps {
   provinceHeader?: string;
   municipalityHeader?: string;
   officeHeader?: string;
+  subtitle?: string;
   isEditable?: boolean;
   onEditLogo?: (logoType: ReportLogoType) => void;
+  onHeaderChange?: (field: 'republicHeader' | 'provinceHeader' | 'municipalityHeader' | 'officeHeader', value: string) => void;
   className?: string;
 }
 
@@ -30,8 +32,10 @@ export const StandardReportHeader: React.FC<StandardReportHeaderProps> = ({
   provinceHeader = 'Province of Southern Leyte',
   municipalityHeader = 'MUNICIPALITY OF SILAGO',
   officeHeader = 'MUNICIPAL AGRICULTURE OFFICE',
+  subtitle,
   isEditable = false,
   onEditLogo,
+  onHeaderChange,
   className = ''
 }) => {
   const { daLogoUrl, silagoLogoUrl, southernLeyteLogoUrl } = useApp();
@@ -105,19 +109,55 @@ export const StandardReportHeader: React.FC<StandardReportHeaderProps> = ({
       </div>
 
       {/* Official Hierarchy Text */}
-      <div className="text-center">
-        <p className="text-xs sm:text-[13px] font-sans tracking-wide text-black font-normal leading-tight">
-          {republicHeader}
-        </p>
-        <p className="text-xs sm:text-[13px] font-sans tracking-wide text-black font-normal leading-tight">
-          {provinceHeader}
-        </p>
-        <h1 className="text-sm sm:text-base font-serif font-black tracking-wider text-black uppercase leading-tight mt-0.5">
-          {municipalityHeader}
-        </h1>
-        <h2 className="text-xs sm:text-[13px] font-sans font-black tracking-wide text-black uppercase leading-tight mt-0.5">
-          {officeHeader}
-        </h2>
+      <div className="text-center w-full max-w-xl mx-auto space-y-0.5">
+        {isEditable && onHeaderChange ? (
+          <div className="space-y-0.5">
+            <input
+              type="text"
+              value={republicHeader}
+              onChange={(e) => onHeaderChange('republicHeader', e.target.value)}
+              className="text-center font-sans tracking-wide text-black text-xs sm:text-[13px] font-normal w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent"
+            />
+            <input
+              type="text"
+              value={provinceHeader}
+              onChange={(e) => onHeaderChange('provinceHeader', e.target.value)}
+              className="text-center font-sans tracking-wide text-black text-xs sm:text-[13px] font-normal w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent"
+            />
+            <input
+              type="text"
+              value={municipalityHeader}
+              onChange={(e) => onHeaderChange('municipalityHeader', e.target.value)}
+              className="text-center text-sm sm:text-base font-serif font-black tracking-wider text-black uppercase leading-tight w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent"
+            />
+            <input
+              type="text"
+              value={officeHeader}
+              onChange={(e) => onHeaderChange('officeHeader', e.target.value)}
+              className="text-center font-sans font-black tracking-wide text-black uppercase text-xs sm:text-[13px] leading-tight w-full border border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-amber-50/40 rounded-xs outline-hidden print:border-none print:bg-transparent"
+            />
+          </div>
+        ) : (
+          <>
+            <p className="text-xs sm:text-[13px] font-sans tracking-wide text-black font-normal leading-tight">
+              {republicHeader}
+            </p>
+            <p className="text-xs sm:text-[13px] font-sans tracking-wide text-black font-normal leading-tight">
+              {provinceHeader}
+            </p>
+            <h1 className="text-sm sm:text-base font-serif font-black tracking-wider text-black uppercase leading-tight mt-0.5">
+              {municipalityHeader}
+            </h1>
+            <h2 className="text-xs sm:text-[13px] font-sans font-black tracking-wide text-black uppercase leading-tight mt-0.5">
+              {officeHeader}
+            </h2>
+          </>
+        )}
+        {subtitle && (
+          <p className="text-[11px] font-sans font-bold text-slate-800 uppercase tracking-wider pt-0.5">
+            {subtitle}
+          </p>
+        )}
       </div>
     </div>
   );
