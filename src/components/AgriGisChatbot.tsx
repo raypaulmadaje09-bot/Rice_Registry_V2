@@ -1100,7 +1100,7 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
   onFilterReportBarangay,
   onFocusBarangayOnMap
 }) => {
-  const { currentUser, adminProfile, parcels, lftAccounts, officeContactInfo, addParcel } = useApp();
+  const { currentUser, adminProfile, parcels, lftAccounts, officeContactInfo, addParcel, language, t } = useApp();
 
   // 1. DYNAMIC SESSION EXTRACTION (Active authentication state from context)
   const activeUser = currentUser;
@@ -1165,9 +1165,20 @@ export const AgriGisChatbot: React.FC<AgriGisChatbotProps> = ({
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [lastMatchedParcels, setLastMatchedParcels] = useState<FarmParcel[]>([]);
 
-  // Conversational language state
-  const [activeLanguage, setActiveLanguage] = useState<SupportedLanguage>('bisaya');
+  // Conversational language state synced with global AppContext
+  const [activeLanguage, setActiveLanguage] = useState<SupportedLanguage>(() => {
+    return language === 'EN' ? 'english' : 'bisaya';
+  });
   const [isLanguageLocked, setIsLanguageLocked] = useState<boolean>(false);
+
+  // Keep activeLanguage in sync when global language toggle changes
+  useEffect(() => {
+    if (language === 'EN') {
+      setActiveLanguage('english');
+    } else {
+      setActiveLanguage('bisaya');
+    }
+  }, [language]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PortalTab } from '../types';
+import { useApp } from '../context/AppContext';
 import {
   LayoutDashboard,
   Activity,
@@ -50,6 +51,8 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
     management: true
   });
 
+  const { t } = useApp();
+
   // Ensure active tab's section is open whenever activeTab changes
   useEffect(() => {
     if (activeTab === 'dashboard' || activeTab === 'lft_dashboard') {
@@ -84,7 +87,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
                   ? 'bg-blue-600 text-white shadow-md'
                   : 'text-slate-300 hover:text-white hover:bg-white/10'
               }`}
-              title="Operations: Executive Dashboard"
+              title={`${t('nav.operations', 'Operations')}: ${t('nav.dashboard', 'Executive Dashboard')}`}
             >
               <LayoutDashboard className="w-4 h-4" />
             </button>
@@ -97,7 +100,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
                   ? 'bg-blue-600 text-white shadow-md'
                   : 'text-slate-300 hover:text-white hover:bg-white/10'
               }`}
-              title="Operations: LFT Field Dashboard"
+              title={`${t('nav.operations', 'Operations')}: ${t('nav.lftDashboard', 'LFT Field Dashboard')}`}
             >
               <Activity className="w-4 h-4" />
             </button>
@@ -117,7 +120,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'text-slate-300 hover:text-white hover:bg-white/10'
             }`}
-            title="Registry: GIS Rice Map & Polygons"
+            title={`${t('nav.registry', 'Registry')}: ${t('nav.map', 'GIS Rice Map & Polygons')}`}
           >
             <Compass className="w-4 h-4" />
             <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400" />
@@ -131,7 +134,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'text-slate-300 hover:text-white hover:bg-white/10'
             }`}
-            title={`Registry: Rice Farm Records (${parcelsCount} lots)`}
+            title={`${t('nav.registry', 'Registry')}: ${t('nav.database', 'Rice Farm Records')} (${parcelsCount} lots)`}
           >
             <Wheat className="w-4 h-4" />
           </button>
@@ -144,7 +147,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'text-slate-300 hover:text-white hover:bg-white/10'
             }`}
-            title="Registry: Official Farm Reports"
+            title={`${t('nav.registry', 'Registry')}: ${t('nav.reports', 'Print Official Reports')}`}
           >
             <Printer className="w-4 h-4" />
           </button>
@@ -164,7 +167,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
                   ? 'bg-blue-600 text-white shadow-md'
                   : 'text-slate-300 hover:text-white hover:bg-white/10'
               }`}
-              title="Management: LFT Field Accounts"
+              title={`${t('nav.management', 'Management')}: ${t('nav.accounts', 'LFT Field Accounts')}`}
             >
               <Users className="w-4 h-4" />
             </button>
@@ -179,7 +182,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
                   ? 'bg-blue-600 text-white shadow-md'
                   : 'text-slate-300 hover:text-white hover:bg-white/10'
               }`}
-              title="Management: Photo, Media & Municipal Seals"
+              title={`${t('nav.management', 'Management')}: ${t('nav.photos', 'Farmer & Field Media')}`}
             >
               <Image className="w-4 h-4" />
             </button>
@@ -194,7 +197,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'text-slate-300 hover:text-white hover:bg-white/10'
             }`}
-            title="Management: ISO/IEC 25010 Quality Evaluation"
+            title={`${t('nav.management', 'Management')}: ${t('nav.evaluation', 'ISO 25010 Quality Evaluation')}`}
           >
             <ClipboardCheck className="w-4 h-4 text-emerald-400" />
           </button>
@@ -207,7 +210,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'text-slate-300 hover:text-white hover:bg-white/10'
             }`}
-            title={isCentralAdmin ? 'Management: System Settings' : 'Management: Account Settings'}
+            title={`${t('nav.management', 'Management')}: ${t('nav.settings', 'System Settings')}`}
           >
             <Settings className="w-4 h-4" />
           </button>
@@ -220,7 +223,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
           type="button"
           onClick={onOpenPublicPortal}
           className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition cursor-pointer"
-          title="Public Web Portal"
+          title={t('nav.portal', 'Public Web Portal')}
         >
           <Globe className="w-4 h-4 text-sky-400" />
         </button>
@@ -256,7 +259,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
               <Layers className="w-3.5 h-3.5" />
             </div>
             <span className="text-[11px] font-black text-slate-200 tracking-wider uppercase group-hover:text-white">
-              Operations
+              {t('nav.operations', 'Operations')}
             </span>
           </div>
 
@@ -287,7 +290,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <LayoutDashboard className="w-4 h-4 shrink-0 text-slate-300" />
-                  <span className="truncate">Executive Dashboard</span>
+                  <span className="truncate">{t('nav.dashboard', 'Executive Dashboard')}</span>
                 </div>
                 <span
                   className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
@@ -310,7 +313,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <Activity className="w-4 h-4 shrink-0 text-slate-300" />
-                  <span className="truncate">LFT Field Dashboard</span>
+                  <span className="truncate">{t('nav.lftDashboard', 'LFT Field Dashboard')}</span>
                 </div>
                 <span
                   className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
@@ -342,7 +345,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
               <Database className="w-3.5 h-3.5" />
             </div>
             <span className="text-[11px] font-black text-slate-200 tracking-wider uppercase group-hover:text-white">
-              Registry
+              {t('nav.registry', 'Registry')}
             </span>
           </div>
 
@@ -372,7 +375,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
             >
               <div className="flex items-center gap-2 min-w-0">
                 <Compass className="w-4 h-4 shrink-0 text-slate-300" />
-                <span className="truncate">GIS Rice Map &amp; Polygons</span>
+                <span className="truncate">{t('nav.map', 'GIS Rice Map & Polygons')}</span>
               </div>
               <span
                 className={`text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 ${
@@ -396,7 +399,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
             >
               <div className="flex items-center gap-2 min-w-0">
                 <Wheat className="w-4 h-4 shrink-0 text-slate-300" />
-                <span className="truncate">Rice Farm Records</span>
+                <span className="truncate">{t('nav.database', 'Rice Farm Records')}</span>
               </div>
               <span
                 className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
@@ -419,7 +422,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
             >
               <div className="flex items-center gap-2 min-w-0">
                 <Printer className="w-4 h-4 shrink-0 text-slate-300" />
-                <span className="truncate">Print Official Reports</span>
+                <span className="truncate">{t('nav.reports', 'Print Official Reports')}</span>
               </div>
               <span
                 className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
@@ -450,7 +453,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
               <Sliders className="w-3.5 h-3.5" />
             </div>
             <span className="text-[11px] font-black text-slate-200 tracking-wider uppercase group-hover:text-white">
-              Management
+              {t('nav.management', 'Management')}
             </span>
           </div>
 
@@ -481,7 +484,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <Users className="w-4 h-4 shrink-0 text-slate-300" />
-                  <span className="truncate">LFT Field Accounts</span>
+                  <span className="truncate">{t('nav.accounts', 'LFT Field Accounts')}</span>
                 </div>
                 <span
                   className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
@@ -506,7 +509,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <Image className="w-4 h-4 shrink-0 text-slate-300" />
-                  <span className="truncate">Photo &amp; Media</span>
+                  <span className="truncate">{t('nav.photos', 'Photo & Media')}</span>
                 </div>
                 <span
                   className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
@@ -530,7 +533,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
             >
               <div className="flex items-center gap-2 min-w-0">
                 <ClipboardCheck className="w-4 h-4 shrink-0 text-emerald-400" />
-                <span className="truncate">ISO 25010 Quality Evaluation</span>
+                <span className="truncate">{t('nav.evaluation', 'ISO 25010 Quality Evaluation')}</span>
               </div>
               <span
                 className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
@@ -553,7 +556,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
             >
               <div className="flex items-center gap-2 min-w-0">
                 <Settings className="w-4 h-4 shrink-0 text-slate-300" />
-                <span className="truncate">{isCentralAdmin ? 'System Settings' : 'Account Settings'}</span>
+                <span className="truncate">{isCentralAdmin ? t('nav.settings', 'System Settings') : t('nav.settings', 'Account Settings')}</span>
               </div>
             </button>
           </div>
@@ -571,7 +574,7 @@ export const UnifiedSidebarNav: React.FC<UnifiedSidebarNavProps> = ({
         >
           <div className="flex items-center gap-2 min-w-0">
             <Globe className="w-4 h-4 text-sky-400 shrink-0 group-hover:scale-110 transition-transform" />
-            <span className="truncate">Public Web Portal</span>
+            <span className="truncate">{t('nav.portal', 'Public Web Portal')}</span>
           </div>
           <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0 group-hover:text-white" />
         </button>

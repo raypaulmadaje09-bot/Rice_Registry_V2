@@ -84,7 +84,8 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
     syncWithSupabase,
     offlineQueueCount,
     syncOfflineQueue,
-    isOnline
+    isOnline,
+    t
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
@@ -758,10 +759,10 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#0f3822] tracking-tight">
-              Rice Farm Records Database
+              {t('database.title', 'Rice Farm Records Database')}
             </h2>
             <p className="text-xs text-slate-500 mt-1 max-w-3xl leading-relaxed">
-              Official live registry of georeferenced rice farm parcels, RSBSA tillers, palay varieties, and PCIC insurance across all 15 Silago barangays.
+              {t('database.subtitle', 'Official live registry of georeferenced rice farm parcels, RSBSA tillers, palay varieties, and PCIC insurance across all 15 Silago barangays.')}
             </p>
           </div>
 
@@ -772,7 +773,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
               className="px-4 py-2 bg-[#0e3b23] hover:bg-[#154d2f] text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition flex items-center gap-2 shrink-0 cursor-pointer self-start sm:self-auto"
             >
               <Plus className="w-4 h-4 text-emerald-300" />
-              <span>+ Add Rice Farm Registration</span>
+              <span>{t('database.registerFarm', '+ Add Rice Farm Registration')}</span>
             </button>
           )}
         </div>
@@ -782,20 +783,20 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
           {/* Card 1: Filtered Parcels */}
           <div className="bg-[#fffefb] border border-[#fef08a] rounded-2xl p-4 sm:p-5 shadow-2xs">
             <span className="text-[10px] sm:text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider block">
-              FILTERED PARCELS
+              {t('database.filteredParcels', 'FILTERED PARCELS')}
             </span>
             <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-2xl sm:text-3xl font-black text-slate-900">
                 {filteredParcels.length}
               </span>
-              <span className="text-xs font-bold text-slate-600">lots</span>
+              <span className="text-xs font-bold text-slate-600">{t('database.lots', 'lots')}</span>
             </div>
           </div>
 
           {/* Card 2: Total Area Mapped */}
           <div className="bg-[#fffefb] border border-[#fef08a] rounded-2xl p-4 sm:p-5 shadow-2xs">
             <span className="text-[10px] sm:text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider block">
-              TOTAL AREA MAPPED
+              {t('database.totalAreaMapped', 'TOTAL AREA MAPPED')}
             </span>
             <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-2xl sm:text-3xl font-black text-[#059669]">
@@ -808,7 +809,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
           {/* Card 3: Average Farm Size */}
           <div className="bg-[#fffefb] border border-[#fef08a] rounded-2xl p-4 sm:p-5 shadow-2xs">
             <span className="text-[10px] sm:text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider block">
-              AVERAGE FARM SIZE
+              {t('database.averageFarmSize', 'AVERAGE FARM SIZE')}
             </span>
             <div className="mt-1 flex items-baseline gap-1.5">
               <span className="text-2xl sm:text-3xl font-black text-[#2563eb]">
@@ -821,14 +822,14 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
           {/* Card 4: Georeference Coverage */}
           <div className="bg-[#fffefb] border border-[#fef08a] rounded-2xl p-4 sm:p-5 shadow-2xs">
             <span className="text-[10px] sm:text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider block">
-              GEOREFERENCE COVERAGE
+              {t('database.georeferenceCoverage', 'GEOREFERENCE COVERAGE')}
             </span>
             <div className="mt-1 flex items-baseline gap-2">
               <div className="w-5 h-5 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center shrink-0 self-center">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
               </div>
               <span className="text-2xl sm:text-3xl font-black text-slate-900">100%</span>
-              <span className="text-xs font-bold text-emerald-700">GPS Mapped</span>
+              <span className="text-xs font-bold text-emerald-700">{t('database.gpsMapped', 'GPS Mapped')}</span>
             </div>
           </div>
         </div>
@@ -842,7 +843,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by RSBSA No., farmer name, barangay, variety..."
+              placeholder={t('database.searchPlaceholder', 'Search by RSBSA No., farmer name, barangay, variety...')}
               className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-800 shadow-2xs"
             />
           </div>
@@ -1024,47 +1025,47 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
 
                 {/* 2. RSBSA NO. (Frozen Left 44px) */}
                 <th className="sticky top-0 left-[44px] z-30 bg-[#0c2340] w-[155px] min-w-[155px] max-w-[155px] py-3 px-3 text-center whitespace-nowrap text-white border-b border-[#08182b] border-r-2 border-slate-700/80 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.4)]">
-                  RSBSA NO.
+                  {t('database.rsbsaNo', 'RSBSA NO.')}
                 </th>
 
                 {/* 3. PROFILE & FARMER NAME */}
                 <th className="sticky top-0 z-20 bg-[#0c2340] w-[230px] min-w-[230px] py-3 px-3.5 text-left whitespace-nowrap text-white border-b border-[#08182b]">
-                  PROFILE &amp; FARMER NAME
+                  {t('database.farmerName', 'PROFILE & FARMER NAME')}
                 </th>
 
                 {/* 4. RESIDENTIAL ADDRESS */}
                 <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3.5 text-left whitespace-nowrap text-white border-b border-[#08182b] w-[190px] min-w-[190px]">
-                  RESIDENTIAL ADDRESS
+                  {t('database.residentialAddress', 'RESIDENTIAL ADDRESS')}
                 </th>
 
                 {/* 5. FARM LOCATION / BASAKAN */}
                 <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3.5 text-left whitespace-nowrap text-white border-b border-[#08182b] w-[180px] min-w-[180px]">
-                  FARM LOCATION / BASAKAN
+                  {t('database.farmLocation', 'FARM LOCATION / BASAKAN')}
                 </th>
 
                 {/* 6. ECOSYSTEM */}
                 <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3 text-center whitespace-nowrap text-white border-b border-[#08182b] w-[140px] min-w-[140px]">
-                  ECOSYSTEM
+                  {t('database.ecosystem', 'ECOSYSTEM')}
                 </th>
 
                 {/* 7. FARM AREA (HA) */}
                 <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3 text-right whitespace-nowrap text-white border-b border-[#08182b] w-[110px] min-w-[110px]">
-                  FARM AREA (HA)
+                  {t('database.farmArea', 'FARM AREA (HA)')}
                 </th>
 
                 {/* 8. COMMODITY & VARIETY */}
                 <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3.5 text-left whitespace-nowrap text-white border-b border-[#08182b] w-[200px] min-w-[200px]">
-                  COMMODITY &amp; VARIETY
+                  {t('database.commodityVariety', 'COMMODITY & VARIETY')}
                 </th>
 
                 {/* 9. GPS / GEOREFERENCE STATUS */}
                 <th className="sticky top-0 z-20 bg-[#0c2340] py-3 px-3.5 text-center whitespace-nowrap text-white border-b border-[#08182b] w-[180px] min-w-[180px]">
-                  GPS / GEOREFERENCE STATUS
+                  {t('database.georeferenceStatus', 'GPS / GEOREFERENCE STATUS')}
                 </th>
 
                 {/* 10. ACTIONS (Sticky Right) */}
                 <th className="sticky top-0 right-0 z-30 bg-[#0c2340] py-3 px-3.5 text-center whitespace-nowrap shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.3)] border-b border-[#08182b] text-white w-[140px] min-w-[140px]">
-                  ACTIONS
+                  {t('database.actions', 'ACTIONS')}
                 </th>
               </tr>
             </thead>

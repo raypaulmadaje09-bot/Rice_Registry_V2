@@ -150,7 +150,7 @@ interface ReportsViewProps {
 }
 
 export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => {
-  const { parcels, currentUser, activeSeason } = useApp();
+  const { parcels, currentUser, activeSeason, t } = useApp();
 
   const [reportType, setReportType] = useState<
     'official_registry' | 'seasonal_production' | 'barangay_consolidated' | 'census' | 'rsbsa'
@@ -1306,7 +1306,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider flex items-center gap-1.5 shrink-0">
               <FileText className="w-3.5 h-3.5 text-emerald-700" />
-              DOCUMENT TYPE:
+              {t('reports.documentType', 'DOCUMENT TYPE')}:
             </span>
 
             {/* 5 Horizontal Document Type Pills */}
@@ -1325,7 +1325,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
                 }`}
               >
                 <FileText className={`w-3.5 h-3.5 ${documentView === 'letter' ? 'text-emerald-700' : 'text-slate-400'}`} />
-                <span>Transmittal Letter</span>
+                <span>{t('reports.transmittalLetter', 'Transmittal Letter')}</span>
               </button>
 
               {/* Tab 2: Irrigators Directory */}
@@ -1343,7 +1343,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
                 }`}
               >
                 <FileText className={`w-3.5 h-3.5 ${documentView === 'irrigators_letter' ? 'text-teal-700' : 'text-slate-400'}`} />
-                <span>Irrigators Directory</span>
+                <span>{t('reports.irrigatorsDirectory', 'Irrigators Directory')}</span>
               </button>
 
               {/* Tab 3: MPCSRS Palay Report */}
@@ -1361,7 +1361,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
                 }`}
               >
                 <Wheat className={`w-3.5 h-3.5 ${documentView === 'mpcsrs_report' ? 'text-emerald-700' : 'text-slate-400'}`} />
-                <span>MPCSRS Palay Report</span>
+                <span>{t('reports.mpcsrsReport', 'MPCSRS Palay Report')}</span>
               </button>
 
               {/* Tab 4: Masterlist Registry */}
@@ -1378,7 +1378,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
                 }`}
               >
                 <Wheat className={`w-3.5 h-3.5 ${documentView === 'registry_table' ? 'text-blue-700' : 'text-slate-400'}`} />
-                <span>Masterlist Registry</span>
+                <span>{t('reports.masterlistRegistry', 'Masterlist Registry')}</span>
               </button>
 
               {/* Tab 5: Complete Package */}
@@ -1395,7 +1395,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ initialBarangay }) => 
                 }`}
               >
                 <Layers className="w-3.5 h-3.5 text-indigo-300" />
-                <span>Complete Package (All 4)</span>
+                <span>{t('reports.completePackage', 'Complete Package (All 4)')}</span>
               </button>
             </div>
           </div>

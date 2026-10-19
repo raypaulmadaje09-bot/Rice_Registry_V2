@@ -35,7 +35,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenAddParcel,
   onSelectBarangay
 }) => {
-  const { parcels, currentUser, lftAccounts } = useApp();
+  const { parcels, currentUser, lftAccounts, t } = useApp();
 
   // Quick Stats Summary Row Data
   const quickStats = useMemo(() => {
@@ -156,7 +156,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               className="bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-xs transition cursor-pointer"
             >
               <Compass className="w-4 h-4" />
-              <span>Open GIS Rice Map</span>
+              <span>{t('dashboard.openMap', 'Open GIS Rice Map')}</span>
             </button>
 
             <button
@@ -165,7 +165,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               className="bg-white/10 hover:bg-white/15 border border-white/20 text-white font-semibold text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 transition cursor-pointer"
             >
               <FileText className="w-4 h-4" />
-              <span>View All Farm Records</span>
+              <span>{t('dashboard.viewAllRecords', 'View All Farm Records')}</span>
             </button>
 
             <button
@@ -174,7 +174,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               className="bg-white/10 hover:bg-white/15 border border-white/20 text-white font-semibold text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 transition cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Register Rice Farm</span>
+              <span>{t('dashboard.registerFarm', 'Register Rice Farm')}</span>
             </button>
           </div>
         </div>
@@ -189,16 +189,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </span>
             <div>
               <h3 className="text-xs font-black tracking-wider uppercase text-slate-800">
-                Quick Stats Summary
+                {t('dashboard.quickStats', 'Quick Stats Summary')}
               </h3>
               <p className="text-[11px] text-slate-500">
-                Live registry status for {quickStats.currentMonthName}
+                {t('dashboard.liveRegistryStatus', 'Live registry status for')} {quickStats.currentMonthName}
               </p>
             </div>
           </div>
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 w-fit">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Live Sync Active
+            {t('dashboard.liveSyncActive', 'Live Sync Active')}
           </span>
         </div>
 
@@ -210,7 +210,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             <div>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                Total Registered Area
+                {t('dashboard.totalRegisteredArea', 'Total Registered Area')}
               </span>
               <div className="flex items-baseline gap-1 mt-0.5">
                 <span className="font-serif font-black text-2xl text-slate-900 leading-none">
@@ -219,7 +219,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <span className="text-xs font-bold text-slate-500">ha</span>
               </div>
               <span className="text-[11px] text-slate-500 block mt-0.5">
-                Across all 15 Silago barangays
+                {t('dashboard.acrossBarangays', 'Across all 15 Silago barangays')}
               </span>
             </div>
           </div>
@@ -231,16 +231,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             <div>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                Active LFT Officers
+                {t('dashboard.activeLfts', 'Active LFT Officers')}
               </span>
               <div className="flex items-baseline gap-1 mt-0.5">
                 <span className="font-serif font-black text-2xl text-slate-900 leading-none">
                   {quickStats.activeLfts}
                 </span>
-                <span className="text-xs font-bold text-slate-500">Field Technicians</span>
+                <span className="text-xs font-bold text-slate-500">{t('dashboard.fieldTechnicians', 'Field Technicians')}</span>
               </div>
               <span className="text-[11px] text-slate-500 block mt-0.5">
-                Certified field verification coverage
+                {t('dashboard.certifiedCoverage', 'Certified field verification coverage')}
               </span>
             </div>
           </div>
@@ -252,16 +252,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             <div>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                Farms Added This Month
+                {t('dashboard.farmsAddedThisMonth', 'Farms Added This Month')}
               </span>
               <div className="flex items-baseline gap-1 mt-0.5">
                 <span className="font-serif font-black text-2xl text-slate-900 leading-none">
                   {quickStats.farmsAddedThisMonth}
                 </span>
-                <span className="text-xs font-bold text-slate-500">New Registrations</span>
+                <span className="text-xs font-bold text-slate-500">{t('dashboard.newRegistrations', 'New Registrations')}</span>
               </div>
               <span className="text-[11px] text-slate-500 block mt-0.5">
-                Enrolled during {quickStats.currentMonthName}
+                {t('dashboard.enrolledDuring', 'Enrolled during')} {quickStats.currentMonthName}
               </span>
             </div>
           </div>
@@ -274,7 +274,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              TOTAL REGISTERED RICE FARMS
+              {t('dashboard.registeredFarmers', 'TOTAL REGISTERED RICE FARMS')}
             </span>
             <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
               <Wheat className="w-4 h-4" />
@@ -285,7 +285,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {stats.totalParcels}
             </span>
             <span className="text-xs text-slate-500 block mt-1.5">
-              Active georeferenced farm parcels
+              {t('dashboard.activeParcels', 'Active georeferenced farm parcels')}
             </span>
           </div>
         </div>
@@ -294,7 +294,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              GEOREFERENCED AREA (HA)
+              {t('dashboard.areaGeoreferenced', 'GEOREFERENCED AREA (HA)')}
             </span>
             <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
               <Compass className="w-4 h-4" />
@@ -308,7 +308,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <span className="text-sm font-bold text-slate-600">ha</span>
             </div>
             <span className="text-xs text-slate-500 block mt-1.5">
-              Mapped palay parcel area
+              {t('dashboard.mappedPalayArea', 'Mapped palay parcel area')}
             </span>
           </div>
         </div>
@@ -317,7 +317,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              ACTIVE BARANGAYS
+              {t('dashboard.activeBarangays', 'ACTIVE BARANGAYS')}
             </span>
             <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
               <Building2 className="w-4 h-4" />
@@ -328,7 +328,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {new Set(parcels.map((p) => p.barangay)).size} / 15
             </span>
             <span className="text-xs text-slate-500 block mt-1.5">
-              {new Set(parcels.map((p) => p.barangay)).size > 0 ? 'Barangays with registered farms' : 'No barangays mapped yet'}
+              {new Set(parcels.map((p) => p.barangay)).size > 0 ? t('dashboard.barangaysWithFarms', 'Barangays with registered farms') : t('dashboard.noBarangaysYet', 'No barangays mapped yet')}
             </span>
           </div>
         </div>
@@ -337,7 +337,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              RSBSA &amp; PCIC INSURED
+              {t('dashboard.pendingValidations', 'RSBSA & PCIC INSURED')}
             </span>
             <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
               <ShieldCheck className="w-4 h-4" />

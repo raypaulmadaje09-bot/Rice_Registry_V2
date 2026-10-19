@@ -371,7 +371,7 @@ export const MapView: React.FC<MapViewProps> = ({
   focusParcel,
   onOpenLogin
 }) => {
-  const { parcels, currentUser } = useApp();
+  const { parcels, currentUser, t } = useApp();
   const isAuthorized = Boolean(currentUser);
   const [showAuthWarningModal, setShowAuthWarningModal] = useState(false);
 
@@ -1678,14 +1678,14 @@ export const MapView: React.FC<MapViewProps> = ({
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="font-bold text-sm sm:text-base text-slate-900 tracking-tight">
-                      Farmer Landholdings Directory &amp; GIS Analytics
+                      {t('map.directoryTitle', 'Farmer Landholdings Directory & GIS Analytics')}
                     </h2>
                     <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full text-[11px] font-bold font-mono">
                       {filteredParcels.length} {filteredParcels.length === 1 ? 'lot' : 'lots'}
                     </span>
                   </div>
                   <p className="text-xs text-slate-500">
-                    Georeferenced cadastral boundaries, rice varieties, and spatial distribution in Silago
+                    {t('map.directorySubtitle', 'Georeferenced cadastral boundaries, rice varieties, and spatial distribution in Silago')}
                   </p>
                 </div>
               </div>
@@ -1702,7 +1702,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 title={isFarmerListOpen ? 'Hide farmers list carousel' : 'Browse farmers list carousel'}
               >
                 <Users className={`w-4 h-4 ${isFarmerListOpen ? 'text-white' : 'text-blue-600'}`} />
-                <span>{isFarmerListOpen ? 'Hide Farmers List' : 'Browse Farmers List'}</span>
+                <span>{isFarmerListOpen ? (t('map.hideFarmersList', 'Hide Farmers List')) : (t('map.browseFarmersList', 'Browse Farmers List'))}</span>
                 <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${isFarmerListOpen ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'}`}>
                   {filteredParcels.length}
                 </span>
@@ -1721,7 +1721,7 @@ export const MapView: React.FC<MapViewProps> = ({
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search RSBSA, farmer name, variety, barangay..."
+                    placeholder={t('map.searchPlaceholder', 'Search RSBSA, farmer name, variety, barangay...')}
                     className="w-full pl-10 pr-9 py-2 bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200/90 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 shadow-2xs transition"
                   />
                   {searchQuery && (
@@ -2337,7 +2337,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 aria-label="Reset View"
               >
                 <RotateCcw className="w-4 h-4 text-emerald-400 group-hover:-rotate-45 transition-transform duration-200" />
-                <span className="hidden sm:inline">Reset View</span>
+                <span className="hidden sm:inline">{t('map.resetView', 'Reset View')}</span>
               </button>
             </div>
 
@@ -2358,7 +2358,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 title="Click anywhere on the map to pin and register new farm parcel"
               >
                 <MapPin className="w-3.5 h-3.5 text-rose-400" />
-                <span>Drop GPS Pin</span>
+                <span>{t('map.dropPin', 'Drop GPS Pin')}</span>
               </button>
 
               <button
@@ -2373,7 +2373,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 title="Draw Boundary: Click points on map to define new farm parcel boundaries"
               >
                 <PenTool className={`w-3.5 h-3.5 ${activeTool === 'draw_boundary' || activeTool === 'draw_polygon' ? 'text-white' : 'text-blue-400'}`} />
-                <span>Draw Boundary</span>
+                <span>{t('map.drawBoundary', 'Draw Boundary')}</span>
               </button>
 
               <button
@@ -2391,7 +2391,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 title="Measure distance along irrigation canal or farm road"
               >
                 <Ruler className="w-3.5 h-3.5 text-amber-400" />
-                <span>Measure Distance</span>
+                <span>{t('map.measureDistance', 'Measure Distance')}</span>
               </button>
 
               {(measurePoints.length > 0 || digitizerPoints.length > 0) && (

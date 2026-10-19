@@ -20,6 +20,7 @@ import {
 } from '../utils/supabaseClient';
 import { getUserPermissions, UserPermissions } from '../utils/rbac';
 import { setReportCustomLogoCache } from '../utils/reportExportUtils';
+import { getTranslation } from '../locales/translations';
 
 export const DEFAULT_OFFICE_CONTACT_INFO: OfficeContactInfo = {
   schedule: 'Monday – Friday: 8:00 AM – 5:00 PM',
@@ -85,6 +86,7 @@ interface AppContextType {
   resetParcels: () => void;
   language: Language;
   setLanguage: (lang: Language) => void;
+  t: (keyPath: string, fallback?: string) => string;
 
   // LFT Officer Accounts Management
   lftAccounts: LftAccount[];
@@ -1240,13 +1242,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Language State
-  const [language, setLanguageState] = useState<Language>('EN');
+  // Language State (Persisted in localStorage & Supabase)
+  const [language, setLanguageState] = useState<Language>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('silago_language') as Language | null;
+        if (stored === 'EN' || stored === 'CEB') return stored;
+      }
+    } catch {}
+    return 'EN';
+  });
 
-  const setLanguage = (lang: Language) => {
+  const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('silago_language', lang);
+      }
+    } catch {}
     supabaseDb.setSetting('silago_language', lang);
-  };
+  }, []);
+
+  const t = useCallback((keyPath: string, fallback?: string): string => {
+    return getTranslation(language, keyPath, fallback);
+  }, [language]);
 
   // Background & Media Settings
   const [bgPhotoUrl, setBgPhotoUrlState] = useState<string>(DEFAULT_BG_PHOTO);
@@ -1959,6 +1978,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         reorderLftAccounts,
         language,
         setLanguage,
+        t,
         bgPhotoUrl,
         bgOpacity,
         bgBlur,
@@ -2085,4 +2105,9 @@ export const useApp = () => {
     throw new Error('useApp must be used within an AppProvider');
   }
   return context;
+};
+
+export const useTranslation = () => {
+  const { t, language, setLanguage } = useApp();
+  return { t, language, setLanguage };
 };

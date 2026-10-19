@@ -58,6 +58,7 @@ const AppContent: React.FC = () => {
     deleteParcel,
     language,
     setLanguage,
+    t,
     bgPhotoUrl,
     bgOpacity,
     bgBlur,
@@ -344,25 +345,25 @@ const AppContent: React.FC = () => {
   const getHeaderTitle = () => {
     switch (activeTab) {
       case 'dashboard':
-        return 'Executive Dashboard';
+        return t('nav.dashboard', 'Executive Dashboard');
       case 'lft_dashboard':
-        return 'LFT Field Dashboard';
+        return t('nav.lftDashboard', 'LFT Field Dashboard');
       case 'map':
-        return 'GIS Rice Farm Map & Georeferenced Polygons';
+        return t('nav.map', 'GIS Rice Farm Map & Georeferenced Polygons');
       case 'eartags':
-        return 'Rice Farm Records Database';
+        return t('nav.database', 'Rice Farm Records Database');
       case 'reports':
-        return 'Official Rice Farm Registry Reports';
+        return t('nav.reports', 'Official Rice Farm Registry Reports');
       case 'accounts':
-        return 'LFT Accounts & Settings';
+        return t('nav.accounts', 'LFT Accounts & Settings');
       case 'photos':
-        return 'Photo, Media & Municipal Seals Settings';
+        return t('nav.photos', 'Photo, Media & Municipal Seals Settings');
       case 'evaluation':
-        return 'ISO/IEC 25010 Software Quality Evaluation';
+        return t('nav.evaluation', 'ISO/IEC 25010 Software Quality Evaluation');
       case 'settings':
-        return isCentralAdmin ? 'System & Admin Settings' : 'LFT Account Settings';
+        return isCentralAdmin ? t('nav.settings', 'System & Admin Settings') : t('nav.settings', 'LFT Account Settings');
       default:
-        return 'Rice Farm Registry and Georeferencing';
+        return t('common.appTitle', 'Rice Farm Registry and Georeferencing');
     }
   };
 
@@ -740,7 +741,7 @@ const AppContent: React.FC = () => {
 
                 <div>
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                    Rice Farm Registry and Georeferencing
+                    {t('common.appSubtitle', 'Rice Farm Registry and Georeferencing')}
                   </span>
                   <h1 className="font-serif font-black text-xl sm:text-2xl text-[#0b2545] tracking-tight leading-tight">
                     {getHeaderTitle()}
@@ -755,7 +756,7 @@ const AppContent: React.FC = () => {
                 className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-blue-600 font-semibold text-xs transition shadow-2xs cursor-pointer"
               >
                 <Globe className="w-3.5 h-3.5" />
-                <span>Public Interface</span>
+                <span>{t('nav.portal', 'Public Web Portal')}</span>
               </button>
             </header>
 
