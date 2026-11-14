@@ -1,0 +1,133 @@
+<svg viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.15" />
+    </filter>
+  </defs>
+
+  <!-- Red Heart Outer Sweep Loop -->
+  <path 
+    d="M 50 48 C 90 -10, 185 -5, 218 68 C 242 120, 222 178, 172 210 C 135 232, 85 220, 85 220 C 95 212, 138 198, 168 170 C 205 132, 210 90, 185 55 C 158 18, 90 25, 50 48 Z" 
+    fill="#D81B27" 
+  />
+
+  <!-- Golden Philippine Sun with 8 rays -->
+  <g transform="translate(108, 116)">
+    <!-- 8 Main Rays -->
+    <g fill="#F5BA13">
+      <!-- Ray 0 deg -->
+      <polygon points="0,-72 8,-28 -8,-28" />
+      <polygon points="-12,-52 -5,-25 -15,-28" />
+      <polygon points="12,-52 15,-28 5,-25" />
+      
+      <!-- Ray 45 deg -->
+      <g transform="rotate(45)">
+        <polygon points="0,-72 8,-28 -8,-28" />
+        <polygon points="-12,-52 -5,-25 -15,-28" />
+        <polygon points="12,-52 15,-28 5,-25" />
+      </g>
+      <!-- Ray 90 deg -->
+      <g transform="rotate(90)">
+        <polygon points="0,-72 8,-28 -8,-28" />
+        <polygon points="-12,-52 -5,-25 -15,-28" />
+        <polygon points="12,-52 15,-28 5,-25" />
+      </g>
+      <!-- Ray 135 deg -->
+      <g transform="rotate(135)">
+        <polygon points="0,-72 8,-28 -8,-28" />
+        <polygon points="-12,-52 -5,-25 -15,-28" />
+        <polygon points="12,-52 15,-28 5,-25" />
+      </g>
+      <!-- Ray 180 deg -->
+      <g transform="rotate(180)">
+        <polygon points="0,-72 8,-28 -8,-28" />
+        <polygon points="-12,-52 -5,-25 -15,-28" />
+        <polygon points="12,-52 15,-28 5,-25" />
+      </g>
+      <!-- Ray 225 deg -->
+      <g transform="rotate(225)">
+        <polygon points="0,-72 8,-28 -8,-28" />
+        <polygon points="-12,-52 -5,-25 -15,-28" />
+        <polygon points="12,-52 15,-28 5,-25" />
+      </g>
+      <!-- Ray 270 deg -->
+      <g transform="rotate(270)">
+        <polygon points="0,-72 8,-28 -8,-28" />
+        <polygon points="-12,-52 -5,-25 -15,-28" />
+        <polygon points="12,-52 15,-28 5,-25" />
+      </g>
+      <!-- Ray 315 deg -->
+      <g transform="rotate(315)">
+        <polygon points="0,-72 8,-28 -8,-28" />
+        <polygon points="-12,-52 -5,-25 -15,-28" />
+        <polygon points="12,-52 15,-28 5,-25" />
+      </g>
+    </g>
+    <circle cx="0" cy="0" r="30" fill="#F5BA13" />
+  </g>
+
+  <!-- Top Curved Pill: AKTIBO. PURSIGIDO. -->
+  <g filter="url(#shadow)">
+    <rect x="42" y="78" width="132" height="19" rx="9.5" fill="#FFFFFF" stroke="#0B3076" stroke-width="1.2" />
+    <text 
+      x="108" 
+      y="91.5" 
+      fill="#0B3076" 
+      font-size="9.5" 
+      font-weight="900" 
+      letter-spacing="0.8" 
+      text-anchor="middle" 
+      font-family="system-ui, -apple-system, sans-serif"
+    >
+      AKTIBO. PURSIGIDO.
+    </text>
+  </g>
+
+  <!-- BAG-ONG Typography -->
+  <text 
+    x="108" 
+    y="125" 
+    fill="#08286A" 
+    font-size="28" 
+    font-weight="900" 
+    letter-spacing="-0.5" 
+    text-anchor="middle" 
+    font-family="Impact, -apple-system, Arial Black, sans-serif"
+    stroke="#FFFFFF"
+    stroke-width="3"
+    paint-order="stroke fill"
+  >
+    BAG-ONG
+  </text>
+
+  <!-- SILAGO Typography -->
+  <text 
+    x="108" 
+    y="158" 
+    fill="#08286A" 
+    font-size="34" 
+    font-weight="900" 
+    letter-spacing="0.5" 
+    text-anchor="middle" 
+    font-family="Impact, -apple-system, Arial Black, sans-serif"
+    stroke="#FFFFFF"
+    stroke-width="3.5"
+    paint-order="stroke fill"
+  >
+    SILAGO
+  </text>
+
+  <!-- Love Peace Hope Script -->
+  <text 
+    x="108" 
+    y="182" 
+    fill="#D81B27" 
+    font-size="16" 
+    font-weight="bold" 
+    font-style="italic" 
+    text-anchor="middle" 
+    font-family="'Brush Script MT', 'Lucida Handwriting', cursive, Georgia, serif"
+  >
+    Love Peace Hope
+  </text>
+</svg>
