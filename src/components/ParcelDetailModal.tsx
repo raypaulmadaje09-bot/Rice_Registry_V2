@@ -131,12 +131,15 @@ export const ParcelDetailModal: React.FC<ParcelDetailModalProps> = ({
   }, [parcel.plantingDate, parcel.breed, parcel.healthStatus]);
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white text-gov-ink w-full max-w-2xl rounded-md shadow-2xl overflow-hidden border border-gov-line-strong animate-in zoom-in-95 duration-200 flex flex-col max-h-[92vh]">
-        {/* Modal Top Bar */}
-        <div className="bg-gov-forest text-white p-5 relative shrink-0">
+    <div className="fixed inset-0 z-100 flex justify-end bg-black/40 backdrop-blur-xs animate-in fade-in duration-200" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white text-gov-ink w-full max-w-xl h-full shadow-2xl border-l border-gov-line animate-in slide-in-from-right duration-250 flex flex-col"
+      >
+        {/* Drawer Top Bar */}
+        <div className="bg-gov-forest text-white p-4 sm:p-5 relative shrink-0 border-b-2 border-gov-gold">
           <div className="flex items-start justify-between gap-3">
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[10px] font-mono font-bold bg-white/15 text-emerald-200 border border-white/20 px-2 py-0.5 rounded-sm">
                   {parcel.tagNumber}
@@ -148,18 +151,19 @@ export const ParcelDetailModal: React.FC<ParcelDetailModalProps> = ({
                   {parcel.syncStatus}
                 </span>
               </div>
-              <h2 className="text-xl sm:text-2xl font-serif font-bold text-white mt-1.5">
+              <h2 className="text-lg sm:text-xl font-serif font-bold text-white mt-1.5 truncate">
                 {parcel.raiserName}
               </h2>
-              <p className="text-xs text-white/75 flex items-center gap-1.5 mt-0.5">
-                <MapPin className="w-3.5 h-3.5 text-amber-300" />
-                {parcel.address}
+              <p className="text-xs text-white/75 flex items-center gap-1.5 mt-0.5 truncate">
+                <MapPin className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                <span>{parcel.address}</span>
               </p>
             </div>
             <button
               onClick={onClose}
               type="button"
-              className="p-1 rounded text-white/65 hover:text-white hover:bg-white/10 transition cursor-pointer"
+              className="p-1 rounded text-white/65 hover:text-white hover:bg-white/10 transition cursor-pointer shrink-0"
+              title="Close panel (Esc)"
             >
               <X className="w-5 h-5" />
             </button>

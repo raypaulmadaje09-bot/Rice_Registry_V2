@@ -1366,7 +1366,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
             <thead className="sticky top-0 z-20 bg-gov-canvas text-gov-muted border-b border-gov-line">
               <tr className="border-b border-gov-line text-[10px] font-bold uppercase tracking-wider text-gov-muted">
                 {/* 1. [Checkbox Selection] (Frozen Left 0) */}
-                <th className="sticky top-0 left-0 z-30 bg-gov-canvas w-[40px] min-w-[40px] max-w-[40px] py-2.5 px-2 text-center whitespace-nowrap text-gov-muted border-b border-gov-line border-r border-gov-line">
+                <th className="sticky top-0 left-0 z-30 bg-gov-canvas w-[38px] min-w-[38px] max-w-[38px] py-2 px-2 text-center whitespace-nowrap text-gov-muted border-b border-gov-line border-r border-gov-line">
                   <input
                     type="checkbox"
                     ref={headerCheckboxRef}
@@ -1377,58 +1377,58 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                   />
                 </th>
 
-                {/* 2. PARCEL ID TAG (Frozen Left 40px) */}
-                <th className="sticky top-0 left-[40px] z-30 bg-gov-canvas w-[150px] min-w-[150px] max-w-[150px] py-2.5 px-2.5 text-center whitespace-nowrap text-gov-muted border-b border-gov-line border-r border-gov-line">
+                {/* 2. PARCEL ID TAG (Frozen Left 38px) */}
+                <th className="sticky top-0 left-[38px] z-30 bg-gov-canvas w-[145px] min-w-[145px] max-w-[145px] py-2 px-2 text-center whitespace-nowrap text-gov-muted border-b border-gov-line border-r border-gov-line">
                   PARCEL ID TAG
                 </th>
 
                 {/* 3. FARMER NAME */}
-                <th className="sticky top-0 z-20 bg-gov-canvas w-[200px] min-w-[200px] py-2.5 px-3 text-left whitespace-nowrap text-gov-muted border-b border-gov-line">
+                <th className="sticky top-0 z-20 bg-gov-canvas w-[200px] min-w-[200px] py-2 px-3 text-left whitespace-nowrap text-gov-muted border-b border-gov-line">
                   FARMER NAME
                 </th>
 
-                {/* 4. RICE VARIETY */}
-                <th className="sticky top-0 z-20 bg-gov-canvas py-2.5 px-3 text-left whitespace-nowrap text-gov-muted border-b border-gov-line w-[150px] min-w-[150px]">
-                  RICE VARIETY
-                </th>
-
-                {/* 5. TENURE */}
-                <th className="sticky top-0 z-20 bg-gov-canvas py-2.5 px-2.5 text-center whitespace-nowrap text-gov-muted border-b border-gov-line w-[110px] min-w-[110px]">
-                  TENURE
-                </th>
-
-                {/* 6. BARANGAY */}
-                <th className="sticky top-0 z-20 bg-gov-canvas py-2.5 px-3 text-left whitespace-nowrap text-gov-muted border-b border-gov-line w-[130px] min-w-[130px]">
+                {/* 4. BARANGAY & PUROK */}
+                <th className="sticky top-0 z-20 bg-gov-canvas py-2 px-3 text-left whitespace-nowrap text-gov-muted border-b border-gov-line w-[130px] min-w-[130px]">
                   BARANGAY
                 </th>
 
-                {/* 7. DATE REGISTERED */}
-                <th className="sticky top-0 z-20 bg-gov-canvas py-2.5 px-2.5 text-center whitespace-nowrap text-gov-muted border-b border-gov-line w-[110px] min-w-[110px]">
-                  DATE REGISTERED
+                {/* 5. RICE VARIETY */}
+                <th className="sticky top-0 z-20 bg-gov-canvas py-2 px-3 text-left whitespace-nowrap text-gov-muted border-b border-gov-line w-[140px] min-w-[140px]">
+                  RICE VARIETY
                 </th>
 
-                {/* 8. AGRO-ECOSYSTEM */}
-                <th className="sticky top-0 z-20 bg-gov-canvas py-2.5 px-2.5 text-center whitespace-nowrap text-gov-muted border-b border-gov-line w-[130px] min-w-[130px]">
-                  AGRO-ECOSYSTEM
+                {/* 6. TENURE */}
+                <th className="sticky top-0 z-20 bg-gov-canvas py-2 px-2 text-center whitespace-nowrap text-gov-muted border-b border-gov-line w-[100px] min-w-[100px]">
+                  TENURE
                 </th>
 
-                {/* 9. EST. YIELD (MT) */}
-                <th className="sticky top-0 z-20 bg-gov-canvas py-2.5 px-2.5 text-right whitespace-nowrap text-gov-muted border-b border-gov-line w-[100px] min-w-[100px]">
-                  EST. YIELD
+                {/* 7. FARM AREA (HA) */}
+                <th className="sticky top-0 z-20 bg-gov-canvas py-2 px-2.5 text-right whitespace-nowrap text-gov-muted border-b border-gov-line w-[90px] min-w-[90px]">
+                  AREA (HA)
                 </th>
 
-                {/* 10. FARM AREA (HA) */}
-                <th className="sticky top-0 z-20 bg-gov-canvas py-2.5 px-2.5 text-right whitespace-nowrap text-gov-muted border-b border-gov-line w-[100px] min-w-[100px]">
-                  FARM AREA
+                {/* 8. EST. YIELD (MT) */}
+                <th className="sticky top-0 z-20 bg-gov-canvas py-2 px-2.5 text-right whitespace-nowrap text-gov-muted border-b border-gov-line w-[90px] min-w-[90px]">
+                  YIELD (MT)
+                </th>
+
+                {/* 9. AGRO-ECOSYSTEM */}
+                <th className="sticky top-0 z-20 bg-gov-canvas py-2 px-2.5 text-left whitespace-nowrap text-gov-muted border-b border-gov-line w-[125px] min-w-[125px]">
+                  ECOSYSTEM
+                </th>
+
+                {/* 10. DATE REGISTERED */}
+                <th className="sticky top-0 z-20 bg-gov-canvas py-2 px-2 text-center whitespace-nowrap text-gov-muted border-b border-gov-line w-[95px] min-w-[95px]">
+                  DATE
                 </th>
 
                 {/* 11. STATUS */}
-                <th className="sticky top-0 z-20 bg-gov-canvas py-2.5 px-2.5 text-center whitespace-nowrap text-gov-muted border-b border-gov-line w-[110px] min-w-[110px]">
+                <th className="sticky top-0 z-20 bg-gov-canvas py-2 px-2 text-center whitespace-nowrap text-gov-muted border-b border-gov-line w-[85px] min-w-[85px]">
                   STATUS
                 </th>
 
                 {/* 12. ACTIONS (Sticky Right) */}
-                <th className="sticky top-0 right-0 z-30 bg-gov-canvas py-2.5 px-3 text-center whitespace-nowrap border-b border-gov-line border-l border-gov-line text-gov-muted w-[130px] min-w-[130px]">
+                <th className="sticky top-0 right-0 z-30 bg-gov-canvas py-2 px-2.5 text-center whitespace-nowrap border-b border-gov-line border-l border-gov-line text-gov-muted w-[115px] min-w-[115px]">
                   ACTIONS
                 </th>
               </tr>
@@ -1747,8 +1747,8 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                       </td>
 
                       {/* 3. FARMER NAME */}
-                      <td className="w-[220px] min-w-[220px] py-2 px-3 whitespace-nowrap">
-                        <div className="flex items-center gap-2.5">
+                      <td className="w-[200px] min-w-[200px] py-2 px-3 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
                           <button
                             type="button"
                             onClick={(e) => {
@@ -1760,98 +1760,94 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                                 parcel
                               });
                             }}
-                            className="relative shrink-0 p-0.5 rounded-full border border-stone-300 hover:border-emerald-500 hover:scale-105 transition-all cursor-pointer shadow-2xs"
+                            className="relative shrink-0 p-0.5 rounded border border-gov-line hover:border-gov-green transition cursor-pointer"
                             title="Click to view full photo"
                           >
                             <SafeImage
                               src={farmerPhoto}
                               alt={parcel.raiserName}
                               fallbackType="farmer"
-                              className="w-7 h-7 rounded-full object-cover"
+                              className="w-6 h-6 rounded-sm object-cover"
                             />
                           </button>
                           <div className="flex flex-col min-w-0">
                             <span
-                              className="font-bold text-stone-900 text-xs uppercase truncate block max-w-[170px]"
+                              className="font-bold text-gov-ink text-xs uppercase truncate block max-w-[155px]"
                               title={getFarmerDisplayName(parcel)}
                             >
                               {getFarmerDisplayName(parcel)}
                             </span>
-                            <span className="text-[10px] text-stone-400 truncate block max-w-[170px]">
+                            <span className="text-[10px] text-gov-muted truncate block max-w-[155px]">
                               {parcel.focalPerson ? `LFT: ${parcel.focalPerson}` : `Purok ${parcel.purok || '1'}`}
                             </span>
                           </div>
                         </div>
                       </td>
 
-                      {/* 4. RICE VARIETY */}
-                      <td className="w-[160px] min-w-[160px] py-2.5 px-3.5 whitespace-nowrap">
+                      {/* 4. BARANGAY & PUROK */}
+                      <td className="w-[130px] min-w-[130px] py-2 px-3 whitespace-nowrap text-xs font-semibold text-gov-ink">
+                        Brgy. {getDisplayBarangay(parcel.barangay)}
+                      </td>
+
+                      {/* 5. RICE VARIETY */}
+                      <td className="w-[140px] min-w-[140px] py-2 px-3 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-stone-900 text-xs">
+                          <span className="font-semibold text-gov-ink text-xs truncate max-w-[100px]">
                             {activeVariety || 'NSIC Rc 222'}
                           </span>
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          <span className="text-[9.5px] font-semibold px-1 py-0.2 rounded bg-gov-canvas text-gov-muted border border-gov-line">
                             {parcel.seedType || 'Inbred'}
                           </span>
                         </div>
                       </td>
 
-                      {/* 5. TENURE */}
-                      <td className="w-[110px] min-w-[110px] py-2.5 px-3 text-center whitespace-nowrap">
-                        <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-stone-100 text-stone-700 border border-stone-200">
-                          {parcel.sex || 'Owner'}
-                        </span>
+                      {/* 6. TENURE */}
+                      <td className="w-[100px] min-w-[100px] py-2 px-2 text-center whitespace-nowrap text-xs text-gov-muted">
+                        {parcel.sex || 'Owner'}
                       </td>
 
-                      {/* 6. BARANGAY */}
-                      <td className="w-[140px] min-w-[140px] py-2.5 px-3.5 whitespace-nowrap text-xs font-semibold text-stone-800">
-                        Brgy. {getDisplayBarangay(parcel.barangay)}
-                      </td>
-
-                      {/* 7. DATE REGISTERED */}
-                      <td className="w-[120px] min-w-[120px] py-2.5 px-3 text-center whitespace-nowrap text-xs text-stone-600 font-mono">
-                        {formatBirthday(parcel.registrationDate || parcel.birthday || '2026-06-15')}
-                      </td>
-
-                      {/* 8. AGRO-ECOSYSTEM */}
-                      <td className="w-[140px] min-w-[140px] py-2.5 px-3 text-center whitespace-nowrap">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10.5px] font-bold border ${ecoBadge.badgeClass}`}>
-                          {ecoBadge.label}
-                        </span>
-                      </td>
-
-                      {/* 9. EST. YIELD (MT) */}
-                      <td className="w-[110px] min-w-[110px] py-2.5 px-3 text-right whitespace-nowrap font-mono font-medium text-stone-800 text-xs">
-                        {seasonalRecord ? `${(seasonalRecord.actualProductionVolumeMt || (parcel.weightKg || 1) * 4.8).toFixed(2)} MT` : `${((parcel.weightKg || 1) * 4.8).toFixed(2)} MT`}
-                      </td>
-
-                      {/* 10. FARM AREA (HA) */}
-                      <td className="w-[110px] min-w-[110px] py-2.5 px-3 text-right whitespace-nowrap font-mono font-bold text-stone-900 text-xs">
+                      {/* 7. FARM AREA (HA) */}
+                      <td className="w-[90px] min-w-[90px] py-2 px-2.5 text-right whitespace-nowrap font-mono font-bold text-gov-ink text-xs tabular-nums">
                         {(parcel.weightKg || parcel.areaHa || 0).toFixed(2)} ha
                       </td>
 
+                      {/* 8. EST. YIELD (MT) */}
+                      <td className="w-[90px] min-w-[90px] py-2 px-2.5 text-right whitespace-nowrap font-mono font-medium text-gov-muted text-xs tabular-nums">
+                        {seasonalRecord ? `${(seasonalRecord.actualProductionVolumeMt || (parcel.weightKg || 1) * 4.8).toFixed(2)}` : `${((parcel.weightKg || 1) * 4.8).toFixed(2)}`} MT
+                      </td>
+
+                      {/* 9. AGRO-ECOSYSTEM */}
+                      <td className="w-[125px] min-w-[125px] py-2 px-2.5 text-left whitespace-nowrap text-xs text-gov-muted truncate max-w-[125px]">
+                        {ecoBadge.label}
+                      </td>
+
+                      {/* 10. DATE REGISTERED */}
+                      <td className="w-[95px] min-w-[95px] py-2 px-2 text-center whitespace-nowrap text-[11px] text-gov-muted font-mono">
+                        {formatBirthday(parcel.registrationDate || parcel.birthday || '2026-06-15')}
+                      </td>
+
                       {/* 11. STATUS */}
-                      <td className="w-[120px] min-w-[120px] py-2.5 px-3 text-center whitespace-nowrap">
+                      <td className="w-[85px] min-w-[85px] py-2 px-2 text-center whitespace-nowrap">
                         {hasPolygonMapped ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
                             Verified
                           </span>
                         ) : hasGpsCoordinates ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-gov-green">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            GPS Active
+                            Active
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                             Pending
                           </span>
                         )}
                       </td>
 
-                      {/* 12. ACTIONS matching Swine Registry (Sticky Right) */}
-                      <td className={`w-[130px] min-w-[130px] py-2 px-2 text-center whitespace-nowrap sticky right-0 z-10 ${rowBg} group-hover:bg-gov-canvas/60 border-l border-gov-line`}>
+                      {/* 12. ACTIONS (Sticky Right) */}
+                      <td className={`w-[115px] min-w-[115px] py-2 px-2 text-center whitespace-nowrap sticky right-0 z-10 ${rowBg} group-hover:bg-gov-canvas/60 border-l border-gov-line`}>
                         <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                           {/* 1. View Dossier */}
                           <button
