@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useApp } from '../context/AppContext';
 import { FarmParcel, SeasonalProductionRecord } from '../types';
 import { getFarmerPhoto, getLandPhoto } from '../data/photos';
 import { calculateCropGrowthStage } from '../data/riceVarieties';
@@ -49,6 +50,7 @@ export const ParcelDetailModal: React.FC<ParcelDetailModalProps> = ({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [seasonalModalOpen, setSeasonalModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<SeasonalProductionRecord | null>(null);
+  const { permissions } = useApp();
   const formSchema = useRegistryFormSchema();
 
   if (!parcel) return null;
@@ -757,7 +759,7 @@ export const ParcelDetailModal: React.FC<ParcelDetailModalProps> = ({
         {/* Footer Actions */}
         <div className="p-3.5 bg-gov-canvas/60 border-t border-gov-line flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="flex flex-wrap items-center gap-2">
-            {onEdit && (
+            {onEdit && permissions.canEditParcels && (
               <button
                 type="button"
                 onClick={() => {
@@ -770,7 +772,7 @@ export const ParcelDetailModal: React.FC<ParcelDetailModalProps> = ({
                 <span>Edit Registration</span>
               </button>
             )}
-            {onDelete && !confirmDelete && (
+            {onDelete && !confirmDelete && permissions.canDeleteParcels && (
               <button
                 type="button"
                 onClick={() => setConfirmDelete(true)}

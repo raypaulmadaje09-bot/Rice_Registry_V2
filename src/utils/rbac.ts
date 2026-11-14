@@ -26,6 +26,7 @@ export interface UserPermissions {
   isLftOfficer: boolean;
   isPublicVisitor: boolean;
   canAddParcels: boolean;
+  canEditParcels: boolean;
   canManageLftAccounts: boolean;
   canConfigureSystemSettings: boolean;
   canDeleteParcels: boolean;
@@ -44,6 +45,7 @@ export function getUserPermissions(user: User | null | undefined): UserPermissio
       isLftOfficer: false,
       isPublicVisitor: true,
       canAddParcels: false,
+      canEditParcels: false,
       canManageLftAccounts: false,
       canConfigureSystemSettings: false,
       canDeleteParcels: false,
@@ -61,7 +63,8 @@ export function getUserPermissions(user: User | null | undefined): UserPermissio
     isCentralAdmin,
     isLftOfficer,
     isPublicVisitor: false,
-    canAddParcels: isCentralAdmin || isLftOfficer,
+    canAddParcels: isCentralAdmin, // Only Central Admin registers & modifies masterlist farmers
+    canEditParcels: isCentralAdmin, // Strictly Central Admin can edit farmer records
     canManageLftAccounts: isCentralAdmin,
     canConfigureSystemSettings: isCentralAdmin,
     canDeleteParcels: isCentralAdmin, // Only Central Admin can delete records
@@ -75,29 +78,16 @@ export function getUserPermissions(user: User | null | undefined): UserPermissio
  */
 export function canUserAddParcel(user: User | null | undefined, barangayName?: string): boolean {
   if (!user) return false;
-  if (user.role === 'Central Admin') return true;
-  if (user.role === 'Barangay Focal Person') {
-    if (!barangayName) return true; // User can open add dialog, will be filtered to assigned barangays
-    const assigned = getUserAssignedBarangays(user);
-    if (!assigned || assigned.length === 0) return false;
-    return assigned.some((b) => matchBarangay(barangayName, b));
-  }
-  return false;
+  return user.role === 'Central Admin';
 }
 
 /**
  * Checks if the user is authorized to edit a parcel in a specific barangay
+ * STRICT: Only Central Admin can edit rice farmer records!
  */
-export function canUserEditParcel(user: User | null | undefined, parcelOrBarangay: FarmParcel | string): boolean {
+export function canUserEditParcel(user: User | null | undefined, _parcelOrBarangay?: FarmParcel | string): boolean {
   if (!user) return false;
-  if (user.role === 'Central Admin') return true;
-  if (user.role === 'Barangay Focal Person') {
-    const barangayName = typeof parcelOrBarangay === 'string' ? parcelOrBarangay : parcelOrBarangay.barangay;
-    const assigned = getUserAssignedBarangays(user);
-    if (!assigned || assigned.length === 0) return false;
-    return assigned.some((b) => matchBarangay(barangayName, b));
-  }
-  return false;
+  return user.role === 'Central Admin';
 }
 
 /**

@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { BARANGAYS, isUserAuthorizedForBarangay, matchBarangay } from '../data/barangays';
+import { BARANGAYS, getUserAssignedBarangays, isUserAuthorizedForBarangay, matchBarangay } from '../data/barangays';
 import { SUBSIDY_CATEGORIES } from '../data/subsidies';
 import {
   FarmParcel,
@@ -181,13 +181,33 @@ export const SubsidiesView: React.FC = () => {
 
   const todayIso = () => new Date().toISOString().split('T')[0];
 
+  const assignedBrgys = useMemo(() => getUserAssignedBarangays(currentUser), [currentUser]);
+  const isLftUser = Boolean(
+    assignedBrgys && assignedBrgys.length > 0 && currentUser?.role === 'Barangay Focal Person'
+  );
+
   const [viewMode, setViewMode] = useState<SubsidiesViewMode>('checklist');
   const [selectedProgramId, setSelectedProgramId] = useState<string>(
     () => subsidyPrograms.find((p) => p.status === 'Active')?.id || subsidyPrograms[0]?.id || ''
   );
   const [quickDateGiven, setQuickDateGiven] = useState<string>(todayIso);
   const [searchQuery, setSearchQuery] = useState('');
-  const [barangayFilter, setBarangayFilter] = useState('All');
+  const [barangayFilter, setBarangayFilter] = useState<string>(() => {
+    const assigned = getUserAssignedBarangays(currentUser);
+    if (assigned && assigned.length > 0 && currentUser?.role === 'Barangay Focal Person') {
+      return 'ASSIGNED';
+    }
+    return 'All';
+  });
+
+  useEffect(() => {
+    const assigned = getUserAssignedBarangays(currentUser);
+    if (assigned && assigned.length > 0 && currentUser?.role === 'Barangay Focal Person') {
+      setBarangayFilter('ASSIGNED');
+    } else {
+      setBarangayFilter('All');
+    }
+  }, [currentUser]);
   const [statusFilter, setStatusFilter] = useState<ClaimStatusFilter>('all');
   const [historyTypeFilter, setHistoryTypeFilter] = useState<'All' | SubsidyCategory>('All');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -320,7 +340,11 @@ export const SubsidiesView: React.FC = () => {
   const filteredParcels = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return programEligibleParcels.filter((p) => {
-      if (barangayFilter !== 'All' && !matchBarangay(p.barangay, barangayFilter)) {
+      if (barangayFilter === 'ASSIGNED') {
+        if (!isUserAuthorizedForBarangay(currentUser, p.barangay)) {
+          return false;
+        }
+      } else if (barangayFilter !== 'All' && !matchBarangay(p.barangay, barangayFilter)) {
         return false;
       }
       const claim = selectedClaimMap.get(p.tagNumber);
@@ -332,39 +356,53 @@ export const SubsidiesView: React.FC = () => {
       const haystack = `${p.raiserName} ${p.swineNameOrId} ${p.tagNumber} ${p.barangay} ${p.contactNumber || ''} ${p.variety || p.breed || ''} ${claim?.slipOrVoucherNo || ''}`.toLowerCase();
       return haystack.includes(q);
     });
-  }, [programEligibleParcels, barangayFilter, statusFilter, searchQuery, selectedClaimMap]);
+  }, [programEligibleParcels, barangayFilter, statusFilter, searchQuery, selectedClaimMap, currentUser]);
 
   // Apply filters for Previous Give-aways History view
   const filteredHistoryEntries = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return unifiedHistoryEntries.filter((entry) => {
       if (historyTypeFilter !== 'All' && entry.inputType !== historyTypeFilter) return false;
-      if (barangayFilter !== 'All' && !matchBarangay(entry.barangay, barangayFilter)) return false;
+      if (barangayFilter === 'ASSIGNED') {
+        if (!isUserAuthorizedForBarangay(currentUser, entry.barangay)) return false;
+      } else if (barangayFilter !== 'All' && !matchBarangay(entry.barangay, barangayFilter)) {
+        return false;
+      }
       if (!q) return true;
       const haystack = `${entry.ownerName} ${entry.rsbsaNo} ${entry.parcelTag} ${entry.barangay} ${entry.inputType} ${entry.itemGiven} ${entry.programTitle} ${entry.fundingSource} ${entry.slipOrVoucherNo || ''} ${entry.recipientName || ''}`.toLowerCase();
       return haystack.includes(q);
     });
-  }, [unifiedHistoryEntries, historyTypeFilter, barangayFilter, searchQuery]);
+  }, [unifiedHistoryEntries, historyTypeFilter, barangayFilter, searchQuery, currentUser]);
 
   // Program KPI stats
   const stats = useMemo(() => {
     let claimedCount = 0;
     let totalHa = 0;
-    for (const p of programEligibleParcels) {
+    const targetParcels = programEligibleParcels.filter((p) => {
+      if (barangayFilter === 'ASSIGNED') {
+        return isUserAuthorizedForBarangay(currentUser, p.barangay);
+      }
+      if (barangayFilter !== 'All') {
+        return matchBarangay(p.barangay, barangayFilter);
+      }
+      return true;
+    });
+
+    for (const p of targetParcels) {
       totalHa += Number(p.areaHa || p.weightKg || 0);
       if (selectedClaimMap.get(p.tagNumber)?.claimed) claimedCount += 1;
     }
-    const eligibleCount = programEligibleParcels.length;
+    const eligibleCount = targetParcels.length;
     const pendingCount = Math.max(0, eligibleCount - claimedCount);
     const coveragePct = eligibleCount > 0 ? Math.round((claimedCount / eligibleCount) * 100) : 0;
     return { eligibleCount, claimedCount, pendingCount, coveragePct, totalHa };
-  }, [programEligibleParcels, selectedClaimMap]);
+  }, [programEligibleParcels, selectedClaimMap, barangayFilter, currentUser]);
 
   const kpiItems: OfficeKpiItem[] = [
     {
-      label: 'Eligible Riceland Owners',
+      label: isLftUser && barangayFilter === 'ASSIGNED' ? 'Eligible Sector Farmers' : 'Eligible Riceland Owners',
       value: stats.eligibleCount,
-      note: `${stats.totalHa.toFixed(2)} ha total landholding`,
+      note: `${stats.totalHa.toFixed(2)} ha ${isLftUser && barangayFilter === 'ASSIGNED' ? 'in assigned sector' : 'total landholding'}`,
       icon: Users
     },
     {
@@ -830,14 +868,16 @@ export const SubsidiesView: React.FC = () => {
             title="Step 1 — Select Government Seedlings / Fertilizer Program Batch"
             subtitle="Choose the distribution batch below to view eligible riceland owners and mark claims."
             rightContent={
-              <button
-                type="button"
-                onClick={openCreateProgram}
-                className="px-3.5 py-1.5 rounded-md bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Seedlings / Fertilizer Program</span>
-              </button>
+              permissions.isCentralAdmin ? (
+                <button
+                  type="button"
+                  onClick={openCreateProgram}
+                  className="px-3.5 py-1.5 rounded-md bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Seedlings / Fertilizer Program</span>
+                </button>
+              ) : undefined
             }
           >
             {subsidyPrograms.length > 0 ? (
@@ -974,10 +1014,22 @@ export const SubsidiesView: React.FC = () => {
 
           {/* STEP 2. OFFICIAL RICELAND OWNER DISTRIBUTION TALAAN */}
           <OfficePanel
-            title="Step 2 — Riceland Owner Distribution Talaan (Numbered Log)"
+            title={
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-slate-900">Distribution Talaan (Seed &amp; Fertilizer Ledger)</span>
+                {isLftUser && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 text-[11px] font-semibold">
+                    <span>Field Officer Sector:</span>
+                    <span className="font-bold">{assignedBrgys?.join(', ')}</span>
+                  </span>
+                )}
+              </div>
+            }
             subtitle={
               selectedProgram
-                ? `Showing ${filteredParcels.length} of ${programEligibleParcels.length} registered riceland owner(s) for "${selectedProgram.title}"`
+                ? `Showing ${filteredParcels.length} ${
+                    isLftUser && barangayFilter === 'ASSIGNED' ? 'sector farmer-beneficiaries' : 'registered riceland owner(s)'
+                  } for "${selectedProgram.title}"`
                 : 'Select a program above'
             }
             noPadding
@@ -1023,19 +1075,39 @@ export const SubsidiesView: React.FC = () => {
                   />
                 </div>
 
-                <div className="w-full sm:w-44">
+                <div className="w-full sm:w-56">
                   <select
                     value={barangayFilter}
                     onChange={(e) => setBarangayFilter(e.target.value)}
                     className={OFFICE_SELECT_CLASS}
                     aria-label="Filter by barangay"
                   >
-                    <option value="All">All 15 Silago Barangays</option>
-                    {BARANGAYS.map((b) => (
-                      <option key={b.name} value={b.name}>
-                        Brgy. {b.name}
-                      </option>
-                    ))}
+                    {isLftUser ? (
+                      <>
+                        <option value="ASSIGNED">
+                          My Assigned Sector ({assignedBrgys?.length || 0} Barangays)
+                        </option>
+                        <optgroup label="My Assigned Barangays">
+                          {assignedBrgys?.map((b) => (
+                            <option key={b} value={b}>
+                              Brgy. {b}
+                            </option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="Municipal Overview">
+                          <option value="All">All 15 Silago Barangays (Read-Only Outside)</option>
+                        </optgroup>
+                      </>
+                    ) : (
+                      <>
+                        <option value="All">All 15 Silago Barangays</option>
+                        {BARANGAYS.map((b) => (
+                          <option key={b.name} value={b.name}>
+                            Brgy. {b.name}
+                          </option>
+                        ))}
+                      </>
+                    )}
                   </select>
                 </div>
 
@@ -1171,45 +1243,48 @@ export const SubsidiesView: React.FC = () => {
                           <td className="py-2.5 px-2.5 align-top">
                             <div className="space-y-1">
                               {ownerHistory.length === 0 ? (
-                                <span className="text-[11px] text-slate-400 block">
-                                  None recorded
-                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setHistoryOwnerParcel(parcel)}
+                                  className="inline-flex items-center gap-1 text-[10.5px] font-medium text-slate-400 hover:text-emerald-700 hover:underline cursor-pointer"
+                                >
+                                  <History className="w-3 h-3 text-slate-400" />
+                                  <span>No prior aid</span>
+                                </button>
                               ) : (
-                                <div className="flex flex-wrap gap-1">
-                                  {ownerHistory.slice(0, 2).map((entry) => (
-                                    <span
-                                      key={entry.id}
-                                      title={`${entry.itemGiven} (${entry.quantityGiven}) • Given: ${entry.dateGiven} • ${entry.programTitle}`}
-                                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm border text-[10px] font-semibold ${
-                                        CATEGORY_BADGE_STYLES[entry.inputType]
-                                      }`}
-                                    >
-                                      <Check className="w-2.5 h-2.5 stroke-[2.5]" />
-                                      <span>{entry.inputType === 'Seedlings / Seeds' ? 'Seeds' : entry.inputType}</span>
-                                      {entry.dateGiven && (
-                                        <span className="opacity-80 font-mono">{entry.dateGiven}</span>
-                                      )}
-                                    </span>
-                                  ))}
-                                  {ownerHistory.length > 2 && (
-                                    <span className="text-[10px] font-semibold text-slate-600 px-1 py-0.5">
-                                      +{ownerHistory.length - 2} more
-                                    </span>
-                                  )}
+                                <div className="space-y-1">
+                                  <div className="flex flex-wrap gap-1">
+                                    {ownerHistory.slice(0, 2).map((entry) => (
+                                      <span
+                                        key={entry.id}
+                                        title={`${entry.itemGiven} (${entry.quantityGiven}) • Given: ${entry.dateGiven} • ${entry.programTitle}`}
+                                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm border text-[10px] font-semibold ${
+                                          CATEGORY_BADGE_STYLES[entry.inputType]
+                                        }`}
+                                      >
+                                        <Check className="w-2.5 h-2.5 stroke-[2.5]" />
+                                        <span>{entry.inputType === 'Seedlings / Seeds' ? 'Seeds' : entry.inputType}</span>
+                                        {entry.dateGiven && (
+                                          <span className="opacity-80 font-mono">{entry.dateGiven}</span>
+                                        )}
+                                      </span>
+                                    ))}
+                                    {ownerHistory.length > 2 && (
+                                      <span className="text-[10px] font-semibold text-slate-600 px-1 py-0.5">
+                                        +{ownerHistory.length - 2} more
+                                      </span>
+                                    )}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => setHistoryOwnerParcel(parcel)}
+                                    className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-emerald-800 hover:text-emerald-950 hover:underline cursor-pointer"
+                                  >
+                                    <History className="w-3 h-3" />
+                                    <span>History ({ownerHistory.length})</span>
+                                  </button>
                                 </div>
                               )}
-                              <button
-                                type="button"
-                                onClick={() => setHistoryOwnerParcel(parcel)}
-                                className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-emerald-800 hover:text-emerald-950 hover:underline cursor-pointer"
-                              >
-                                <History className="w-3 h-3" />
-                                <span>
-                                  {ownerHistory.length > 0
-                                    ? `History (${ownerHistory.length})`
-                                    : 'View / Log'}
-                                </span>
-                              </button>
                             </div>
                           </td>
 
@@ -1268,8 +1343,8 @@ export const SubsidiesView: React.FC = () => {
 
                           <td className="py-2.5 pl-2 pr-3 align-top text-right whitespace-nowrap w-[1%]">
                             {!canEditRow ? (
-                              <span className="text-[10px] font-medium text-slate-400">
-                                Assigned Brgy Only
+                              <span className="text-[10px] font-medium text-slate-400 italic">
+                                Outside Assigned Sector
                               </span>
                             ) : isClaimed ? (
                               <div className="inline-flex items-center gap-1">
@@ -1370,19 +1445,39 @@ export const SubsidiesView: React.FC = () => {
                   </select>
                 </div>
 
-                <div className="w-full sm:w-44">
+                <div className="w-full sm:w-56">
                   <select
                     value={barangayFilter}
                     onChange={(e) => setBarangayFilter(e.target.value)}
                     className={OFFICE_SELECT_CLASS}
                     aria-label="Filter history by barangay"
                   >
-                    <option value="All">All 15 Silago Barangays</option>
-                    {BARANGAYS.map((b) => (
-                      <option key={b.name} value={b.name}>
-                        Brgy. {b.name}
-                      </option>
-                    ))}
+                    {isLftUser ? (
+                      <>
+                        <option value="ASSIGNED">
+                          My Assigned Sector ({assignedBrgys?.length || 0} Barangays)
+                        </option>
+                        <optgroup label="My Assigned Barangays">
+                          {assignedBrgys?.map((b) => (
+                            <option key={b} value={b}>
+                              Brgy. {b}
+                            </option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="Municipal Overview">
+                          <option value="All">All 15 Silago Barangays (Read-Only Outside)</option>
+                        </optgroup>
+                      </>
+                    ) : (
+                      <>
+                        <option value="All">All 15 Silago Barangays</option>
+                        {BARANGAYS.map((b) => (
+                          <option key={b.name} value={b.name}>
+                            Brgy. {b.name}
+                          </option>
+                        ))}
+                      </>
+                    )}
                   </select>
                 </div>
               </div>

@@ -1881,13 +1881,13 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                             </button>
                           )}
 
-                          {/* 4. Edit (Inline) */}
-                          {!permissions.isPublicVisitor && (
+                          {/* 4. Edit (Inline) - Central Admin Only */}
+                          {permissions.canEditParcels && (
                             <button
                               type="button"
                               onClick={(e) => handleStartInlineEdit(e, parcel)}
                               className="p-1 rounded border border-gov-line bg-white hover:bg-gov-canvas text-gov-muted hover:text-gov-ink transition cursor-pointer"
-                              title="Edit Record Inline"
+                              title="Edit Record Inline (Admin Only)"
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>

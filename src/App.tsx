@@ -1090,14 +1090,14 @@ const AppContent: React.FC = () => {
           <ParcelDetailModal
             parcel={selectedParcel}
             onClose={() => setSelectedParcel(null)}
-            onEdit={(p) => {
+            onEdit={permissions.canEditParcels ? (p) => {
               setEditingParcel(p);
               setIsAddParcelOpen(true);
-            }}
-            onDelete={(tag) => {
+            } : undefined}
+            onDelete={permissions.canDeleteParcels ? (tag) => {
               deleteParcel(tag);
               setSelectedParcel(null);
-            }}
+            } : undefined}
           />
         </ParcelDetailErrorBoundary>
       )}

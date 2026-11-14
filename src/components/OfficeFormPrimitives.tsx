@@ -204,7 +204,7 @@ export const OfficePhotoField: React.FC<OfficePhotoFieldProps> = ({
 );
 
 interface OfficePanelProps {
-  title: string;
+  title: React.ReactNode;
   subtitle?: string;
   rightContent?: React.ReactNode;
   noPadding?: boolean;
