@@ -1411,7 +1411,7 @@ export const SubsidiesView: React.FC = () => {
                     </tr>
                   ) : (
                     filteredHistoryEntries.map((entry, idx) => {
-                      const canDelete = isUserAuthorizedForBarangay(currentUser, entry.barangay);
+                      const canDelete = permissions.isCentralAdmin;
                       return (
                         <tr key={entry.id} className="hover:bg-slate-50">
                           <td className="py-2.5 pl-3 pr-1.5 align-top text-center font-mono text-[11px] font-bold text-slate-500 tabular-nums">
@@ -1934,7 +1934,7 @@ export const SubsidiesView: React.FC = () => {
                         </div>
                       </div>
 
-                      {isUserAuthorizedForBarangay(currentUser, entry.barangay) && (
+                      {permissions.isCentralAdmin && (
                         <button
                           type="button"
                           onClick={() => {

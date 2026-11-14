@@ -53,7 +53,8 @@ import {
   Activity,
   PanelLeftClose,
   PanelLeftOpen,
-  Download
+  Download,
+  Shield
 } from 'lucide-react';
 
 const AppContent: React.FC = () => {
@@ -1037,10 +1038,32 @@ const AppContent: React.FC = () => {
 
               {activeTab === 'evaluation' && <EvaluationView />}
 
-              {activeTab === 'settings' && currentUser && (
+              {activeTab === 'settings' && isCentralAdmin && (
                 <SettingsView
                   onNavigateToLanding={() => setViewMode('landing')}
                 />
+              )}
+              {activeTab === 'settings' && !isCentralAdmin && (
+                <div className="max-w-lg mx-auto my-12 bg-white border border-gov-line rounded p-6 text-center space-y-4">
+                  <div className="w-10 h-10 rounded bg-amber-50 border border-amber-200 text-amber-800 flex items-center justify-center mx-auto">
+                    <Shield className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <h2 className="text-base font-bold text-gov-ink">Central Admin Access Only</h2>
+                    <p className="text-xs text-gov-muted leading-relaxed">
+                      System Settings, Portal Wallpapers, and Branding configurations are strictly restricted to Central Municipal Administrators.
+                    </p>
+                  </div>
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab(currentUser?.role === 'Barangay Focal Person' ? 'lft_dashboard' : 'map')}
+                      className="gov-btn gov-btn-primary"
+                    >
+                      Return to Dashboard
+                    </button>
+                  </div>
+                </div>
               )}
               {activeTab === 'legal_decrees' && <LegalDecreesView />}
               {activeTab === 'barangays' && isCentralAdmin && <BarangaysView onNavigate={setActiveTab} onMeasureBarangay={(barangay) => {
