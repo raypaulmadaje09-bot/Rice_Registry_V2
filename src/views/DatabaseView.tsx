@@ -1160,7 +1160,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
               <optgroup label="Silago Barangays">
                 {BARANGAYS.map((b) => (
                   <option key={b.name} value={b.name}>
-                    Brgy. {b.name}
+                    {b.name}
                   </option>
                 ))}
               </optgroup>
@@ -1362,11 +1362,11 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
       <div className="overflow-x-auto rounded border border-gov-line bg-white">
         {/* Scrollable Container with Sticky Header, Sticky Left Columns, and Visible Scrollbar */}
         <div className="custom-table-scrollbar w-full overflow-x-auto overflow-y-auto max-h-[calc(100vh-240px)] min-h-[400px] divide-y divide-gov-line/60 relative">
-          <table className="w-full min-w-[1250px] text-left border-collapse text-xs">
-            <thead className="sticky top-0 z-20 bg-gov-canvas text-gov-muted border-b border-gov-line">
+          <table className="w-full min-w-[1380px] text-left border-collapse text-xs">
+            <thead className="sticky top-0 z-20 bg-gov-canvas text-gov-muted border-b border-gov-line shadow-2xs">
               <tr className="border-b border-gov-line text-[10px] font-bold uppercase tracking-wider text-gov-muted">
-                {/* 1. [Checkbox Selection] (Frozen Left 0) */}
-                <th className="sticky top-0 left-0 z-30 bg-gov-canvas w-[38px] min-w-[38px] max-w-[38px] py-2 px-2 text-center whitespace-nowrap text-gov-muted border-b border-gov-line border-r border-gov-line">
+                {/* 1. [Checkbox Selection] */}
+                <th className="w-10 min-w-[40px] max-w-[40px] py-2.5 px-2 text-center whitespace-nowrap text-gov-muted border-r border-gov-line">
                   <input
                     type="checkbox"
                     ref={headerCheckboxRef}
@@ -1377,58 +1377,58 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                   />
                 </th>
 
-                {/* 2. PARCEL ID TAG (Frozen Left 38px) */}
-                <th className="sticky top-0 left-[38px] z-30 bg-gov-canvas w-[145px] min-w-[145px] max-w-[145px] py-2 px-2 text-center whitespace-nowrap text-gov-muted border-b border-gov-line border-r border-gov-line">
+                {/* 2. PARCEL ID TAG */}
+                <th className="w-40 min-w-[150px] py-2.5 px-3 text-left whitespace-nowrap text-gov-muted border-r border-gov-line">
                   PARCEL ID TAG
                 </th>
 
                 {/* 3. FARMER NAME */}
-                <th className="sticky top-0 z-20 bg-gov-canvas w-[200px] min-w-[200px] py-2 px-3 text-left whitespace-nowrap text-gov-muted border-b border-gov-line">
+                <th className="w-56 min-w-[210px] py-2.5 px-3 text-left whitespace-nowrap text-gov-muted border-r border-gov-line">
                   FARMER NAME
                 </th>
 
-                {/* 4. BARANGAY & PUROK */}
-                <th className="sticky top-0 z-20 bg-gov-canvas py-2 px-3 text-left whitespace-nowrap text-gov-muted border-b border-gov-line w-[130px] min-w-[130px]">
+                {/* 4. BARANGAY */}
+                <th className="w-36 min-w-[130px] py-2.5 px-3 text-left whitespace-nowrap text-gov-muted border-r border-gov-line">
                   BARANGAY
                 </th>
 
                 {/* 5. RICE VARIETY */}
-                <th className="sticky top-0 z-20 bg-gov-canvas py-2 px-3 text-left whitespace-nowrap text-gov-muted border-b border-gov-line w-[140px] min-w-[140px]">
+                <th className="w-44 min-w-[160px] py-2.5 px-3 text-left whitespace-nowrap text-gov-muted border-r border-gov-line">
                   RICE VARIETY
                 </th>
 
                 {/* 6. TENURE */}
-                <th className="sticky top-0 z-20 bg-gov-canvas py-2 px-2 text-center whitespace-nowrap text-gov-muted border-b border-gov-line w-[100px] min-w-[100px]">
+                <th className="w-28 min-w-[100px] py-2.5 px-2 text-center whitespace-nowrap text-gov-muted border-r border-gov-line">
                   TENURE
                 </th>
 
                 {/* 7. FARM AREA (HA) */}
-                <th className="sticky top-0 z-20 bg-gov-canvas py-2 px-2.5 text-right whitespace-nowrap text-gov-muted border-b border-gov-line w-[90px] min-w-[90px]">
+                <th className="w-24 min-w-[90px] py-2.5 px-2.5 text-right whitespace-nowrap text-gov-muted border-r border-gov-line">
                   AREA (HA)
                 </th>
 
                 {/* 8. EST. YIELD (MT) */}
-                <th className="sticky top-0 z-20 bg-gov-canvas py-2 px-2.5 text-right whitespace-nowrap text-gov-muted border-b border-gov-line w-[90px] min-w-[90px]">
+                <th className="w-24 min-w-[90px] py-2.5 px-2.5 text-right whitespace-nowrap text-gov-muted border-r border-gov-line">
                   YIELD (MT)
                 </th>
 
                 {/* 9. AGRO-ECOSYSTEM */}
-                <th className="sticky top-0 z-20 bg-gov-canvas py-2 px-2.5 text-left whitespace-nowrap text-gov-muted border-b border-gov-line w-[125px] min-w-[125px]">
+                <th className="w-36 min-w-[130px] py-2.5 px-3 text-left whitespace-nowrap text-gov-muted border-r border-gov-line">
                   ECOSYSTEM
                 </th>
 
                 {/* 10. DATE REGISTERED */}
-                <th className="sticky top-0 z-20 bg-gov-canvas py-2 px-2 text-center whitespace-nowrap text-gov-muted border-b border-gov-line w-[95px] min-w-[95px]">
+                <th className="w-28 min-w-[100px] py-2.5 px-2 text-center whitespace-nowrap text-gov-muted border-r border-gov-line">
                   DATE
                 </th>
 
                 {/* 11. STATUS */}
-                <th className="sticky top-0 z-20 bg-gov-canvas py-2 px-2 text-center whitespace-nowrap text-gov-muted border-b border-gov-line w-[85px] min-w-[85px]">
+                <th className="w-24 min-w-[90px] py-2.5 px-2 text-center whitespace-nowrap text-gov-muted border-r border-gov-line">
                   STATUS
                 </th>
 
-                {/* 12. ACTIONS (Sticky Right) */}
-                <th className="sticky top-0 right-0 z-30 bg-gov-canvas py-2 px-2.5 text-center whitespace-nowrap border-b border-gov-line border-l border-gov-line text-gov-muted w-[115px] min-w-[115px]">
+                {/* 12. ACTIONS */}
+                <th className="w-32 min-w-[120px] py-2.5 px-2.5 text-center whitespace-nowrap text-gov-muted border-l border-gov-line">
                   ACTIONS
                 </th>
               </tr>
@@ -1504,13 +1504,13 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                         key={parcel.tagNumber}
                         className="bg-amber-50/70 ring-2 ring-emerald-500/80 transition shadow-inner font-normal text-xs"
                       >
-                        {/* 1. [Checkbox Selection] (Frozen Left 0) */}
-                        <td className="sticky left-0 z-10 bg-amber-50 w-[44px] min-w-[44px] max-w-[44px] py-2 px-2 text-center whitespace-nowrap border-r border-amber-300">
+                        {/* 1. [Checkbox Selection] */}
+                        <td className="w-10 min-w-[40px] max-w-[40px] py-2 px-2 text-center whitespace-nowrap border-r border-amber-300">
                           <span className="w-4 h-4 inline-block bg-stone-200/50 rounded border border-stone-300"></span>
                         </td>
 
-                        {/* 2. PARCEL ID TAG (Frozen Left 44px) */}
-                        <td className="sticky left-[44px] z-10 bg-amber-50 w-[155px] min-w-[155px] max-w-[155px] py-2 px-2 text-center whitespace-nowrap border-r-2 border-amber-300 shadow-2xs">
+                        {/* 2. PARCEL ID TAG */}
+                        <td className="w-40 min-w-[150px] py-2 px-2 whitespace-nowrap border-r border-amber-300">
                           <input
                             type="text"
                             value={inlineEditData.swineNameOrId}
@@ -1523,7 +1523,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                         </td>
 
                         {/* 3. FARMER NAME */}
-                        <td className="w-[220px] min-w-[220px] py-2 px-2 whitespace-nowrap bg-amber-50">
+                        <td className="w-56 min-w-[210px] py-2 px-2 whitespace-nowrap border-r border-amber-300">
                           <div className="flex flex-col gap-1 min-w-0">
                             <input
                               type="text"
@@ -1560,38 +1560,8 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                           </div>
                         </td>
 
-                        {/* 4. RICE VARIETY */}
-                        <td className="w-[160px] min-w-[160px] py-2 px-2 bg-amber-50 whitespace-nowrap">
-                          <select
-                            value={inlineEditData.breed}
-                            onChange={(e) =>
-                              setInlineEditData({ ...inlineEditData, breed: e.target.value })
-                            }
-                            className="w-full px-1.5 py-1 bg-white border border-stone-300 rounded text-xs font-medium focus:ring-2 focus:ring-emerald-600 shadow-2xs cursor-pointer"
-                          >
-                            {RICE_VARIETIES.map((rv) => (
-                              <option key={rv.name} value={rv.name}>
-                                {rv.name}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-
-                        {/* 5. TENURE */}
-                        <td className="w-[110px] min-w-[110px] py-2 px-2 text-center bg-amber-50 whitespace-nowrap">
-                          <input
-                            type="text"
-                            value={inlineEditData.commodity}
-                            onChange={(e) =>
-                              setInlineEditData({ ...inlineEditData, commodity: e.target.value })
-                            }
-                            className="w-full px-1.5 py-1 bg-white border border-stone-300 rounded text-xs font-medium text-center focus:ring-2 focus:ring-emerald-600 shadow-2xs"
-                            placeholder="Owner"
-                          />
-                        </td>
-
-                        {/* 6. BARANGAY */}
-                        <td className="w-[140px] min-w-[140px] py-2 px-2 bg-amber-50 whitespace-nowrap">
+                        {/* 4. BARANGAY */}
+                        <td className="w-36 min-w-[130px] py-2 px-2 whitespace-nowrap border-r border-amber-300">
                           <select
                             value={inlineEditData.barangay}
                             onChange={(e) =>
@@ -1607,42 +1577,38 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                           </select>
                         </td>
 
-                        {/* 7. DATE REGISTERED */}
-                        <td className="w-[120px] min-w-[120px] py-2 px-2 text-center bg-amber-50 whitespace-nowrap">
-                          <input
-                            type="text"
-                            value={inlineEditData.birthday}
-                            onChange={(e) =>
-                              setInlineEditData({ ...inlineEditData, birthday: e.target.value })
-                            }
-                            className="w-full px-1.5 py-1 bg-white border border-stone-300 rounded text-xs font-mono text-center focus:ring-2 focus:ring-emerald-600 shadow-2xs"
-                            placeholder="MM/DD/YYYY"
-                          />
-                        </td>
-
-                        {/* 8. AGRO-ECOSYSTEM */}
-                        <td className="w-[140px] min-w-[140px] py-2 px-2 text-center bg-amber-50 whitespace-nowrap">
+                        {/* 5. RICE VARIETY */}
+                        <td className="w-44 min-w-[160px] py-2 px-2 whitespace-nowrap border-r border-amber-300">
                           <select
-                            value={inlineEditData.purpose || 'Irrigated Lowland (NIA)'}
+                            value={inlineEditData.breed}
                             onChange={(e) =>
-                              setInlineEditData({ ...inlineEditData, purpose: e.target.value })
+                              setInlineEditData({ ...inlineEditData, breed: e.target.value })
                             }
-                            className="w-full px-1.5 py-1 bg-white border border-stone-300 rounded text-xs font-medium text-stone-800 focus:ring-2 focus:ring-emerald-600 shadow-2xs cursor-pointer"
+                            className="w-full px-1.5 py-1 bg-white border border-stone-300 rounded text-xs font-medium focus:ring-2 focus:ring-emerald-600 shadow-2xs cursor-pointer"
                           >
-                            <option value="Irrigated Lowland (NIA)">Irrigated Lowland</option>
-                            <option value="Rainfed Lowland">Rainfed Lowland</option>
-                            <option value="Hybrid Seed Production">Hybrid Lowland</option>
-                            <option value="Upland Rice">Upland Rice</option>
+                            {RICE_VARIETIES.map((rv) => (
+                              <option key={rv.name} value={rv.name}>
+                                {rv.name}
+                              </option>
+                            ))}
                           </select>
                         </td>
 
-                        {/* 9. EST. YIELD (MT) */}
-                        <td className="w-[110px] min-w-[110px] py-2 px-2 text-right bg-amber-50 whitespace-nowrap font-mono text-xs">
-                          {((inlineEditData.weightKg || 1) * 4.8).toFixed(2)} MT
+                        {/* 6. TENURE */}
+                        <td className="w-28 min-w-[100px] py-2 px-2 text-center whitespace-nowrap border-r border-amber-300">
+                          <input
+                            type="text"
+                            value={inlineEditData.commodity}
+                            onChange={(e) =>
+                              setInlineEditData({ ...inlineEditData, commodity: e.target.value })
+                            }
+                            className="w-full px-1.5 py-1 bg-white border border-stone-300 rounded text-xs font-medium text-center focus:ring-2 focus:ring-emerald-600 shadow-2xs"
+                            placeholder="Owner"
+                          />
                         </td>
 
-                        {/* 10. FARM AREA (HA) */}
-                        <td className="w-[110px] min-w-[110px] py-2 px-2 text-right bg-amber-50 whitespace-nowrap">
+                        {/* 7. FARM AREA (HA) */}
+                        <td className="w-24 min-w-[90px] py-2 px-2 text-right whitespace-nowrap border-r border-amber-300">
                           <input
                             type="number"
                             step="0.01"
@@ -1659,20 +1625,54 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                           />
                         </td>
 
+                        {/* 8. EST. YIELD (MT) */}
+                        <td className="w-24 min-w-[90px] py-2 px-2 text-right whitespace-nowrap border-r border-amber-300 font-mono text-xs text-gov-ink">
+                          {((inlineEditData.weightKg || 1) * 4.8).toFixed(2)} MT
+                        </td>
+
+                        {/* 9. AGRO-ECOSYSTEM */}
+                        <td className="w-36 min-w-[130px] py-2 px-2 whitespace-nowrap border-r border-amber-300">
+                          <select
+                            value={inlineEditData.purpose || 'Irrigated Lowland (NIA)'}
+                            onChange={(e) =>
+                              setInlineEditData({ ...inlineEditData, purpose: e.target.value })
+                            }
+                            className="w-full px-1.5 py-1 bg-white border border-stone-300 rounded text-xs font-medium text-stone-800 focus:ring-2 focus:ring-emerald-600 shadow-2xs cursor-pointer"
+                          >
+                            <option value="Irrigated Lowland (NIA)">Irrigated Lowland</option>
+                            <option value="Rainfed Lowland">Rainfed Lowland</option>
+                            <option value="Hybrid Seed Production">Hybrid Lowland</option>
+                            <option value="Upland Rice">Upland Rice</option>
+                          </select>
+                        </td>
+
+                        {/* 10. DATE REGISTERED */}
+                        <td className="w-28 min-w-[100px] py-2 px-2 text-center whitespace-nowrap border-r border-amber-300">
+                          <input
+                            type="text"
+                            value={inlineEditData.birthday}
+                            onChange={(e) =>
+                              setInlineEditData({ ...inlineEditData, birthday: e.target.value })
+                            }
+                            className="w-full px-1.5 py-1 bg-white border border-stone-300 rounded text-xs font-mono text-center focus:ring-2 focus:ring-emerald-600 shadow-2xs"
+                            placeholder="MM/DD/YYYY"
+                          />
+                        </td>
+
                         {/* 11. STATUS */}
-                        <td className="w-[120px] min-w-[120px] py-2 px-2 text-center bg-amber-50 whitespace-nowrap">
-                          <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                        <td className="w-24 min-w-[90px] py-2 px-2 text-center whitespace-nowrap border-r border-amber-300">
+                          <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
                             Editing
                           </span>
                         </td>
 
-                        {/* 12. ACTIONS (Save & Cancel - Sticky Right) */}
-                        <td className="w-[150px] min-w-[150px] py-2 px-2 text-center whitespace-nowrap sticky right-0 z-10 bg-amber-50 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] border-l border-amber-300">
+                        {/* 12. ACTIONS */}
+                        <td className="w-32 min-w-[120px] py-2 px-2 text-center whitespace-nowrap border-l border-amber-300">
                           <div className="flex items-center justify-center gap-1.5">
                             <button
                               type="button"
                               onClick={() => handleSaveInlineEdit(parcel.tagNumber)}
-                              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center gap-1 cursor-pointer transition shadow-xs"
+                              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-bold text-xs flex items-center gap-1 cursor-pointer transition shadow-xs"
                               title="Save changes"
                             >
                               <Check className="w-3.5 h-3.5" />
@@ -1681,7 +1681,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                             <button
                               type="button"
                               onClick={handleCancelInlineEdit}
-                              className="px-2 py-1 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-lg font-semibold text-xs flex items-center gap-1 cursor-pointer transition"
+                              className="px-2 py-1 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded font-semibold text-xs flex items-center gap-1 cursor-pointer transition"
                               title="Cancel editing"
                             >
                               <X className="w-3.5 h-3.5" />
@@ -1705,8 +1705,8 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                           : 'bg-white'
                       }`}
                     >
-                      {/* 1. [Checkbox Selection] (Frozen Left 0) */}
-                      <td className={`sticky left-0 z-10 ${isSelected ? 'bg-emerald-100/90' : rowBg} group-hover:bg-emerald-50/90 w-[44px] min-w-[44px] max-w-[44px] py-2.5 px-2 text-center whitespace-nowrap border-r border-stone-200 shadow-2xs`}>
+                      {/* 1. [Checkbox Selection] */}
+                      <td className="w-10 min-w-[40px] max-w-[40px] py-2.5 px-2 text-center whitespace-nowrap border-r border-stone-200">
                         <input
                           type="checkbox"
                           checked={isSelected}
@@ -1719,24 +1719,24 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                         />
                       </td>
 
-                      {/* 2. PARCEL ID TAG (Frozen Left 44px) */}
-                      <td className={`sticky left-[44px] z-10 ${isSelected ? 'bg-emerald-100/90' : rowBg} group-hover:bg-stone-100/90 w-[155px] min-w-[155px] max-w-[155px] py-2.5 px-2.5 text-center whitespace-nowrap border-r-2 border-stone-200 shadow-2xs`}>
-                        <div className="flex flex-col items-center gap-1">
+                      {/* 2. PARCEL ID TAG */}
+                      <td className="w-40 min-w-[150px] py-2.5 px-3 text-left whitespace-nowrap border-r border-stone-200">
+                        <div className="flex flex-col items-start gap-1">
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               onSelectParcel(parcel);
                             }}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-900 font-mono text-[11px] font-bold tracking-tight cursor-pointer transition shadow-2xs hover:shadow-xs"
+                            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-gov-canvas hover:bg-gov-canvas/80 border border-gov-line text-gov-ink font-mono text-[11px] font-bold tracking-tight cursor-pointer transition"
                             title="Click to open Farmer Profile Dossier"
                           >
-                            <span className="text-stone-400">🔒</span>
+                            <span className="text-gov-muted text-[10px]">#</span>
                             <span>{parcel.swineNameOrId || parcel.tagNumber}</span>
                           </button>
                           {(parcel.is_pending_sync || parcel.isPendingSync) && (
                             <span
-                              className="inline-flex items-center gap-1 text-[9px] font-extrabold text-amber-800 bg-amber-100/90 border border-amber-300 px-1.5 py-0.5 rounded-full shadow-2xs animate-pulse"
+                              className="inline-flex items-center gap-1 text-[9px] font-extrabold text-amber-800 bg-amber-100/90 border border-amber-300 px-1.5 py-0.5 rounded-full animate-pulse"
                               title="Saved locally offline. Will synchronize automatically when connected."
                             >
                               <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
@@ -1747,7 +1747,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                       </td>
 
                       {/* 3. FARMER NAME */}
-                      <td className="w-[200px] min-w-[200px] py-2 px-3 whitespace-nowrap">
+                      <td className="w-56 min-w-[210px] py-2 px-3 whitespace-nowrap border-r border-stone-200">
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
@@ -1772,62 +1772,62 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                           </button>
                           <div className="flex flex-col min-w-0">
                             <span
-                              className="font-bold text-gov-ink text-xs uppercase truncate block max-w-[155px]"
+                              className="font-bold text-gov-ink text-xs uppercase truncate block max-w-[170px]"
                               title={getFarmerDisplayName(parcel)}
                             >
                               {getFarmerDisplayName(parcel)}
                             </span>
-                            <span className="text-[10px] text-gov-muted truncate block max-w-[155px]">
+                            <span className="text-[10px] text-gov-muted truncate block max-w-[170px]">
                               {parcel.focalPerson ? `LFT: ${parcel.focalPerson}` : `Purok ${parcel.purok || '1'}`}
                             </span>
                           </div>
                         </div>
                       </td>
 
-                      {/* 4. BARANGAY & PUROK */}
-                      <td className="w-[130px] min-w-[130px] py-2 px-3 whitespace-nowrap text-xs font-semibold text-gov-ink">
-                        Brgy. {getDisplayBarangay(parcel.barangay)}
+                      {/* 4. BARANGAY */}
+                      <td className="w-36 min-w-[130px] py-2 px-3 whitespace-nowrap text-xs font-semibold text-gov-ink border-r border-stone-200">
+                        {getDisplayBarangay(parcel.barangay)}
                       </td>
 
                       {/* 5. RICE VARIETY */}
-                      <td className="w-[140px] min-w-[140px] py-2 px-3 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-gov-ink text-xs truncate max-w-[100px]">
+                      <td className="w-44 min-w-[160px] py-2 px-3 whitespace-nowrap border-r border-stone-200">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-gov-ink text-xs truncate max-w-[150px]" title={activeVariety || 'NSIC Rc 222'}>
                             {activeVariety || 'NSIC Rc 222'}
                           </span>
-                          <span className="text-[9.5px] font-semibold px-1 py-0.2 rounded bg-gov-canvas text-gov-muted border border-gov-line">
+                          <span className="text-[10px] text-gov-muted font-normal">
                             {parcel.seedType || 'Inbred'}
                           </span>
                         </div>
                       </td>
 
                       {/* 6. TENURE */}
-                      <td className="w-[100px] min-w-[100px] py-2 px-2 text-center whitespace-nowrap text-xs text-gov-muted">
+                      <td className="w-28 min-w-[100px] py-2 px-2 text-center whitespace-nowrap text-xs text-gov-muted border-r border-stone-200">
                         {parcel.sex || 'Owner'}
                       </td>
 
                       {/* 7. FARM AREA (HA) */}
-                      <td className="w-[90px] min-w-[90px] py-2 px-2.5 text-right whitespace-nowrap font-mono font-bold text-gov-ink text-xs tabular-nums">
+                      <td className="w-24 min-w-[90px] py-2 px-2.5 text-right whitespace-nowrap font-mono font-bold text-gov-ink text-xs tabular-nums border-r border-stone-200">
                         {(parcel.weightKg || parcel.areaHa || 0).toFixed(2)} ha
                       </td>
 
                       {/* 8. EST. YIELD (MT) */}
-                      <td className="w-[90px] min-w-[90px] py-2 px-2.5 text-right whitespace-nowrap font-mono font-medium text-gov-muted text-xs tabular-nums">
+                      <td className="w-24 min-w-[90px] py-2 px-2.5 text-right whitespace-nowrap font-mono font-medium text-gov-muted text-xs tabular-nums border-r border-stone-200">
                         {seasonalRecord ? `${(seasonalRecord.actualProductionVolumeMt || (parcel.weightKg || 1) * 4.8).toFixed(2)}` : `${((parcel.weightKg || 1) * 4.8).toFixed(2)}`} MT
                       </td>
 
                       {/* 9. AGRO-ECOSYSTEM */}
-                      <td className="w-[125px] min-w-[125px] py-2 px-2.5 text-left whitespace-nowrap text-xs text-gov-muted truncate max-w-[125px]">
+                      <td className="w-36 min-w-[130px] py-2 px-3 text-left whitespace-nowrap text-xs text-gov-ink border-r border-stone-200">
                         {ecoBadge.label}
                       </td>
 
                       {/* 10. DATE REGISTERED */}
-                      <td className="w-[95px] min-w-[95px] py-2 px-2 text-center whitespace-nowrap text-[11px] text-gov-muted font-mono">
+                      <td className="w-28 min-w-[100px] py-2 px-2 text-center whitespace-nowrap text-[11px] text-gov-muted font-mono border-r border-stone-200">
                         {formatBirthday(parcel.registrationDate || parcel.birthday || '2026-06-15')}
                       </td>
 
                       {/* 11. STATUS */}
-                      <td className="w-[85px] min-w-[85px] py-2 px-2 text-center whitespace-nowrap">
+                      <td className="w-24 min-w-[90px] py-2 px-2 text-center whitespace-nowrap border-r border-stone-200">
                         {hasPolygonMapped ? (
                           <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
@@ -1846,14 +1846,14 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                         )}
                       </td>
 
-                      {/* 12. ACTIONS (Sticky Right) */}
-                      <td className={`w-[115px] min-w-[115px] py-2 px-2 text-center whitespace-nowrap sticky right-0 z-10 ${rowBg} group-hover:bg-gov-canvas/60 border-l border-gov-line`}>
-                        <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      {/* 12. ACTIONS */}
+                      <td className="w-32 min-w-[120px] py-2 px-2.5 text-center whitespace-nowrap border-l border-gov-line">
+                        <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
                           {/* 1. View Dossier */}
                           <button
                             type="button"
                             onClick={() => onSelectParcel(parcel)}
-                            className="px-2.5 py-1 rounded bg-gov-canvas hover:bg-gov-green-soft hover:text-gov-green text-gov-ink border border-gov-line text-[11px] font-semibold transition cursor-pointer"
+                            className="px-2.5 py-1 rounded bg-gov-green hover:bg-emerald-800 text-white text-[11px] font-semibold transition cursor-pointer shadow-2xs"
                             title="View Farmer Dossier"
                           >
                             View
@@ -1898,8 +1898,8 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                             <button
                               type="button"
                               onClick={() => handleDeleteAttempt(parcel)}
-                              className="p-1 rounded border border-gov-line bg-white hover:bg-rose-50 text-rose-600 hover:border-rose-300 transition cursor-pointer"
-                              title="Delete Record (Admin)"
+                              className="p-1 rounded border border-gov-line bg-white hover:bg-rose-50 text-rose-600 transition cursor-pointer"
+                              title="Delete Parcel (Admin Only)"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
