@@ -1362,73 +1362,73 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
       <div className="overflow-x-auto rounded border border-gov-line bg-white">
         {/* Scrollable Container with Sticky Header, Sticky Left Columns, and Visible Scrollbar */}
         <div className="custom-table-scrollbar w-full overflow-x-auto overflow-y-auto max-h-[calc(100vh-240px)] min-h-[400px] divide-y divide-gov-line/60 relative">
-          <table className="w-full min-w-[1550px] text-left border-collapse text-xs">
+          <table className="w-full min-w-[1250px] text-left border-collapse text-xs">
             <thead className="sticky top-0 z-20 bg-gov-canvas text-gov-muted border-b border-gov-line">
               <tr className="border-b border-gov-line text-[10px] font-bold uppercase tracking-wider text-gov-muted">
                 {/* 1. [Checkbox Selection] (Frozen Left 0) */}
-                <th className="sticky top-0 left-0 z-30 bg-stone-100 w-[44px] min-w-[44px] max-w-[44px] py-3 px-2 text-center whitespace-nowrap text-stone-700 border-b border-stone-200 border-r border-stone-200 shadow-2xs">
+                <th className="sticky top-0 left-0 z-30 bg-gov-canvas w-[40px] min-w-[40px] max-w-[40px] py-2.5 px-2 text-center whitespace-nowrap text-gov-muted border-b border-gov-line border-r border-gov-line">
                   <input
                     type="checkbox"
                     ref={headerCheckboxRef}
                     checked={isAllSelected}
                     onChange={handleToggleSelectAll}
-                    className="w-4 h-4 text-emerald-600 rounded border-stone-300 focus:ring-emerald-500 cursor-pointer transition"
+                    className="w-3.5 h-3.5 accent-gov-green rounded cursor-pointer transition"
                     title={isAllSelected ? "Deselect All" : "Select All Visible Records"}
                   />
                 </th>
 
-                {/* 2. PARCEL ID TAG (Frozen Left 44px) */}
-                <th className="sticky top-0 left-[44px] z-30 bg-stone-100 w-[155px] min-w-[155px] max-w-[155px] py-3 px-3 text-center whitespace-nowrap text-stone-700 border-b border-stone-200 border-r-2 border-stone-200 shadow-2xs">
+                {/* 2. PARCEL ID TAG (Frozen Left 40px) */}
+                <th className="sticky top-0 left-[40px] z-30 bg-gov-canvas w-[150px] min-w-[150px] max-w-[150px] py-2.5 px-2.5 text-center whitespace-nowrap text-gov-muted border-b border-gov-line border-r border-gov-line">
                   PARCEL ID TAG
                 </th>
 
                 {/* 3. FARMER NAME */}
-                <th className="sticky top-0 z-20 bg-stone-100 w-[220px] min-w-[220px] py-3 px-3.5 text-left whitespace-nowrap text-stone-700 border-b border-stone-200">
+                <th className="sticky top-0 z-20 bg-gov-canvas w-[200px] min-w-[200px] py-2.5 px-3 text-left whitespace-nowrap text-gov-muted border-b border-gov-line">
                   FARMER NAME
                 </th>
 
                 {/* 4. RICE VARIETY */}
-                <th className="sticky top-0 z-20 bg-stone-100 py-3 px-3.5 text-left whitespace-nowrap text-stone-700 border-b border-stone-200 w-[160px] min-w-[160px]">
+                <th className="sticky top-0 z-20 bg-gov-canvas py-2.5 px-3 text-left whitespace-nowrap text-gov-muted border-b border-gov-line w-[150px] min-w-[150px]">
                   RICE VARIETY
                 </th>
 
                 {/* 5. TENURE */}
-                <th className="sticky top-0 z-20 bg-stone-100 py-3 px-3 text-center whitespace-nowrap text-stone-700 border-b border-stone-200 w-[110px] min-w-[110px]">
+                <th className="sticky top-0 z-20 bg-gov-canvas py-2.5 px-2.5 text-center whitespace-nowrap text-gov-muted border-b border-gov-line w-[110px] min-w-[110px]">
                   TENURE
                 </th>
 
                 {/* 6. BARANGAY */}
-                <th className="sticky top-0 z-20 bg-stone-100 py-3 px-3.5 text-left whitespace-nowrap text-stone-700 border-b border-stone-200 w-[140px] min-w-[140px]">
+                <th className="sticky top-0 z-20 bg-gov-canvas py-2.5 px-3 text-left whitespace-nowrap text-gov-muted border-b border-gov-line w-[130px] min-w-[130px]">
                   BARANGAY
                 </th>
 
                 {/* 7. DATE REGISTERED */}
-                <th className="sticky top-0 z-20 bg-stone-100 py-3 px-3 text-center whitespace-nowrap text-stone-700 border-b border-stone-200 w-[120px] min-w-[120px]">
+                <th className="sticky top-0 z-20 bg-gov-canvas py-2.5 px-2.5 text-center whitespace-nowrap text-gov-muted border-b border-gov-line w-[110px] min-w-[110px]">
                   DATE REGISTERED
                 </th>
 
                 {/* 8. AGRO-ECOSYSTEM */}
-                <th className="sticky top-0 z-20 bg-stone-100 py-3 px-3 text-center whitespace-nowrap text-stone-700 border-b border-stone-200 w-[140px] min-w-[140px]">
+                <th className="sticky top-0 z-20 bg-gov-canvas py-2.5 px-2.5 text-center whitespace-nowrap text-gov-muted border-b border-gov-line w-[130px] min-w-[130px]">
                   AGRO-ECOSYSTEM
                 </th>
 
                 {/* 9. EST. YIELD (MT) */}
-                <th className="sticky top-0 z-20 bg-stone-100 py-3 px-3 text-right whitespace-nowrap text-stone-700 border-b border-stone-200 w-[110px] min-w-[110px]">
-                  EST. YIELD (MT)
+                <th className="sticky top-0 z-20 bg-gov-canvas py-2.5 px-2.5 text-right whitespace-nowrap text-gov-muted border-b border-gov-line w-[100px] min-w-[100px]">
+                  EST. YIELD
                 </th>
 
                 {/* 10. FARM AREA (HA) */}
-                <th className="sticky top-0 z-20 bg-stone-100 py-3 px-3 text-right whitespace-nowrap text-stone-700 border-b border-stone-200 w-[110px] min-w-[110px]">
-                  FARM AREA (HA)
+                <th className="sticky top-0 z-20 bg-gov-canvas py-2.5 px-2.5 text-right whitespace-nowrap text-gov-muted border-b border-gov-line w-[100px] min-w-[100px]">
+                  FARM AREA
                 </th>
 
                 {/* 11. STATUS */}
-                <th className="sticky top-0 z-20 bg-stone-100 py-3 px-3 text-center whitespace-nowrap text-stone-700 border-b border-stone-200 w-[120px] min-w-[120px]">
+                <th className="sticky top-0 z-20 bg-gov-canvas py-2.5 px-2.5 text-center whitespace-nowrap text-gov-muted border-b border-gov-line w-[110px] min-w-[110px]">
                   STATUS
                 </th>
 
                 {/* 12. ACTIONS (Sticky Right) */}
-                <th className="sticky top-0 right-0 z-30 bg-stone-100 py-3 px-3.5 text-center whitespace-nowrap shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.06)] border-b border-stone-200 text-stone-700 w-[150px] min-w-[150px]">
+                <th className="sticky top-0 right-0 z-30 bg-gov-canvas py-2.5 px-3 text-center whitespace-nowrap border-b border-gov-line border-l border-gov-line text-gov-muted w-[130px] min-w-[130px]">
                   ACTIONS
                 </th>
               </tr>
@@ -1851,90 +1851,61 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                       </td>
 
                       {/* 12. ACTIONS matching Swine Registry (Sticky Right) */}
-                      <td className={`w-[150px] min-w-[150px] py-2.5 px-3 text-center whitespace-nowrap sticky right-0 z-10 ${rowBg} group-hover:bg-emerald-50/70 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)] border-l border-stone-200`}>
-                        <div className="flex items-center justify-center gap-1">
+                      <td className={`w-[130px] min-w-[130px] py-2 px-2 text-center whitespace-nowrap sticky right-0 z-10 ${rowBg} group-hover:bg-gov-canvas/60 border-l border-gov-line`}>
+                        <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                           {/* 1. View Dossier */}
                           <button
                             type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onSelectParcel(parcel);
-                            }}
-                            className="p-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 text-stone-600 hover:text-stone-900 transition cursor-pointer"
+                            onClick={() => onSelectParcel(parcel)}
+                            className="px-2.5 py-1 rounded bg-gov-canvas hover:bg-gov-green-soft hover:text-gov-green text-gov-ink border border-gov-line text-[11px] font-semibold transition cursor-pointer"
                             title="View Farmer Dossier"
                           >
-                            <Eye className="w-3.5 h-3.5 text-stone-500" />
+                            View
                           </button>
 
                           {/* 2. Certificate */}
                           <button
                             type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setCertificateParcel(parcel);
-                            }}
-                            className="p-1.5 rounded-lg border border-emerald-200 bg-white hover:bg-emerald-50 text-emerald-700 transition cursor-pointer"
+                            onClick={() => setCertificateParcel(parcel)}
+                            className="p-1 rounded border border-gov-line bg-white hover:bg-gov-canvas text-gov-muted hover:text-gov-ink transition cursor-pointer"
                             title="Official Certificate"
                           >
-                            <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                            <FileText className="w-3.5 h-3.5" />
                           </button>
 
                           {/* 3. Locate on Map */}
-                          {hasGpsCoordinates ? (
+                          {hasGpsCoordinates && (
                             <button
                               type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onLocateOnMap?.(parcel);
-                              }}
-                              className="p-1.5 rounded-lg border border-emerald-200 bg-white hover:bg-emerald-50 text-emerald-700 transition cursor-pointer"
+                              onClick={() => onLocateOnMap?.(parcel)}
+                              className="p-1 rounded border border-gov-line bg-white hover:bg-gov-canvas text-gov-green transition cursor-pointer"
                               title="Locate on GIS Map"
                             >
-                              <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                              <MapPin className="w-3.5 h-3.5" />
                             </button>
-                          ) : null}
+                          )}
 
                           {/* 4. Edit (Inline) */}
                           {!permissions.isPublicVisitor && (
                             <button
                               type="button"
                               onClick={(e) => handleStartInlineEdit(e, parcel)}
-                              className="p-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 text-stone-600 hover:text-stone-900 transition cursor-pointer"
+                              className="p-1 rounded border border-gov-line bg-white hover:bg-gov-canvas text-gov-muted hover:text-gov-ink transition cursor-pointer"
                               title="Edit Record Inline"
                             >
-                              <Pencil className="w-3.5 h-3.5 text-stone-500" />
+                              <Pencil className="w-3.5 h-3.5" />
                             </button>
                           )}
 
-                          {/* 5. Archive / Restore */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleArchive(parcel);
-                            }}
-                            className="p-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-100 text-stone-600 transition cursor-pointer"
-                            title={parcel.isArchived || parcel.is_archived ? 'Restore Record' : 'Archive Record'}
-                          >
-                            {parcel.isArchived || parcel.is_archived ? (
-                              <ArchiveRestore className="w-3.5 h-3.5 text-emerald-700" />
-                            ) : (
-                              <Archive className="w-3.5 h-3.5 text-stone-400" />
-                            )}
-                          </button>
-
-                          {/* 6. Delete (Admin Only) */}
+                          {/* 5. Delete (Admin Only) */}
                           {permissions.canDeleteParcels && (
                             <button
                               type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteAttempt(parcel);
-                              }}
-                              className="p-1.5 rounded-lg border border-rose-200 bg-white hover:bg-rose-50 text-rose-600 transition cursor-pointer"
+                              onClick={() => handleDeleteAttempt(parcel)}
+                              className="p-1 rounded border border-gov-line bg-white hover:bg-rose-50 text-rose-600 hover:border-rose-300 transition cursor-pointer"
                               title="Delete Record (Admin)"
                             >
-                              <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           )}
                         </div>
